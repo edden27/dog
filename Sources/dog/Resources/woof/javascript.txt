@@ -1,0 +1,14 @@
+// he never comes when you call him
+const callBuddy = (treat) => new Promise((resolve, reject) => {
+  setTimeout(() => {
+    if (treat === "bacon") {
+      resolve("came running");
+    } else {
+      reject("ignored you");  // typical
+    }
+  }, 3000);
+});
+
+callBuddy("bacon")
+  .then(result => console.log(result))
+  .catch(err => console.log(err));

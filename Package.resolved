@@ -1,0 +1,59 @@
+{
+  "originHash" : "ede4782c9513cd8f3907a482649fbb8d85900183d591bc8045ab89ab30b47216",
+  "pins" : [
+    {
+      "identity" : "swift-argument-parser",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-argument-parser",
+      "state" : {
+        "revision" : "626b5b7b2f45e1b0b1c6f4a309296d1d21d7311b",
+        "version" : "1.7.1"
+      }
+    },
+    {
+      "identity" : "tree-sitter",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/tree-sitter/tree-sitter",
+      "state" : {
+        "revision" : "da6fe9beb4f7f67beb75914ca8e0d48ae48d6406",
+        "version" : "0.25.10"
+      }
+    },
+    {
+      "identity" : "tree-sitter-bash",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/tree-sitter/tree-sitter-bash",
+      "state" : {
+        "revision" : "a06c2e4415e9bc0346c6b86d401879ffb44058f7",
+        "version" : "0.25.1"
+      }
+    },
+    {
+      "identity" : "tree-sitter-go",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/tree-sitter/tree-sitter-go",
+      "state" : {
+        "revision" : "1547678a9da59885853f5f5cc8a99cc203fa2e2c",
+        "version" : "0.25.0"
+      }
+    },
+    {
+      "identity" : "tree-sitter-markdown",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/MDeiml/tree-sitter-markdown",
+      "state" : {
+        "branch" : "split_parser",
+        "revision" : "f969cd3ae3f9fbd4e43205431d0ae286014c05b5"
+      }
+    },
+    {
+      "identity" : "tree-sitter-swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/alex-pinkus/tree-sitter-swift",
+      "state" : {
+        "revision" : "277b583bbb024f20ba88b95c48bf5a6a0b4f2287"
+      }
+    }
+  ],
+  "version" : 3
+}

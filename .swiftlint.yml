@@ -1,0 +1,13 @@
+excluded:
+  - .build
+  - cli/.build
+  - cli/LocalPackages
+  - tests/benchmarks
+  - tests/fixtures
+  - DerivedDocumentation
+
+# Trailing commas make diffs cleaner — adding a line doesn't modify the previous line
+disabled_rules:
+  - trailing_comma
+  - opening_brace
+  - optional_data_string_conversion

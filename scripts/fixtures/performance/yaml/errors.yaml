@@ -1,0 +1,19 @@
+# Valid YAML mixed with intentional syntax errors
+# to trigger tree-sitter's (ERROR) @error capture node
+
+name: Rex
+breed: Golden Retriever
+age: 5
+
+# Broken: bad indentation / structure triggers ERROR
+- - - : : :
+  foo:
+    bar: baz
+      broken indent here
+    : missing key
+
+# More valid YAML after errors
+tricks:
+  - sit
+  - shake
+  - rollover

@@ -1,0 +1,14 @@
+// ownership is a squirrel chase
+struct GoodBoy<'leash> {
+    name: &'leash str,
+    treats: u32,
+    is_hungry: bool,
+}
+
+impl<'leash> GoodBoy<'leash> {
+    fn fetch(&mut self, ball: &str) -> Result<u32, &'static str> {
+        if self.is_hungry { return Err("too tired"); }
+        self.treats += 1;
+        Ok(self.treats)  // good boy
+    }
+}

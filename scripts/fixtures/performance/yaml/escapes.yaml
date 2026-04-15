@@ -1,0 +1,32 @@
+# Exercises: string.escape, error
+---
+escapes:
+  newline: "line one\nline two"
+  tab: "col1\tcol2"
+  unicode: "snowman: \u2603"
+  null_byte: "has\x00null"
+  backslash: "path\\to\\file"
+  quote: "she said \"hello\""
+  hex: "\x41\x42\x43"
+
+multiline_strings:
+  folded: >
+    This is a folded
+    string that spans
+    multiple lines.
+  literal: |
+    This preserves
+    newlines exactly
+    as written.
+
+# Intentional YAML error — duplicate key
+duplicate_key: first_value
+duplicate_key: second_value
+
+anchors:
+  default: &defaults
+    adapter: postgres
+    host: localhost
+  production:
+    <<: *defaults
+    host: production-db.example.com

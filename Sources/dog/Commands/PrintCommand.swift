@@ -1,0 +1,801 @@
+#if canImport(Darwin)
+  import Darwin
+#elseif canImport(Glibc)
+  import Glibc
+#endif
+
+/// Reads a file or stdin, highlights it, and writes colored output to stdout.
+struct PrintCommand {
+  let file: String?
+  let language: String?
+  let plain: Bool
+  let colorEnabled: Bool
+  let paging: PagingOption
+  let wrap: WrapOption
+  /// User-supplied terminal width override (columns). When nil, autodetect.
+  let terminalWidthOverride: Int?
+  /// O(1) array-indexed color table — no closure indirection.
+  let colorTable: [Style]
+  let baseColor: Style
+  let lineNumberStyle: Style?
+  let gutterBgStyle: Style?
+  let editorBgStyle: Style?
+  /// Pre-loaded source bytes — when set, skips file/stdin reading.
+  /// Used by `--woof` to feed embedded snippets through the normal pipeline.
+  let sourceOverride: [UInt8]?
+
+  init(
+    file: String?,
+    language: String?,
+    plain: Bool,
+    colorEnabled: Bool,
+    paging: PagingOption,
+    wrap: WrapOption,
+    terminalWidthOverride: Int?,
+    colorTable: [Style],
+    baseColor: Style,
+    lineNumberStyle: Style?,
+    gutterBgStyle: Style?,
+    editorBgStyle: Style?,
+    sourceOverride: [UInt8]? = nil
+  ) {
+    self.file = file
+    self.language = language
+    self.plain = plain
+    self.colorEnabled = colorEnabled
+    self.paging = paging
+    self.wrap = wrap
+    self.terminalWidthOverride = terminalWidthOverride
+    self.colorTable = colorTable
+    self.baseColor = baseColor
+    self.lineNumberStyle = lineNumberStyle
+    self.gutterBgStyle = gutterBgStyle
+    self.editorBgStyle = editorBgStyle
+    self.sourceOverride = sourceOverride
+  }
+
+  /// Execute the highlight-and-print pipeline.
+  func run() async throws {
+    let sourceBytes: [UInt8]
+    if let override = sourceOverride {
+      sourceBytes = override
+    } else {
+      do {
+        sourceBytes = try readSourceBytes()
+      } catch DogError.binaryFile(let path) {
+        // Soft message instead of hard error — plays nicely with fzf previews
+        var output = ANSIOutput(enabled: colorEnabled)
+        output.text("\(path): binary file")
+        output.newline()
+        output.flush()
+        return
+      }
+    }
+
+    // Detect language: explicit flag → filename → extension → shebang
+    let detectedLang = LanguageDetector.detect(
+      filename: file,
+      sourceBytes: sourceBytes,
+      explicit: language
+    )
+
+    // Parse with tree-sitter if we have a language
+    var output: ANSIOutput
+    var lineCount: Int
+
+    if let lang = detectedLang {
+      let tokens = try await SyntaxParser.parse(sourceBytes: sourceBytes, language: lang)
+      Bark.debug("parsed \(tokens.count) tokens for \(lang)")
+      (output, lineCount) = renderColorized(sourceBytes: sourceBytes, tokens: tokens)
+    } else {
+      output = ANSIOutput(enabled: colorEnabled, estimatedSize: sourceBytes.count)
+      lineCount = sourceBytes.reduce(0) { $0 + ($1 == 0x0A ? 1 : 0) } + 1
+      output.text(sourceBytes[...])
+    }
+
+    // Pager decision
+    let term = terminalSize()
+    let usePager: Bool
+    switch paging {
+    case .never: usePager = false
+    case .always: usePager = stdoutIsTTY()
+    case .auto: usePager = stdoutIsTTY() && lineCount > term.height
+    }
+
+    if usePager {
+      _ = Pager.run(buffer: &output)
+    } else {
+      output.flush()
+    }
+  }
+
+  // MARK: - Rendering
+
+  /// Gutter visual width: digits + " │ " (space, box-drawing, space = 3 display cols).
+  private static let gutterSeparatorWidth = 3
+
+  private func renderColorized(sourceBytes: [UInt8], tokens: [SyntaxToken]) -> (ANSIOutput, Int) {
+    // Wrap policy: --wrap=never disables; --wrap=auto wraps only when stdout is a TTY.
+    // (Pipes/fzf previews handle their own width — extra newlines count as bonus rows.)
+    let wrapEnabled: Bool
+    let truncateLongLines: Bool
+    let isTTY = stdoutIsTTY()
+    switch wrap {
+    case .never:
+      wrapEnabled = false
+      // Only clip to terminal width when output will actually be displayed in one
+      // (TTY or explicit width override). Pipes get full lines — downstream
+      // consumers handle their own width.
+      truncateLongLines = isTTY || terminalWidthOverride != nil
+    case .auto:
+      wrapEnabled = isTTY || terminalWidthOverride != nil
+      truncateLongLines = false
+    }
+    // Clamp the user override to the actual terminal width — wrapping wider
+    // than the real terminal would let the terminal soft-wrap and break our
+    // column accounting.
+    let actualTermWidth = terminalSize().width
+    let termWidth: Int
+    if let override = terminalWidthOverride {
+      termWidth = min(override, actualTermWidth)
+    } else {
+      termWidth = actualTermWidth
+    }
+    // Count lines without allocating — single pass
+    var lineCount = 1
+    for b in sourceBytes where b == 0x0A { lineCount += 1 }
+    // Digit width without String allocation
+    var digitWidth = 1
+    var n = lineCount
+    while n >= 10 {
+      digitWidth += 1
+      n /= 10
+    }
+    // Plain mode: no gutter at all, full width is content
+    let gutterCols = plain ? 0 : digitWidth + Self.gutterSeparatorWidth
+    let contentCols = termWidth - gutterCols
+
+    var output = ANSIOutput(
+      enabled: colorEnabled,
+      estimatedSize: sourceBytes.count * 2
+    )
+
+    // Pre-build editor bg escape for the code area
+    var editorBg = ContiguousArray<UInt8>()
+    if let bg = editorBgStyle {
+      editorBg.append(contentsOf: [0x1B, 0x5B, 0x34, 0x38, 0x3B, 0x32, 0x3B])
+      ANSICodes.appendDecimal(bg.r, into: &editorBg)
+      editorBg.append(0x3B)
+      ANSICodes.appendDecimal(bg.g, into: &editorBg)
+      editorBg.append(0x3B)
+      ANSICodes.appendDecimal(bg.b, into: &editorBg)
+      editorBg.append(0x6D)
+    }
+
+    let lineNumStyle = lineNumberStyle ?? baseColor
+    // In plain mode, gutter table holds empty entries (just bg setup) so emitGutter
+    // still primes the editor bg without printing line numbers.
+    let gutterTable: ContiguousArray<ContiguousArray<UInt8>>
+    if plain {
+      gutterTable = Self.buildPlainGutterTable(lineCount: lineCount, editorBg: editorBg)
+    } else {
+      gutterTable = Self.buildGutterTable(
+        lineCount: lineCount, digitWidth: digitWidth,
+        lineNumberStyle: lineNumStyle,
+        gutterBgStyle: gutterBgStyle,
+        editorBg: editorBg
+      )
+    }
+
+    // Pre-build space padding buffer — slice as needed for right-fill
+    var spacePad = ContiguousArray<UInt8>()
+    if !editorBg.isEmpty {
+      for _ in 0..<contentCols { spacePad.append(0x20) }
+    }
+
+    let wrapGutterBytes: ContiguousArray<UInt8>
+    if plain {
+      wrapGutterBytes = Self.buildPlainWrapGutter(editorBg: editorBg)
+    } else {
+      wrapGutterBytes = Self.buildWrapGutter(
+        digitWidth: digitWidth,
+        lineNumberStyle: lineNumStyle,
+        gutterBgStyle: gutterBgStyle,
+        editorBg: editorBg
+      )
+    }
+
+    var tokenIndex = 0
+    var lineNumber = 1
+    var lineStart = 0
+
+    while lineStart < sourceBytes.count {
+      // Find end of this line
+      var lineEnd = lineStart
+      while lineEnd < sourceBytes.count, sourceBytes[lineEnd] != 0x0A {
+        lineEnd += 1
+      }
+
+      // Emit gutter with line number
+      emitGutter(lineNumber: lineNumber, gutterTable: gutterTable, into: &output)
+
+      let lineLen = lineEnd - lineStart
+      // Scan for ASCII-ness — needed by both bulk width math and truncation.
+      var lineIsASCII = true
+      var scan = lineStart
+      while scan < lineEnd {
+        if sourceBytes[scan] >= 0x80 {
+          lineIsASCII = false
+          break
+        }
+        scan += 1
+      }
+      // Bulk path is only safe when either wrap is disabled (we'll truncate)
+      // or the whole line already fits in contentCols as pure ASCII. Must
+      // measure display width (not byte length) because tabs expand.
+      var lineDisplayWidth = 0
+      if lineIsASCII {
+        var ci = lineStart
+        while ci < lineEnd {
+          if sourceBytes[ci] == 0x09 {
+            lineDisplayWidth += 8 - (lineDisplayWidth % 8)
+          } else {
+            lineDisplayWidth += 1
+          }
+          ci += 1
+        }
+      }
+      let canBulk = !wrapEnabled || (lineIsASCII && lineDisplayWidth <= contentCols)
+      let shouldTruncate = truncateLongLines && !wrapEnabled
+      var colUsed: Int
+      if canBulk {
+        // Truncate: when wrap is disabled, clip the emitted range to contentCols
+        // so long lines don't overflow the terminal and soft-wrap.
+        var emitEnd = lineEnd
+        if shouldTruncate, lineLen > contentCols {
+          if lineIsASCII {
+            // ASCII: 1 byte == 1 column
+            emitEnd = lineStart + contentCols
+          } else {
+            // Non-ASCII: walk characters and stop at the column limit
+            emitEnd = truncateByteEnd(
+              sourceBytes: sourceBytes,
+              from: lineStart, to: lineEnd, maxCols: contentCols
+            )
+          }
+        }
+        // Fast path: bulk emit, no per-byte wrap check
+        emitLineBulk(
+          sourceBytes: sourceBytes,
+          lineStart: lineStart, lineEnd: emitEnd,
+          tokens: tokens, tokenIndex: &tokenIndex,
+          into: &output
+        )
+        if lineIsASCII {
+          colUsed = 0
+          for byteIdx in lineStart..<emitEnd {
+            if sourceBytes[byteIdx] == 0x09 {
+              colUsed += 8 - (colUsed % 8)
+            } else {
+              colUsed += 1
+            }
+          }
+        } else {
+          // Non-ASCII bulk path (wrap disabled): measure display columns
+          let str = String(decoding: sourceBytes[lineStart..<emitEnd], as: UTF8.self)
+          colUsed = str.unicodeScalars.reduce(0) { $0 + $1.terminalWidth }
+        }
+        // If truncated, advance tokenIndex past any tokens we skipped on this line
+        if emitEnd < lineEnd {
+          while tokenIndex < tokens.count, tokens[tokenIndex].startByte < lineEnd {
+            tokenIndex += 1
+          }
+        }
+      } else {
+        // Slow path: line may wrap — per-byte column tracking
+        colUsed = emitLine(
+          sourceBytes: sourceBytes,
+          lineStart: lineStart, lineEnd: lineEnd,
+          tokens: tokens, tokenIndex: &tokenIndex,
+          contentCols: contentCols, wrapGutterBytes: wrapGutterBytes, spacePad: spacePad,
+          editorBg: editorBg,
+          into: &output
+        )
+      }
+
+      // Fill remaining columns with editor background
+      if colUsed < contentCols, !editorBg.isEmpty {
+        let fillCount = contentCols - colUsed
+        output.text(editorBg)
+        output.text(spacePad[spacePad.startIndex..<spacePad.startIndex + fillCount])
+        output.reset()
+      }
+
+      // Newline between lines, but not after the last one
+      lineStart = lineEnd + 1
+      if lineStart < sourceBytes.count {
+        output.newline()
+      }
+      lineNumber += 1
+    }
+
+    output.reset()
+    // Always end with a newline so zsh doesn't show its missing-newline `%`
+    // marker in a TTY, and downstream pipes see a properly terminated stream.
+    output.newline()
+    return (output, lineCount)
+  }
+
+  /// Plain-mode gutter entries: just reset + editor bg, repeated per line.
+  /// Lets `emitGutter` prime the bg before each line without printing a number.
+  private static func buildPlainGutterTable(
+    lineCount: Int, editorBg: ContiguousArray<UInt8>
+  ) -> ContiguousArray<ContiguousArray<UInt8>> {
+    var entry = ContiguousArray<UInt8>()
+    entry.append(contentsOf: ANSICodes.reset)
+    entry.append(contentsOf: editorBg)
+    var table = ContiguousArray<ContiguousArray<UInt8>>()
+    table.reserveCapacity(lineCount)
+    for _ in 0..<lineCount { table.append(entry) }
+    return table
+  }
+
+  /// Plain-mode wrap continuation: reset + newline + editor bg.
+  /// Reset MUST come before the newline, otherwise the terminal fills
+  /// from the cursor to the right edge with the still-active bg color.
+  private static func buildPlainWrapGutter(
+    editorBg: ContiguousArray<UInt8>
+  ) -> ContiguousArray<UInt8> {
+    var buf = ContiguousArray<UInt8>()
+    buf.append(contentsOf: ANSICodes.reset)
+    buf.append(0x0A)
+    buf.append(contentsOf: editorBg)
+    return buf
+  }
+
+  /// Walk a UTF-8 byte range and return the byte index where cumulative
+  /// display width would exceed `maxCols`. Used to truncate non-ASCII lines
+  /// when wrap is disabled.
+  private func truncateByteEnd(
+    sourceBytes: [UInt8], from start: Int, to end: Int, maxCols: Int
+  ) -> Int {
+    var i = start
+    var col = 0
+    while i < end {
+      let byte = sourceBytes[i]
+      if byte < 0x80 {
+        if col + 1 > maxCols { return i }
+        col += 1
+        i += 1
+      } else {
+        let charStart = i
+        i += 1
+        while i < end, sourceBytes[i] & 0xC0 == 0x80 { i += 1 }
+        let str = String(decoding: sourceBytes[charStart..<i], as: UTF8.self)
+        let charWidth = str.unicodeScalars.reduce(0) { $0 + $1.terminalWidth }
+        if col + charWidth > maxCols { return charStart }
+        col += charWidth
+      }
+    }
+    return end
+  }
+
+  /// Fast path: emit a line that fits entirely within contentCols. Bulk slices, no column tracking.
+  private func emitLineBulk(
+    sourceBytes: [UInt8],
+    lineStart: Int, lineEnd: Int,
+    tokens: [SyntaxToken], tokenIndex: inout Int,
+    into output: inout ANSIOutput
+  ) {
+    var pos = lineStart
+    var lastStyle: Style?
+
+    while tokenIndex < tokens.count, tokens[tokenIndex].endByte <= lineStart {
+      tokenIndex += 1
+    }
+
+    while tokenIndex < tokens.count {
+      let token = tokens[tokenIndex]
+      guard token.startByte < lineEnd else { break }
+
+      let tokStart = max(token.startByte, pos)
+      let tokEnd = min(token.endByte, lineEnd)
+      guard tokStart < tokEnd else {
+        tokenIndex += 1
+        continue
+      }
+
+      if tokStart > pos {
+        if lastStyle != baseColor {
+          output.color(baseColor)
+          lastStyle = baseColor
+        }
+        output.text(sourceBytes[pos..<tokStart])
+      }
+
+      let style = colorTable[(token.tokenType ?? .none).rawValue]
+      if style != lastStyle {
+        output.color(style)
+        lastStyle = style
+      }
+      output.text(sourceBytes[tokStart..<tokEnd])
+      pos = tokEnd
+
+      if token.endByte <= lineEnd { tokenIndex += 1 } else { break }
+    }
+
+    if pos < lineEnd {
+      if lastStyle != baseColor {
+        output.color(baseColor)
+      }
+      output.text(sourceBytes[pos..<lineEnd])
+    }
+
+    output.reset()
+  }
+
+  /// Pre-built gutter bytes: reset + padding + color + digits + reset + separator.
+  /// Built once per render, indexed by line number. Avoids per-line String allocation.
+  // swiftlint:disable:next function_parameter_count
+  private static func buildGutterTable(
+    lineCount: Int, digitWidth: Int,
+    lineNumberStyle: Style, gutterBgStyle: Style?,
+    editorBg: ContiguousArray<UInt8>
+  ) -> ContiguousArray<ContiguousArray<UInt8>> {
+    var table = ContiguousArray<ContiguousArray<UInt8>>()
+    table.reserveCapacity(lineCount)
+
+    // Pre-build the background escape sequence once
+    var bgBytes = ContiguousArray<UInt8>()
+    if let gutterBg = gutterBgStyle {
+      bgBytes.append(contentsOf: [0x1B, 0x5B, 0x34, 0x38, 0x3B, 0x32, 0x3B])
+      ANSICodes.appendDecimal(gutterBg.r, into: &bgBytes)
+      bgBytes.append(0x3B)
+      ANSICodes.appendDecimal(gutterBg.g, into: &bgBytes)
+      bgBytes.append(0x3B)
+      ANSICodes.appendDecimal(gutterBg.b, into: &bgBytes)
+      bgBytes.append(0x6D)
+    }
+
+    // Pre-build the line number fg escape (just the foreground, no reset)
+    var fgBytes = ContiguousArray<UInt8>()
+    fgBytes.append(contentsOf: [0x1B, 0x5B, 0x33, 0x38, 0x3B, 0x32, 0x3B])
+    ANSICodes.appendDecimal(lineNumberStyle.r, into: &fgBytes)
+    fgBytes.append(0x3B)
+    ANSICodes.appendDecimal(lineNumberStyle.g, into: &fgBytes)
+    fgBytes.append(0x3B)
+    ANSICodes.appendDecimal(lineNumberStyle.b, into: &fgBytes)
+    fgBytes.append(0x6D)
+
+    for lineNum in 1...lineCount {
+      var buf = ContiguousArray<UInt8>()
+      buf.reserveCapacity(digitWidth + 40)
+
+      // Reset, then set bg for entire gutter region
+      buf.append(contentsOf: ANSICodes.reset)
+      buf.append(contentsOf: bgBytes)
+
+      // Right-align padding (bg stays active through spaces)
+      var numDigits = 1
+      var tempNum = lineNum
+      while tempNum >= 10 {
+        numDigits += 1
+        tempNum /= 10
+      }
+      for _ in 0..<(digitWidth - numDigits) { buf.append(0x20) }
+
+      // Set fg for digits (bg still active)
+      buf.append(contentsOf: fgBytes)
+      ANSICodes.appendDecimal(lineNum, digitWidth: numDigits, into: &buf)
+
+      // " │" with gutter bg, then reset + editor bg for trailing space
+      buf.append(contentsOf: [0x20, 0xE2, 0x94, 0x82])
+      buf.append(contentsOf: ANSICodes.reset)
+      buf.append(contentsOf: editorBg)
+      buf.append(0x20)
+
+      table.append(buf)
+    }
+    return table
+  }
+
+  private func emitGutter(
+    lineNumber: Int, gutterTable: ContiguousArray<ContiguousArray<UInt8>>,
+    into output: inout ANSIOutput
+  ) {
+    guard colorEnabled else { return }
+    output.text(gutterTable[lineNumber - 1])
+  }
+
+  /// Emit gutter padding for wrapped continuation lines, then re-emit the active style.
+  /// Pre-built wrap continuation gutter: newline + reset + bg + spaces + fg + " │" + reset + space.
+  private static func buildWrapGutter(
+    digitWidth: Int,
+    lineNumberStyle: Style,
+    gutterBgStyle: Style?,
+    editorBg: ContiguousArray<UInt8>
+  ) -> ContiguousArray<UInt8> {
+    var buf = ContiguousArray<UInt8>()
+    buf.reserveCapacity(digitWidth + 40)
+
+    // Reset MUST come before the newline, otherwise the terminal fills
+    // from the cursor to the right edge with the still-active bg color.
+    buf.append(contentsOf: ANSICodes.reset)
+    buf.append(0x0A)
+    if let gutterBg = gutterBgStyle {
+      buf.append(contentsOf: [0x1B, 0x5B, 0x34, 0x38, 0x3B, 0x32, 0x3B])
+      ANSICodes.appendDecimal(gutterBg.r, into: &buf)
+      buf.append(0x3B)
+      ANSICodes.appendDecimal(gutterBg.g, into: &buf)
+      buf.append(0x3B)
+      ANSICodes.appendDecimal(gutterBg.b, into: &buf)
+      buf.append(0x6D)
+    }
+    // Blank padding where number would be
+    for _ in 0..<digitWidth { buf.append(0x20) }
+    // Line number fg for │
+    buf.append(contentsOf: [0x1B, 0x5B, 0x33, 0x38, 0x3B, 0x32, 0x3B])
+    ANSICodes.appendDecimal(lineNumberStyle.r, into: &buf)
+    buf.append(0x3B)
+    ANSICodes.appendDecimal(lineNumberStyle.g, into: &buf)
+    buf.append(0x3B)
+    ANSICodes.appendDecimal(lineNumberStyle.b, into: &buf)
+    buf.append(0x6D)
+    // " │" + reset + editor bg for trailing space
+    buf.append(contentsOf: [0x20, 0xE2, 0x94, 0x82])
+    buf.append(contentsOf: ANSICodes.reset)
+    buf.append(contentsOf: editorBg)
+    buf.append(0x20)
+
+    return buf
+  }
+
+  private func emitWrapGutter(
+    wrapGutterBytes: ContiguousArray<UInt8>,
+    currentStyle: Style?,
+    into output: inout ANSIOutput
+  ) {
+    guard colorEnabled else { return }
+    output.text(wrapGutterBytes)
+    if let style = currentStyle {
+      output.color(style)
+    }
+  }
+
+  @discardableResult
+  private func emitLine(
+    sourceBytes: [UInt8],
+    lineStart: Int, lineEnd: Int,
+    tokens: [SyntaxToken], tokenIndex: inout Int,
+    contentCols: Int, wrapGutterBytes: ContiguousArray<UInt8>, spacePad: ContiguousArray<UInt8>,
+    editorBg: ContiguousArray<UInt8>,
+    into output: inout ANSIOutput
+  ) -> Int {
+    var pos = lineStart
+    var col = 0
+    var lastStyle: Style?
+
+    // Skip tokens that ended before this line
+    while tokenIndex < tokens.count, tokens[tokenIndex].endByte <= lineStart {
+      tokenIndex += 1
+    }
+
+    // Process tokens overlapping [lineStart, lineEnd)
+    while tokenIndex < tokens.count {
+      let token = tokens[tokenIndex]
+      guard token.startByte < lineEnd else { break }
+
+      let tokStart = max(token.startByte, pos)
+      let tokEnd = min(token.endByte, lineEnd)
+      guard tokStart < tokEnd else {
+        tokenIndex += 1
+        continue
+      }
+
+      // Gap before token
+      if tokStart > pos {
+        if lastStyle != baseColor {
+          output.color(baseColor)
+          lastStyle = baseColor
+        }
+        emitSliceWrapped(
+          sourceBytes: sourceBytes, from: pos, to: tokStart,
+          col: &col, contentCols: contentCols, wrapGutterBytes: wrapGutterBytes, spacePad: spacePad,
+          editorBg: editorBg,
+          currentStyle: lastStyle, into: &output
+        )
+      }
+
+      // Token
+      let style = colorTable[(token.tokenType ?? .none).rawValue]
+      if style != lastStyle {
+        output.color(style)
+        lastStyle = style
+      }
+      emitSliceWrapped(
+        sourceBytes: sourceBytes, from: tokStart, to: tokEnd,
+        col: &col, contentCols: contentCols, wrapGutterBytes: wrapGutterBytes, spacePad: spacePad,
+        editorBg: editorBg,
+        currentStyle: lastStyle, into: &output
+      )
+      pos = tokEnd
+
+      if token.endByte <= lineEnd { tokenIndex += 1 } else { break }
+    }
+
+    // Remaining unstyled text
+    if pos < lineEnd {
+      if lastStyle != baseColor {
+        output.color(baseColor)
+      }
+      emitSliceWrapped(
+        sourceBytes: sourceBytes, from: pos, to: lineEnd,
+        col: &col, contentCols: contentCols, wrapGutterBytes: wrapGutterBytes, spacePad: spacePad,
+        editorBg: editorBg,
+        currentStyle: lastStyle, into: &output
+      )
+    }
+
+    output.reset()
+    return col
+  }
+
+  /// Emit a byte range with wrap handling. Tracks column and wraps at contentCols.
+  /// Word-aware: wraps at the last space before the column limit when possible.
+  /// ASCII fast path: bytes < 0x80 are always 1 column, no Character/wcwidth needed.
+  private func emitSliceWrapped(
+    sourceBytes: [UInt8],
+    from start: Int, to end: Int,
+    col: inout Int, contentCols: Int, wrapGutterBytes: ContiguousArray<UInt8>,
+    spacePad: ContiguousArray<UInt8>, editorBg: ContiguousArray<UInt8>,
+    currentStyle: Style?,
+    into output: inout ANSIOutput
+  ) {
+    var i = start
+    while i < end {
+      let byte = sourceBytes[i]
+
+      if byte < 0x80 {
+        // Hard wrap: if we've hit the column limit, emit wrap-gutter and reset.
+        // This must happen BEFORE emitting any more bytes, otherwise long
+        // unbreakable runs (words wider than contentCols) spill past the edge.
+        if col >= contentCols {
+          let gap = contentCols - col
+          if gap > 0, !spacePad.isEmpty {
+            output.text(editorBg)
+            output.text(spacePad[spacePad.startIndex..<spacePad.startIndex + gap])
+            output.reset()
+          }
+          emitWrapGutter(
+            wrapGutterBytes: wrapGutterBytes, currentStyle: currentStyle, into: &output)
+          col = 0
+          // Skip leading space after wrap
+          if byte == 0x20 {
+            i += 1
+            continue
+          }
+        }
+
+        // Word-aware soft wrap: if the next word won't fit on this row but
+        // would fit on a fresh row, wrap now.
+        if byte != 0x20 {
+          let remaining = contentCols - col
+          var wordEnd = i
+          while wordEnd < end, sourceBytes[wordEnd] < 0x80,
+            sourceBytes[wordEnd] != 0x20, sourceBytes[wordEnd] != 0x09
+          {
+            wordEnd += 1
+          }
+          let wordLen = wordEnd - i
+          if wordLen > remaining, col > 0, wordLen <= contentCols {
+            if !spacePad.isEmpty, remaining > 0 {
+              output.text(editorBg)
+              output.text(spacePad[spacePad.startIndex..<spacePad.startIndex + remaining])
+              output.reset()
+            }
+            emitWrapGutter(
+              wrapGutterBytes: wrapGutterBytes, currentStyle: currentStyle, into: &output)
+            col = 0
+          }
+        }
+
+        output.byte(byte)
+        if byte == 0x09 {
+          col += 8 - (col % 8)
+        } else {
+          col += 1
+        }
+        i += 1
+      } else {
+        // Multi-byte UTF-8: decode the full character to measure its width
+        let charStart = i
+        i += 1
+        while i < end, sourceBytes[i] & 0xC0 == 0x80 { i += 1 }
+        let charSlice = sourceBytes[charStart..<i]
+        let str = String(decoding: charSlice, as: UTF8.self)
+        let charWidth = str.unicodeScalars.reduce(0) { $0 + $1.terminalWidth }
+
+        if col + charWidth > contentCols {
+          // Fill remaining columns before wrapping
+          let gap = contentCols - col
+          if gap > 0, !spacePad.isEmpty {
+            output.text(editorBg)
+            output.text(spacePad[spacePad.startIndex..<spacePad.startIndex + gap])
+            output.reset()
+          }
+          emitWrapGutter(
+            wrapGutterBytes: wrapGutterBytes, currentStyle: currentStyle, into: &output)
+          col = 0
+        }
+        output.text(sourceBytes[charStart..<i])
+        col += charWidth
+      }
+    }
+  }
+
+  // MARK: - Private
+
+  private func readSourceBytes() throws -> [UInt8] {
+    if let file {
+      let fd = open(file, O_RDONLY)
+      guard fd >= 0 else {
+        throw DogError.fileNotFound(path: file)
+      }
+      defer { close(fd) }
+
+      // Get file size for single-shot read
+      var st = stat()
+      guard fstat(fd, &st) == 0 else {
+        throw DogError.readError(path: file, detail: "fstat failed")
+      }
+      let size = Int(st.st_size)
+      var bytes = [UInt8](repeating: 0, count: size)
+      let bytesRead = bytes.withUnsafeMutableBufferPointer { buf in
+        read(fd, buf.baseAddress, size)
+      }
+      guard bytesRead == size else {
+        throw DogError.readError(path: file, detail: "short read")
+      }
+      guard bytes.isValidUTF8 else {
+        throw DogError.binaryFile(path: file)
+      }
+      return bytes
+    }
+
+    // Read from stdin
+    var bytes: [UInt8] = []
+    let chunkSize = 64 * 1024
+    var chunk = [UInt8](repeating: 0, count: chunkSize)
+    while true {
+      let n = chunk.withUnsafeMutableBufferPointer { buf in
+        read(STDIN_FILENO, buf.baseAddress, chunkSize)
+      }
+      if n <= 0 { break }
+      bytes.append(contentsOf: chunk[..<n])
+    }
+    guard bytes.isValidUTF8 else {
+      throw DogError.readError(
+        path: "<stdin>",
+        detail: "input is not valid UTF-8"
+      )
+    }
+    return bytes
+  }
+}
+
+extension Array where Element == UInt8 {
+  /// Check whether the bytes are valid UTF-8.
+  fileprivate var isValidUTF8: Bool {
+    withUnsafeBufferPointer { buf in
+      var iter = buf.makeIterator()
+      var codec = UTF8()
+      while true {
+        switch codec.decode(&iter) {
+        case .scalarValue: continue
+        case .emptyInput: return true
+        case .error: return false
+        }
+      }
+    }
+  }
+}

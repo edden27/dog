@@ -1,0 +1,15 @@
+# every dog needs a training arc
+def sit(func):
+    def wrapper(*args, **kwargs):
+        print("waiting...")
+        return func(*args, **kwargs)
+    return wrapper
+
+@sit
+def fetch(ball: str, times: int = 3) -> bool:
+    for i in range(times):
+        if ball == "tennis":
+            return True
+    return False  # got distracted
+
+print(f"fetched: {fetch('tennis', 5)}")

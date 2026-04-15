@@ -1,0 +1,16 @@
+-- every nvim user's config has a pet in it somewhere
+local M = {}
+
+M.tricks = { "sit", "shake", "vim.lsp.buf.hover()" }
+
+function M.setup(opts)
+  opts = opts or { good_boy = true }
+  for i, trick in ipairs(M.tricks) do
+    if trick:find("vim") then
+      print(i .. ": that's not a trick, " .. (opts.name or "Toby"))
+    end
+  end
+  return opts.good_boy ~= false  -- default to good
+end
+
+return M

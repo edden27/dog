@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# blazingly fast morning routine
+
+TREATS=3
+WALKED=false
+
+check_bowl() {
+  local kibble=${1:-0}
+  if [[ $kibble -gt 0 && "$WALKED" == "true" ]]; then
+    echo "good boy, have $TREATS treats"
+  else
+    ssh terminal.shop  # dogs need coffee too
+    echo "walk first, then we talk"
+  fi
+}
+
+check_bowl "$@"

@@ -1,0 +1,19 @@
+package main
+
+import "fmt"
+
+// walks happen concurrently around here
+func sniff(trail chan string, spots int) {
+	for i := 0; i < spots; i++ {
+		trail <- fmt.Sprintf("spot %d: interesting", i+1)
+	}
+	close(trail)
+}
+
+func main() {
+	trail := make(chan string, 5)
+	go sniff(trail, 3)
+	for msg := range trail {
+		fmt.Println(msg) // still pulling the leash
+	}
+}

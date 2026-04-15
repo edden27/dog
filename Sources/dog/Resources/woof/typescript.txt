@@ -1,0 +1,14 @@
+// type narrowing: what kind of dog is that?
+type Mutt = { breed: "unknown"; maybeGood: boolean };
+type Purebred = { breed: string; akc: number; maybeGood: true };
+type Dog = Mutt | Purebred;
+
+function judge(dog: Dog): string {
+  if (dog.breed === "unknown") {
+    return dog.maybeGood ? "best in show" : "still good";
+  }
+  return `${dog.breed} #${dog.akc}`;  // papers check out
+}
+
+const scout: Dog = { breed: "unknown", maybeGood: true };
+console.log(judge(scout));

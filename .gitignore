@@ -1,0 +1,55 @@
+# macOS
+.DS_Store
+**/.DS_Store
+._*
+.AppleDouble
+.LSOverride
+
+# Swift Package Manager
+.build/
+.swiftpm/
+Packages/
+# Keep Package.resolved committed for reproducible builds — do NOT ignore.
+
+# Xcode
+xcuserdata/
+DerivedData/
+*.xcscmblueprint
+*.xccheckout
+*.xcworkspace
+build/
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+*.moved-aside
+
+# Release artifacts (built by Makefile / CI)
+dist/
+dog-linux-x86_64
+dog-linux-arm64
+dog-linux-*
+
+# Profiling / traces
+*.trace
+Launch_*.trace
+
+# Editors
+*.swp
+*~
+.idea/
+.vscode/
+
+# VitePress (when docs/ lands)
+docs/.vitepress/dist/
+docs/.vitepress/cache/
+node_modules/
+
+# Python tooling (fetch-fixtures.py, bat-coverage.py)
+__pycache__/
+*.pyc
+.venv/
+.python-version
+
+# Logs
+*.log

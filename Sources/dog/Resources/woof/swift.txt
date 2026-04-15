@@ -1,0 +1,16 @@
+// protocol-oriented good boy
+protocol GoodBoy: Sendable {
+    var treatCount: Int { get set }
+    func bark(_ reason: String) async throws
+}
+
+struct Dog: GoodBoy {
+    var name: String = "Rex"
+    var treatCount = 42
+    var isTired: Bool = false
+
+    func bark(_ reason: String) async throws {
+        guard treatCount > 0 else { throw BorkError.tooSleepy }
+        print("WOOF! \(reason)")  // very good boy
+    }
+}

@@ -1,0 +1,19 @@
+<!-- Exercises: tag.error — malformed/unclosed tags -->
+<!DOCTYPE html>
+<html>
+<head><title>Error tags test</title></head>
+<body>
+  <p>Normal paragraph</p>
+  <div>
+    <span>Unclosed span
+    <p>Paragraph after unclosed span</p>
+  </div>
+  <br/>
+  <img src="test.png">
+  </img>
+  <div>
+    </span>
+    <p>Extra closing tag above</p>
+  </div>
+</body>
+</html>
