@@ -381,13 +381,16 @@ struct PrintCommand {
   }
 
   /// Fast path: emit a line that fits entirely within contentCols. Bulk slices, no column tracking.
+  /// Tabs are expanded to spaces against a content-relative column so the terminal's
+  /// absolute tab stops (offset by gutter width) don't desync the trailing bg fill.
   private func emitLineBulk(
     sourceBytes: [UInt8],
     lineStart: Int, lineEnd: Int,
     tokens: [SyntaxToken], tokenIndex: inout Int,
     into output: inout ANSIOutput
   ) {
-    var pos = lineStart
+    var position = lineStart
+    var column = 0
     var lastStyle: Style?
 
     while tokenIndex < tokens.count, tokens[tokenIndex].endByte <= lineStart {
@@ -398,19 +401,22 @@ struct PrintCommand {
       let token = tokens[tokenIndex]
       guard token.startByte < lineEnd else { break }
 
-      let tokStart = max(token.startByte, pos)
-      let tokEnd = min(token.endByte, lineEnd)
-      guard tokStart < tokEnd else {
+      let tokenStart = max(token.startByte, position)
+      let tokenEnd = min(token.endByte, lineEnd)
+      guard tokenStart < tokenEnd else {
         tokenIndex += 1
         continue
       }
 
-      if tokStart > pos {
+      if tokenStart > position {
         if lastStyle != baseColor {
           output.color(baseColor)
           lastStyle = baseColor
         }
-        output.text(sourceBytes[pos..<tokStart])
+        emitBulkSlice(
+          sourceBytes: sourceBytes, from: position, to: tokenStart,
+          column: &column, into: &output
+        )
       }
 
       let style = colorTable[(token.tokenType ?? .none).rawValue]
@@ -418,20 +424,57 @@ struct PrintCommand {
         output.color(style)
         lastStyle = style
       }
-      output.text(sourceBytes[tokStart..<tokEnd])
-      pos = tokEnd
+      emitBulkSlice(
+        sourceBytes: sourceBytes, from: tokenStart, to: tokenEnd,
+        column: &column, into: &output
+      )
+      position = tokenEnd
 
       if token.endByte <= lineEnd { tokenIndex += 1 } else { break }
     }
 
-    if pos < lineEnd {
+    if position < lineEnd {
       if lastStyle != baseColor {
         output.color(baseColor)
       }
-      output.text(sourceBytes[pos..<lineEnd])
+      emitBulkSlice(
+        sourceBytes: sourceBytes, from: position, to: lineEnd,
+        column: &column, into: &output
+      )
     }
 
     output.reset()
+  }
+
+  /// Emit a byte range, expanding 0x09 tabs into spaces aligned to 8-col stops
+  /// relative to content start. Non-tab runs are bulk-copied.
+  private func emitBulkSlice(
+    sourceBytes: [UInt8],
+    from start: Int, to end: Int,
+    column: inout Int,
+    into output: inout ANSIOutput
+  ) {
+    var runStart = start
+    var index = start
+    while index < end {
+      if sourceBytes[index] == 0x09 {
+        if index > runStart {
+          output.text(sourceBytes[runStart..<index])
+          column += index - runStart
+        }
+        let width = 8 - (column % 8)
+        for _ in 0..<width { output.byte(0x20) }
+        column += width
+        index += 1
+        runStart = index
+      } else {
+        index += 1
+      }
+    }
+    if runStart < end {
+      output.text(sourceBytes[runStart..<end])
+      column += end - runStart
+    }
   }
 
   /// Pre-built gutter bytes: reset + padding + color + digits + reset + separator.
