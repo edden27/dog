@@ -4,6 +4,11 @@
   import Glibc
 #endif
 
+/// Number of display columns a tab character advances to the next tab stop.
+/// Defaults to 4 — tighter than the 8-column terminal default, which wastes
+/// horizontal space for code that uses tabs for indentation (Go, Makefiles).
+let tabStopWidth = 4
+
 /// Reads a file or stdin, highlights it, and writes colored output to stdout.
 struct PrintCommand {
   let file: String?
@@ -160,9 +165,10 @@ struct PrintCommand {
       estimatedSize: sourceBytes.count * 2
     )
 
-    // Pre-build editor bg escape for the code area
+    // Pre-build editor bg escape for the code area. Skip in plain mode so
+    // --color=never doesn't leak ANSI bg codes into pipe-friendly output.
     var editorBg = ContiguousArray<UInt8>()
-    if let bg = editorBgStyle {
+    if colorEnabled, let bg = editorBgStyle {
       editorBg.append(contentsOf: [0x1B, 0x5B, 0x34, 0x38, 0x3B, 0x32, 0x3B])
       ANSICodes.appendDecimal(bg.r, into: &editorBg)
       editorBg.append(0x3B)
@@ -238,7 +244,7 @@ struct PrintCommand {
         var ci = lineStart
         while ci < lineEnd {
           if sourceBytes[ci] == 0x09 {
-            lineDisplayWidth += 8 - (lineDisplayWidth % 8)
+            lineDisplayWidth += tabStopWidth - (lineDisplayWidth % tabStopWidth)
           } else {
             lineDisplayWidth += 1
           }
@@ -275,7 +281,7 @@ struct PrintCommand {
           colUsed = 0
           for byteIdx in lineStart..<emitEnd {
             if sourceBytes[byteIdx] == 0x09 {
-              colUsed += 8 - (colUsed % 8)
+              colUsed += tabStopWidth - (colUsed % tabStopWidth)
             } else {
               colUsed += 1
             }
@@ -292,13 +298,33 @@ struct PrintCommand {
           }
         }
       } else {
-        // Slow path: line may wrap — per-byte column tracking
-        colUsed = emitLine(
+        // Slow path: line may wrap — per-byte column tracking.
+        // Measure leading whitespace in display columns so wrap continuations
+        // align under the first non-whitespace char. Cap at half contentCols
+        // to keep continuations usable on deeply indented lines.
+        var wrapIndent = 0
+        let indentCap = contentCols / 2
+        var scanIdx = lineStart
+        while scanIdx < lineEnd, wrapIndent < indentCap {
+          let byte = sourceBytes[scanIdx]
+          if byte == 0x20 {
+            wrapIndent += 1
+          } else if byte == 0x09 {
+            wrapIndent += tabStopWidth - (wrapIndent % tabStopWidth)
+          } else {
+            break
+          }
+          scanIdx += 1
+        }
+        if wrapIndent > indentCap { wrapIndent = indentCap }
+        let lineWriter = WrappedLineWriter(
+          contentCols: contentCols, wrapGutterBytes: wrapGutterBytes,
+          spacePad: spacePad, editorBg: editorBg, wrapIndent: wrapIndent,
+          colorEnabled: colorEnabled, colorTable: colorTable, baseColor: baseColor)
+        colUsed = lineWriter.emitLine(
           sourceBytes: sourceBytes,
           lineStart: lineStart, lineEnd: lineEnd,
           tokens: tokens, tokenIndex: &tokenIndex,
-          contentCols: contentCols, wrapGutterBytes: wrapGutterBytes, spacePad: spacePad,
-          editorBg: editorBg,
           into: &output
         )
       }
@@ -462,7 +488,7 @@ struct PrintCommand {
           output.text(sourceBytes[runStart..<index])
           column += index - runStart
         }
-        let width = 8 - (column % 8)
+        let width = tabStopWidth - (column % tabStopWidth)
         for _ in 0..<width { output.byte(0x20) }
         column += width
         index += 1
@@ -591,189 +617,6 @@ struct PrintCommand {
     buf.append(0x20)
 
     return buf
-  }
-
-  private func emitWrapGutter(
-    wrapGutterBytes: ContiguousArray<UInt8>,
-    currentStyle: Style?,
-    into output: inout ANSIOutput
-  ) {
-    guard colorEnabled else { return }
-    output.text(wrapGutterBytes)
-    if let style = currentStyle {
-      output.color(style)
-    }
-  }
-
-  @discardableResult
-  private func emitLine(
-    sourceBytes: [UInt8],
-    lineStart: Int, lineEnd: Int,
-    tokens: [SyntaxToken], tokenIndex: inout Int,
-    contentCols: Int, wrapGutterBytes: ContiguousArray<UInt8>, spacePad: ContiguousArray<UInt8>,
-    editorBg: ContiguousArray<UInt8>,
-    into output: inout ANSIOutput
-  ) -> Int {
-    var pos = lineStart
-    var col = 0
-    var lastStyle: Style?
-
-    // Skip tokens that ended before this line
-    while tokenIndex < tokens.count, tokens[tokenIndex].endByte <= lineStart {
-      tokenIndex += 1
-    }
-
-    // Process tokens overlapping [lineStart, lineEnd)
-    while tokenIndex < tokens.count {
-      let token = tokens[tokenIndex]
-      guard token.startByte < lineEnd else { break }
-
-      let tokStart = max(token.startByte, pos)
-      let tokEnd = min(token.endByte, lineEnd)
-      guard tokStart < tokEnd else {
-        tokenIndex += 1
-        continue
-      }
-
-      // Gap before token
-      if tokStart > pos {
-        if lastStyle != baseColor {
-          output.color(baseColor)
-          lastStyle = baseColor
-        }
-        emitSliceWrapped(
-          sourceBytes: sourceBytes, from: pos, to: tokStart,
-          col: &col, contentCols: contentCols, wrapGutterBytes: wrapGutterBytes, spacePad: spacePad,
-          editorBg: editorBg,
-          currentStyle: lastStyle, into: &output
-        )
-      }
-
-      // Token
-      let style = colorTable[(token.tokenType ?? .none).rawValue]
-      if style != lastStyle {
-        output.color(style)
-        lastStyle = style
-      }
-      emitSliceWrapped(
-        sourceBytes: sourceBytes, from: tokStart, to: tokEnd,
-        col: &col, contentCols: contentCols, wrapGutterBytes: wrapGutterBytes, spacePad: spacePad,
-        editorBg: editorBg,
-        currentStyle: lastStyle, into: &output
-      )
-      pos = tokEnd
-
-      if token.endByte <= lineEnd { tokenIndex += 1 } else { break }
-    }
-
-    // Remaining unstyled text
-    if pos < lineEnd {
-      if lastStyle != baseColor {
-        output.color(baseColor)
-      }
-      emitSliceWrapped(
-        sourceBytes: sourceBytes, from: pos, to: lineEnd,
-        col: &col, contentCols: contentCols, wrapGutterBytes: wrapGutterBytes, spacePad: spacePad,
-        editorBg: editorBg,
-        currentStyle: lastStyle, into: &output
-      )
-    }
-
-    output.reset()
-    return col
-  }
-
-  /// Emit a byte range with wrap handling. Tracks column and wraps at contentCols.
-  /// Word-aware: wraps at the last space before the column limit when possible.
-  /// ASCII fast path: bytes < 0x80 are always 1 column, no Character/wcwidth needed.
-  private func emitSliceWrapped(
-    sourceBytes: [UInt8],
-    from start: Int, to end: Int,
-    col: inout Int, contentCols: Int, wrapGutterBytes: ContiguousArray<UInt8>,
-    spacePad: ContiguousArray<UInt8>, editorBg: ContiguousArray<UInt8>,
-    currentStyle: Style?,
-    into output: inout ANSIOutput
-  ) {
-    var i = start
-    while i < end {
-      let byte = sourceBytes[i]
-
-      if byte < 0x80 {
-        // Hard wrap: if we've hit the column limit, emit wrap-gutter and reset.
-        // This must happen BEFORE emitting any more bytes, otherwise long
-        // unbreakable runs (words wider than contentCols) spill past the edge.
-        if col >= contentCols {
-          let gap = contentCols - col
-          if gap > 0, !spacePad.isEmpty {
-            output.text(editorBg)
-            output.text(spacePad[spacePad.startIndex..<spacePad.startIndex + gap])
-            output.reset()
-          }
-          emitWrapGutter(
-            wrapGutterBytes: wrapGutterBytes, currentStyle: currentStyle, into: &output)
-          col = 0
-          // Skip leading space after wrap
-          if byte == 0x20 {
-            i += 1
-            continue
-          }
-        }
-
-        // Word-aware soft wrap: if the next word won't fit on this row but
-        // would fit on a fresh row, wrap now.
-        if byte != 0x20 {
-          let remaining = contentCols - col
-          var wordEnd = i
-          while wordEnd < end, sourceBytes[wordEnd] < 0x80,
-            sourceBytes[wordEnd] != 0x20, sourceBytes[wordEnd] != 0x09
-          {
-            wordEnd += 1
-          }
-          let wordLen = wordEnd - i
-          if wordLen > remaining, col > 0, wordLen <= contentCols {
-            if !spacePad.isEmpty, remaining > 0 {
-              output.text(editorBg)
-              output.text(spacePad[spacePad.startIndex..<spacePad.startIndex + remaining])
-              output.reset()
-            }
-            emitWrapGutter(
-              wrapGutterBytes: wrapGutterBytes, currentStyle: currentStyle, into: &output)
-            col = 0
-          }
-        }
-
-        output.byte(byte)
-        if byte == 0x09 {
-          col += 8 - (col % 8)
-        } else {
-          col += 1
-        }
-        i += 1
-      } else {
-        // Multi-byte UTF-8: decode the full character to measure its width
-        let charStart = i
-        i += 1
-        while i < end, sourceBytes[i] & 0xC0 == 0x80 { i += 1 }
-        let charSlice = sourceBytes[charStart..<i]
-        let str = String(decoding: charSlice, as: UTF8.self)
-        let charWidth = str.unicodeScalars.reduce(0) { $0 + $1.terminalWidth }
-
-        if col + charWidth > contentCols {
-          // Fill remaining columns before wrapping
-          let gap = contentCols - col
-          if gap > 0, !spacePad.isEmpty {
-            output.text(editorBg)
-            output.text(spacePad[spacePad.startIndex..<spacePad.startIndex + gap])
-            output.reset()
-          }
-          emitWrapGutter(
-            wrapGutterBytes: wrapGutterBytes, currentStyle: currentStyle, into: &output)
-          col = 0
-        }
-        output.text(sourceBytes[charStart..<i])
-        col += charWidth
-      }
-    }
   }
 
   // MARK: - Private
