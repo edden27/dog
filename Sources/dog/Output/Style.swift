@@ -70,9 +70,12 @@ struct Style: Equatable, Sendable {
     bgR: UInt8, bgG: UInt8, bgB: UInt8, hasBg: Bool
   ) -> ContiguousArray<UInt8> {
     var out = ContiguousArray<UInt8>()
-    out.reserveCapacity(hasBg ? 40 : 20)
-    if bold { out.append(contentsOf: ANSICodes.bold) }
-    if italic { out.append(contentsOf: ANSICodes.italic) }
+    out.reserveCapacity(hasBg ? 48 : 28)
+    // Always clear bold/italic before setting — styles are applied cumulatively
+    // without a reset between them, so a prior italic run would bleed into a
+    // non-italic style otherwise.
+    out.append(contentsOf: bold ? ANSICodes.bold : ANSICodes.notBold)
+    out.append(contentsOf: italic ? ANSICodes.italic : ANSICodes.notItalic)
     // ESC[38;2;R;G;Bm — foreground
     out.append(contentsOf: [0x1B, 0x5B, 0x33, 0x38, 0x3B, 0x32, 0x3B])
     ANSICodes.appendDecimal(r, into: &out)

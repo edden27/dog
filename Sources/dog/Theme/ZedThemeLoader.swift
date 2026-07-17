@@ -125,20 +125,33 @@ enum ZedThemeLoader {
     let tokenCount = TokenType.allCases.count
     var colorTable = [Style](repeating: baseColor, count: tokenCount)
 
-    // Apply theme entries
+    // Single pass with per-token depth tracking. Each token slot remembers
+    // the *best* (lowest) resolution depth seen so far; an incoming entry
+    // only writes if its depth is ≤ that stored value. This preserves the
+    // invariant that an exact-match scope (depth 0) wins over a fallback
+    // (e.g. `comment.todo` resolving to `.comment` at depth 1) regardless
+    // of JSON ordering — without the intermediate array/dict/set allocs
+    // the previous two-pass version required.
+    let tokenSentinel = Int.max
+    var bestDepth = [Int](repeating: tokenSentinel, count: tokenCount)
     for entry in entries {
-      guard let tokenType = resolveTokenType(from: entry.scope) else {
+      guard let r = resolveTokenType(from: entry.scope) else {
         Bark.debug("skipping unknown Zed scope: \(entry.scope)")
         continue
       }
-
+      let raw = r.tokenType.rawValue
+      if r.depth > bestDepth[raw] { continue }
       guard let style = buildStyle(from: entry, background: editorBgRGB) else {
         Bark.warning("invalid color '\(entry.color)' for scope '\(entry.scope)'")
         continue
       }
-
-      colorTable[tokenType.rawValue] = style
-      applyToChildren(of: tokenType, style: style, colorTable: &colorTable)
+      bestDepth[raw] = r.depth
+      colorTable[raw] = style
+      // Children inherit only if they have not been claimed by an exact match
+      // (depth 0). Pass bestDepth so applyToChildren can check per-token.
+      applyToChildren(
+        of: r.tokenType, style: style, colorTable: &colorTable, bestDepth: bestDepth
+      )
     }
 
     let editorUI = extractEditorUIStyles(
@@ -278,46 +291,80 @@ enum ZedThemeLoader {
     "hint", "predictive", "primary",
   ]
 
-  private static func resolveTokenType(from scope: String) -> TokenType? {
+  /// Resolution result. `depth` = number of dot-segments stripped to reach
+  /// a known TokenType. 0 = exact match, higher = looser fallback.
+  /// Lower-depth resolutions take precedence so an unmappable child scope
+  /// (e.g. `comment.todo` with no dedicated token) does not stomp the
+  /// exact-match entry for its parent (`comment`).
+  private struct Resolved {
+    let tokenType: TokenType
+    let depth: Int
+  }
+
+  private static func resolveTokenType(from scope: String) -> Resolved? {
     if ignoredScopes.contains(scope) { return nil }
 
-    if let tokenType = TokenType.from(captureName: scope) {
-      return tokenType
+    // Use EXACT lookup here — `TokenType.from` does its own hierarchical
+    // fallback that would swallow the depth distinction we need below.
+    if let tokenType = TokenType.exact(captureName: scope) {
+      return Resolved(tokenType: tokenType, depth: 0)
     }
 
     if let tokenType = zedScopeTranslation[scope] {
-      return tokenType
+      return Resolved(tokenType: tokenType, depth: 0)
     }
 
     // Hierarchical fallback: strip last dot-segment and retry
     var name = scope
+    var depth = 0
     while let dotIndex = name.lastIndex(of: ".") {
       name = String(name[name.startIndex..<dotIndex])
-      if let tokenType = TokenType.from(captureName: name) {
-        return tokenType
+      depth += 1
+      if let tokenType = TokenType.exact(captureName: name) {
+        return Resolved(tokenType: tokenType, depth: depth)
       }
       if let tokenType = zedScopeTranslation[name] {
-        return tokenType
+        return Resolved(tokenType: tokenType, depth: depth)
       }
     }
 
     return nil
   }
 
+  /// Precomputed parent→children index map. Built once at first use; lets
+  /// `applyToChildren` skip the O(N) string-prefix scan over `allCases` on
+  /// every entry. `childIndices[parent.rawValue]` lists the raw values of
+  /// every TokenType whose `captureName` starts with `parent.captureName + "."`.
+  private static let childIndices: [[Int]] = {
+    let allCases = TokenType.allCases
+    var result = [[Int]](repeating: [], count: allCases.count)
+    for parent in allCases {
+      guard let parentName = parent.captureName else { continue }
+      let prefix = parentName + "."
+      var children: [Int] = []
+      for child in allCases {
+        guard let childName = child.captureName else { continue }
+        if child == parent { continue }
+        if childName.hasPrefix(prefix) {
+          children.append(child.rawValue)
+        }
+      }
+      result[parent.rawValue] = children
+    }
+    return result
+  }()
+
   /// Apply a parent's style to all child TokenTypes that inherit from it.
   private static func applyToChildren(
     of parent: TokenType,
     style: Style,
-    colorTable: inout [Style]
+    colorTable: inout [Style],
+    bestDepth: [Int]
   ) {
-    guard let parentName = parent.captureName else { return }
-    let prefix = parentName + "."
-
-    for tokenType in TokenType.allCases {
-      guard let childName = tokenType.captureName else { continue }
-      if childName.hasPrefix(prefix) {
-        colorTable[tokenType.rawValue] = style
-      }
+    for raw in childIndices[parent.rawValue] {
+      // Skip children already claimed by an exact-match (depth 0) entry.
+      if bestDepth[raw] == 0 { continue }
+      colorTable[raw] = style
     }
   }
 }

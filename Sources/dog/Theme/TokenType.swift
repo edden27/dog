@@ -132,6 +132,13 @@ enum TokenType: Int, CaseIterable, Sendable {
     return nil
   }
 
+  /// Exact-only lookup with no hierarchical fallback. Callers that need to
+  /// distinguish "this scope is a known token" from "we matched a parent"
+  /// must use this — `from(captureName:)` swallows that distinction.
+  static func exact(captureName: String) -> TokenType? {
+    nameMap[captureName]
+  }
+
   /// Reverse lookup: TokenType → capture name string.
   /// Built once lazily from `nameMap`.
   private static let reverseMap: [TokenType: String] = {

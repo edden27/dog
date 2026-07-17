@@ -3,18 +3,18 @@
 # Requires: hyperfine, bat, dog release binary
 #
 # Usage:
-#   ./tests/scripts/bench.sh              # all languages
-#   ./tests/scripts/bench.sh javascript   # single language
-#   BENCH_RUNS=10 ./tests/scripts/bench.sh  # more runs for accuracy
-#   BENCH_SIZE=medium ./tests/scripts/bench.sh  # test medium files instead of large
-#   BENCH_WITH_LANG=1 ./tests/scripts/bench.sh  # pass -l flag (skip auto-detection)
-#   BENCH_THEME='Nord Dark' ./tests/scripts/bench.sh  # bench dog with a theme (name, not path)
-#   BENCH_THEME_DIR=~/.config/zed/themes BENCH_THEME='One Dark Pro' ./tests/scripts/bench.sh
-#   BENCH_BAT_THEME='Catppuccin Mocha' ./tests/scripts/bench.sh  # force bat to a specific theme
-#   BENCH_BAT_NO_CONFIG=1 ./tests/scripts/bench.sh  # bat ignores ~/.config/bat/config and $BAT_THEME
-#   BENCH_PLAIN=1 ./tests/scripts/bench.sh        # dog uses -p (no decorations)
-#   BENCH_NO_PAGER=1 ./tests/scripts/bench.sh     # dog + bat pager off (symmetric)
-#   BENCH_WARMUP=5 BENCH_RUNS=10 BENCH_SIZE=tiny ./tests/scripts/bench.sh  # combine
+#   ./scripts/benchmarks/bench.sh              # all languages
+#   ./scripts/benchmarks/bench.sh javascript   # single language
+#   BENCH_RUNS=10 ./scripts/benchmarks/bench.sh  # more runs for accuracy
+#   BENCH_SIZE=medium ./scripts/benchmarks/bench.sh  # test medium files instead of large
+#   BENCH_WITH_LANG=1 ./scripts/benchmarks/bench.sh  # pass -l flag (skip auto-detection)
+#   BENCH_THEME='Nord Dark' ./scripts/benchmarks/bench.sh  # bench dog with a theme (name, not path)
+#   BENCH_THEME_DIR=~/.config/zed/themes BENCH_THEME='One Dark Pro' ./scripts/benchmarks/bench.sh
+#   BENCH_BAT_THEME='Catppuccin Mocha' ./scripts/benchmarks/bench.sh  # force bat to a specific theme
+#   BENCH_BAT_NO_CONFIG=1 ./scripts/benchmarks/bench.sh  # bat ignores ~/.config/bat/config and $BAT_THEME
+#   BENCH_PLAIN=1 ./scripts/benchmarks/bench.sh        # dog uses -p (no decorations)
+#   BENCH_NO_PAGER=1 ./scripts/benchmarks/bench.sh     # dog + bat pager off (symmetric)
+#   BENCH_WARMUP=5 BENCH_RUNS=10 BENCH_SIZE=tiny ./scripts/benchmarks/bench.sh  # combine
 #
 # IMPORTANT: bat MUST use --color=always or it skips highlighting entirely.
 
@@ -22,7 +22,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-FIXTURES="$PROJECT_ROOT/tests/fixtures/performance"
+FIXTURES="$PROJECT_ROOT/scripts/fixtures/performance"
 
 # Colors — $'...' so they're literal bytes, no echo -e needed
 G=$'\033[38;2;136;169;141m'
@@ -36,7 +36,7 @@ Z=$'\033[0m'
 # Find dog binary
 DOG="${DOG_BIN:-}"
 if [[ -z "$DOG" ]]; then
-  for candidate in "$PROJECT_ROOT/cli/.build/release/dog" "$PROJECT_ROOT/cli/.build/debug/dog"; do
+  for candidate in "$PROJECT_ROOT/.build/release/dog" "$PROJECT_ROOT/.build/debug/dog"; do
     if [[ -x "$candidate" ]]; then
       DOG="$candidate"
       break
