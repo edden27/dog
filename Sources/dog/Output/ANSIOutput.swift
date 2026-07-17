@@ -37,6 +37,35 @@ struct ANSIOutput {
     buffer.append(contentsOf: style.bytes)
   }
 
+  /// Emit a bold/italic toggle delta between `previous` and `next`, then the
+  /// fg/bg color bytes for `next`. Pass `previous == nil` at the start of a
+  /// styled region (after reset) so both bits are forced to their `next`
+  /// state. Compared to the fused-prefix approach in `Style.bytes`, this
+  /// appends zero toggle bytes when both bits are unchanged — the dominant
+  /// case for long runs of same-weight tokens.
+  @inlinable
+  mutating func colorDelta(from previous: Style?, to next: Style) {
+    guard enabled else { return }
+    let prevBold = previous?.bold ?? false
+    let prevItalic = previous?.italic ?? false
+    // Forcing state at the start of a styled region: if previous is nil we
+    // came off a reset, so any *set* bit must be emitted (SGR default is off)
+    // and any *clear* bit is implicit (no toggle needed — terminal is
+    // already in neither-bold-nor-italic after reset).
+    if previous == nil {
+      if next.bold { buffer.append(contentsOf: ANSICodes.bold) }
+      if next.italic { buffer.append(contentsOf: ANSICodes.italic) }
+    } else {
+      if prevBold != next.bold {
+        buffer.append(contentsOf: next.bold ? ANSICodes.bold : ANSICodes.notBold)
+      }
+      if prevItalic != next.italic {
+        buffer.append(contentsOf: next.italic ? ANSICodes.italic : ANSICodes.notItalic)
+      }
+    }
+    buffer.append(contentsOf: next.bytes)
+  }
+
   /// Append raw UTF-8 text bytes from a slice of the source buffer.
   @inlinable
   mutating func text(_ bytes: ArraySlice<UInt8>) {

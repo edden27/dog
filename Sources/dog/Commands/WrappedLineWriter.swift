@@ -78,11 +78,13 @@ struct WrappedLineWriter {
 
   /// Apply `style` to `output` only when it differs from the last-applied
   /// style on this line. Keeps `lastStyle` in sync with terminal state.
+  /// Uses a delta-state emit so unchanged bold/italic bits cost nothing.
+  @inline(__always)
   private func applyStyleIfNeeded(
     _ style: Style, lastStyle: inout Style?, into output: inout ANSIOutput
   ) {
     guard lastStyle != style else { return }
-    output.color(style)
+    output.colorDelta(from: lastStyle, to: style)
     lastStyle = style
   }
 

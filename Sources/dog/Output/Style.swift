@@ -69,13 +69,15 @@ struct Style: Equatable, Sendable {
     r: UInt8, g: UInt8, b: UInt8, bold: Bool, italic: Bool,
     bgR: UInt8, bgG: UInt8, bgB: UInt8, hasBg: Bool
   ) -> ContiguousArray<UInt8> {
+    // Color bytes only. Bold/italic state is emitted by the render loop as a
+    // delta against the previously-applied style, so unchanged bits cost zero.
+    // This replaces the unconditional 10-byte prefix (`ESC[22m ESC[23m` for
+    // the common no-bold no-italic case) with at-most-10 bytes *only on
+    // transitions* — a measurable win on palettes like UtilityDark where
+    // adjacent tokens share bold/italic, and on Zed themes where every token
+    // is plain.
     var out = ContiguousArray<UInt8>()
-    out.reserveCapacity(hasBg ? 48 : 28)
-    // Always clear bold/italic before setting — styles are applied cumulatively
-    // without a reset between them, so a prior italic run would bleed into a
-    // non-italic style otherwise.
-    out.append(contentsOf: bold ? ANSICodes.bold : ANSICodes.notBold)
-    out.append(contentsOf: italic ? ANSICodes.italic : ANSICodes.notItalic)
+    out.reserveCapacity(hasBg ? 40 : 20)
     // ESC[38;2;R;G;Bm — foreground
     out.append(contentsOf: [0x1B, 0x5B, 0x33, 0x38, 0x3B, 0x32, 0x3B])
     ANSICodes.appendDecimal(r, into: &out)

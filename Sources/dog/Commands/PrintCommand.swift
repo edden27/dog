@@ -436,7 +436,7 @@ struct PrintCommand {
 
       if tokenStart > position {
         if lastStyle != baseColor {
-          output.color(baseColor)
+          output.colorDelta(from: lastStyle, to: baseColor)
           lastStyle = baseColor
         }
         emitBulkSlice(
@@ -447,7 +447,7 @@ struct PrintCommand {
 
       let style = colorTable[(token.tokenType ?? .none).rawValue]
       if style != lastStyle {
-        output.color(style)
+        output.colorDelta(from: lastStyle, to: style)
         lastStyle = style
       }
       emitBulkSlice(
@@ -461,7 +461,7 @@ struct PrintCommand {
 
     if position < lineEnd {
       if lastStyle != baseColor {
-        output.color(baseColor)
+        output.colorDelta(from: lastStyle, to: baseColor)
       }
       emitBulkSlice(
         sourceBytes: sourceBytes, from: position, to: lineEnd,
@@ -472,16 +472,35 @@ struct PrintCommand {
     output.reset()
   }
 
-  /// Emit a byte range, expanding 0x09 tabs into spaces aligned to 8-col stops
-  /// relative to content start. Non-tab runs are bulk-copied.
+  /// Emit a byte range, expanding 0x09 tabs into spaces aligned to
+  /// `tabStopWidth` columns relative to content start.
+  ///
+  /// Fast path: the overwhelming majority of tokens contain no tab byte.
+  /// `firstIndex(of: 0x09)` compiles to a tight memchr-style loop the Swift
+  /// optimizer can SIMD-vectorize; when no tab is present we skip straight
+  /// to one `output.text` + column bump, avoiding the per-byte walk the
+  /// tab-expansion logic needs. Only tab-bearing tokens pay for the loop.
+  @inline(__always)
   private func emitBulkSlice(
     sourceBytes: [UInt8],
     from start: Int, to end: Int,
     column: inout Int,
     into output: inout ANSIOutput
   ) {
-    var runStart = start
-    var index = start
+    guard start < end else { return }
+    let slice = sourceBytes[start..<end]
+    guard let firstTab = slice.firstIndex(of: 0x09) else {
+      output.text(slice)
+      column += end - start
+      return
+    }
+    // Tab present — bulk-emit the pre-tab prefix, then walk only the rest.
+    if firstTab > start {
+      output.text(sourceBytes[start..<firstTab])
+      column += firstTab - start
+    }
+    var runStart = firstTab
+    var index = firstTab
     while index < end {
       if sourceBytes[index] == 0x09 {
         if index > runStart {
