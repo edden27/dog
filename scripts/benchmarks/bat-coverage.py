@@ -7,7 +7,7 @@ percentage of non-whitespace bytes receive actual syntax highlighting.
 Outputs structured results matching the run-all.sh design:
   (PASS)/(FAIL) header, comparison table, ✓/✗ per language, summary line.
 
-Requires: bat, dog binary (DOG_BIN or cli/.build/release/dog or cli/.build/debug/dog)
+Requires: bat, dog binary (DOG_BIN or .build/release/dog or .build/debug/dog)
 """
 
 import os
@@ -20,7 +20,7 @@ import unicodedata
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.normpath(os.path.join(SCRIPT_DIR, "..", ".."))
-FIXTURES = os.path.join(PROJECT_ROOT, "tests", "fixtures", "performance")
+FIXTURES = os.path.join(PROJECT_ROOT, "scripts", "fixtures", "performance")
 ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
 
 # UtilityDark palette — explicit RGB only
@@ -38,8 +38,8 @@ def find_dog():
     if env_bin and os.access(env_bin, os.X_OK):
         return env_bin
     for path in [
-        os.path.join(PROJECT_ROOT, "cli", ".build", "release", "dog"),
-        os.path.join(PROJECT_ROOT, "cli", ".build", "debug", "dog"),
+        os.path.join(PROJECT_ROOT, ".build", "release", "dog"),
+        os.path.join(PROJECT_ROOT, ".build", "debug", "dog"),
     ]:
         if os.access(path, os.X_OK):
             return path
