@@ -16,6 +16,8 @@ Rules for this directory:
 | # | What | Status |
 | - | ---- | ------ |
 | baseline | Phase 1 complete: no regressions vs docs; tiny-tier deficit = ts_query_new pattern analysis (84–95%); large-tier = ts parse 54% + query exec 22% + swift alloc 14–19%; write cost 0.2% (buffering dead end); memory clean | confirmed |
+| [001](experiments/001-tree-sitter-0.26/NOTES.md) | tree-sitter 0.26 upgrade: 1–4% slower, no init win, breaks python query (supertype validation) — stay on 0.25.x | rejected |
+| [006](experiments/006-build-flags/NOTES.md) | build flags: thin LTO wins −6..−10% throughput, output byte-identical; O3 subsumed, -Ounchecked worthless | confirmed |
 
 ## Layout
 

@@ -1,0 +1,102 @@
+Benchmark 1: /private/tmp/claude-501/-Users-eddenamber-Projects-dog/8af6f2ef-ccb8-46fc-bf40-c31c3d142fea/scratchpad/dog-0.26.11 --version > /dev/null
+  Time (mean ± σ):       4.4 ms ±   0.3 ms    [User: 2.4 ms, System: 1.3 ms]
+  Range (min … max):     3.9 ms …   5.0 ms    50 runs
+ 
+  Warning: Command took less than 5 ms to complete. Note that the results might be inaccurate because hyperfine can not calibrate the shell startup time much more precise than this limit. You can try to use the `-N`/`--shell=none` option to disable the shell completely.
+ 
+[19:15:00] blank bash (.sh)
+Benchmark 1: /private/tmp/claude-501/-Users-eddenamber-Projects-dog/8af6f2ef-ccb8-46fc-bf40-c31c3d142fea/scratchpad/dog-0.26.11 --color always -P /var/folders/d3/qxmm_9hn4wj3mwtj5w1vrk8w0000gn/T/tmp.qdnsryVYso/blank.sh > /dev/null
+  Time (mean ± σ):      22.8 ms ±   0.5 ms    [User: 19.6 ms, System: 2.2 ms]
+  Range (min … max):    22.0 ms …  24.3 ms    50 runs
+ 
+[19:15:01] blank c (.c)
+Benchmark 1: /private/tmp/claude-501/-Users-eddenamber-Projects-dog/8af6f2ef-ccb8-46fc-bf40-c31c3d142fea/scratchpad/dog-0.26.11 --color always -P /var/folders/d3/qxmm_9hn4wj3mwtj5w1vrk8w0000gn/T/tmp.qdnsryVYso/blank.c > /dev/null
+  Time (mean ± σ):      14.9 ms ±   0.5 ms    [User: 12.0 ms, System: 1.9 ms]
+  Range (min … max):    13.9 ms …  16.0 ms    50 runs
+ 
+[19:15:03] blank cpp (.cpp)
+Benchmark 1: /private/tmp/claude-501/-Users-eddenamber-Projects-dog/8af6f2ef-ccb8-46fc-bf40-c31c3d142fea/scratchpad/dog-0.26.11 --color always -P /var/folders/d3/qxmm_9hn4wj3mwtj5w1vrk8w0000gn/T/tmp.qdnsryVYso/blank.cpp > /dev/null
+  Time (mean ± σ):     124.2 ms ±   1.3 ms    [User: 118.5 ms, System: 4.4 ms]
+  Range (min … max):   121.6 ms … 127.6 ms    50 runs
+ 
+[19:15:09] blank css (.css)
+Benchmark 1: /private/tmp/claude-501/-Users-eddenamber-Projects-dog/8af6f2ef-ccb8-46fc-bf40-c31c3d142fea/scratchpad/dog-0.26.11 --color always -P /var/folders/d3/qxmm_9hn4wj3mwtj5w1vrk8w0000gn/T/tmp.qdnsryVYso/blank.css > /dev/null
+  Time (mean ± σ):       5.2 ms ±   0.3 ms    [User: 2.9 ms, System: 1.6 ms]
+  Range (min … max):     4.8 ms …   6.0 ms    50 runs
+ 
+  Warning: Command took less than 5 ms to complete. Note that the results might be inaccurate because hyperfine can not calibrate the shell startup time much more precise than this limit. You can try to use the `-N`/`--shell=none` option to disable the shell completely.
+ 
+[19:15:10] blank go (.go)
+Benchmark 1: /private/tmp/claude-501/-Users-eddenamber-Projects-dog/8af6f2ef-ccb8-46fc-bf40-c31c3d142fea/scratchpad/dog-0.26.11 --color always -P /var/folders/d3/qxmm_9hn4wj3mwtj5w1vrk8w0000gn/T/tmp.qdnsryVYso/blank.go > /dev/null
+  Time (mean ± σ):       6.9 ms ±   0.2 ms    [User: 4.5 ms, System: 1.7 ms]
+  Range (min … max):     6.6 ms …   7.6 ms    50 runs
+ 
+[19:15:11] blank html (.html)
+Benchmark 1: /private/tmp/claude-501/-Users-eddenamber-Projects-dog/8af6f2ef-ccb8-46fc-bf40-c31c3d142fea/scratchpad/dog-0.26.11 --color always -P /var/folders/d3/qxmm_9hn4wj3mwtj5w1vrk8w0000gn/T/tmp.qdnsryVYso/blank.html > /dev/null
+  Time (mean ± σ):       5.1 ms ±   0.1 ms    [User: 2.8 ms, System: 1.5 ms]
+  Range (min … max):     4.8 ms …   5.6 ms    50 runs
+ 
+  Warning: Command took less than 5 ms to complete. Note that the results might be inaccurate because hyperfine can not calibrate the shell startup time much more precise than this limit. You can try to use the `-N`/`--shell=none` option to disable the shell completely.
+ 
+[19:15:11] blank javascript (.js)
+Benchmark 1: /private/tmp/claude-501/-Users-eddenamber-Projects-dog/8af6f2ef-ccb8-46fc-bf40-c31c3d142fea/scratchpad/dog-0.26.11 --color always -P /var/folders/d3/qxmm_9hn4wj3mwtj5w1vrk8w0000gn/T/tmp.qdnsryVYso/blank.js > /dev/null
+  Time (mean ± σ):      29.2 ms ±   0.6 ms    [User: 26.2 ms, System: 2.0 ms]
+  Range (min … max):    28.2 ms …  31.2 ms    50 runs
+ 
+[19:15:13] blank json (.json)
+Benchmark 1: /private/tmp/claude-501/-Users-eddenamber-Projects-dog/8af6f2ef-ccb8-46fc-bf40-c31c3d142fea/scratchpad/dog-0.26.11 --color always -P /var/folders/d3/qxmm_9hn4wj3mwtj5w1vrk8w0000gn/T/tmp.qdnsryVYso/blank.json > /dev/null
+  Time (mean ± σ):       5.1 ms ±   0.3 ms    [User: 2.7 ms, System: 1.6 ms]
+  Range (min … max):     4.7 ms …   6.1 ms    50 runs
+ 
+  Warning: Command took less than 5 ms to complete. Note that the results might be inaccurate because hyperfine can not calibrate the shell startup time much more precise than this limit. You can try to use the `-N`/`--shell=none` option to disable the shell completely.
+ 
+[19:15:14] blank lua (.lua)
+Benchmark 1: /private/tmp/claude-501/-Users-eddenamber-Projects-dog/8af6f2ef-ccb8-46fc-bf40-c31c3d142fea/scratchpad/dog-0.26.11 --color always -P /var/folders/d3/qxmm_9hn4wj3mwtj5w1vrk8w0000gn/T/tmp.qdnsryVYso/blank.lua > /dev/null
+  Time (mean ± σ):       5.9 ms ±   0.2 ms    [User: 3.8 ms, System: 1.4 ms]
+  Range (min … max):     5.5 ms …   6.8 ms    50 runs
+ 
+[19:15:14] blank markdown (.md)
+Benchmark 1: /private/tmp/claude-501/-Users-eddenamber-Projects-dog/8af6f2ef-ccb8-46fc-bf40-c31c3d142fea/scratchpad/dog-0.26.11 --color always -P /var/folders/d3/qxmm_9hn4wj3mwtj5w1vrk8w0000gn/T/tmp.qdnsryVYso/blank.md > /dev/null
+  Time (mean ± σ):       9.9 ms ±   0.4 ms    [User: 7.4 ms, System: 1.7 ms]
+  Range (min … max):     9.2 ms …  10.9 ms    50 runs
+ 
+[19:15:15] blank python (.py)
+Benchmark 1: /private/tmp/claude-501/-Users-eddenamber-Projects-dog/8af6f2ef-ccb8-46fc-bf40-c31c3d142fea/scratchpad/dog-0.26.11 --color always -P /var/folders/d3/qxmm_9hn4wj3mwtj5w1vrk8w0000gn/T/tmp.qdnsryVYso/blank.py > /dev/null
+  Time (mean ± σ):       5.3 ms ±   0.6 ms    [User: 2.8 ms, System: 1.7 ms]
+  Range (min … max):     4.8 ms …   7.3 ms    50 runs
+ 
+  Warning: Command took less than 5 ms to complete. Note that the results might be inaccurate because hyperfine can not calibrate the shell startup time much more precise than this limit. You can try to use the `-N`/`--shell=none` option to disable the shell completely.
+ 
+[19:15:16] blank ruby (.rb)
+Benchmark 1: /private/tmp/claude-501/-Users-eddenamber-Projects-dog/8af6f2ef-ccb8-46fc-bf40-c31c3d142fea/scratchpad/dog-0.26.11 --color always -P /var/folders/d3/qxmm_9hn4wj3mwtj5w1vrk8w0000gn/T/tmp.qdnsryVYso/blank.rb > /dev/null
+  Time (mean ± σ):      45.9 ms ±   1.4 ms    [User: 42.5 ms, System: 2.4 ms]
+  Range (min … max):    44.3 ms …  50.3 ms    50 runs
+ 
+[19:15:18] blank rust (.rs)
+Benchmark 1: /private/tmp/claude-501/-Users-eddenamber-Projects-dog/8af6f2ef-ccb8-46fc-bf40-c31c3d142fea/scratchpad/dog-0.26.11 --color always -P /var/folders/d3/qxmm_9hn4wj3mwtj5w1vrk8w0000gn/T/tmp.qdnsryVYso/blank.rs > /dev/null
+  Time (mean ± σ):      32.6 ms ±   0.3 ms    [User: 29.4 ms, System: 2.2 ms]
+  Range (min … max):    32.0 ms …  33.8 ms    50 runs
+ 
+[19:15:20] blank swift (.swift)
+Benchmark 1: /private/tmp/claude-501/-Users-eddenamber-Projects-dog/8af6f2ef-ccb8-46fc-bf40-c31c3d142fea/scratchpad/dog-0.26.11 --color always -P /var/folders/d3/qxmm_9hn4wj3mwtj5w1vrk8w0000gn/T/tmp.qdnsryVYso/blank.swift > /dev/null
+  Time (mean ± σ):      70.2 ms ±   0.5 ms    [User: 66.2 ms, System: 3.1 ms]
+  Range (min … max):    69.5 ms …  71.5 ms    50 runs
+ 
+[19:15:25] blank tsx (.tsx)
+Benchmark 1: /private/tmp/claude-501/-Users-eddenamber-Projects-dog/8af6f2ef-ccb8-46fc-bf40-c31c3d142fea/scratchpad/dog-0.26.11 --color always -P /var/folders/d3/qxmm_9hn4wj3mwtj5w1vrk8w0000gn/T/tmp.qdnsryVYso/blank.tsx > /dev/null
+  Time (mean ± σ):      62.1 ms ±   1.5 ms    [User: 58.1 ms, System: 2.8 ms]
+  Range (min … max):    60.6 ms …  68.8 ms    50 runs
+ 
+  Warning: Statistical outliers were detected. Consider re-running this benchmark on a quiet system without any interferences from other programs. It might help to use the '--warmup' or '--prepare' options.
+ 
+[19:15:28] blank typescript (.ts)
+Benchmark 1: /private/tmp/claude-501/-Users-eddenamber-Projects-dog/8af6f2ef-ccb8-46fc-bf40-c31c3d142fea/scratchpad/dog-0.26.11 --color always -P /var/folders/d3/qxmm_9hn4wj3mwtj5w1vrk8w0000gn/T/tmp.qdnsryVYso/blank.ts > /dev/null
+  Time (mean ± σ):      48.1 ms ±   0.6 ms    [User: 44.5 ms, System: 2.5 ms]
+  Range (min … max):    47.2 ms …  49.8 ms    50 runs
+ 
+[19:15:31] blank yaml (.yml)
+Benchmark 1: /private/tmp/claude-501/-Users-eddenamber-Projects-dog/8af6f2ef-ccb8-46fc-bf40-c31c3d142fea/scratchpad/dog-0.26.11 --color always -P /var/folders/d3/qxmm_9hn4wj3mwtj5w1vrk8w0000gn/T/tmp.qdnsryVYso/blank.yml > /dev/null
+  Time (mean ± σ):       9.5 ms ±   0.2 ms    [User: 7.1 ms, System: 1.7 ms]
+  Range (min … max):     9.1 ms …   9.9 ms    50 runs
+ 
+done
