@@ -173,6 +173,50 @@ Verification:
 
 ---
 
+## Item 3 — surface query-compile failures (robustness fix from experiment 001)
+
+**Evidence:** during experiment 001, python's query failed to compile on the
+0.26 runtime and dog silently rendered the whole language as plain
+uncolored text — zero signal to the user. In release builds the existing
+`Bark.warning` calls compile out entirely (`#if DEBUG` in
+`~/Projects/dog/Sources/dog/Diagnostics/Bark.swift`), so the failure is
+invisible even with `DOG_LOG_LEVEL=debug`.
+
+**Desired behavior:** keep the graceful degradation (plain render, exit 0 —
+correct for a cat-replacement; stdout must stay pipe-clean) but emit a
+release-visible one-line warning to **stderr**:
+
+```
+dog: highlight query for 'python' failed to compile (offset 1633); rendering without highlighting
+```
+
+**Files:**
+
+- `~/Projects/dog/Sources/dog/Parsing/Languages/LanguageEntry.swift` — the
+  compile-failure path in `ensureReady()` (moves into `compileQuery(...)` if
+  Item 2 lands first; emit at the join point). Two failure sites: nil
+  queryBytes ("no highlight query") and `ts_query_new` returning nil.
+- `LanguageEntry` does NOT know its language name today (registered by name in
+  `LanguageRegistry.swift` but the entry never stores it) — add a
+  `languageName: String` let to the entry so the warning can name the language;
+  registry passes it at `register(...)`.
+- Warning emission: direct `write(STDERR_FILENO, ...)` (Darwin/Glibc, no
+  Foundation), NOT `Bark` (compiles out of release). A tiny
+  `releaseWarning(_:)` helper next to Bark keeps callsites clean.
+
+**Tests:**
+
+- Unit (XCTest, `~/Projects/dog/tests/dogTests/`): construct a `LanguageEntry`
+  with deliberately invalid query bytes, assert `parse()` returns `[]` (plain
+  fallback preserved) — this pins the degradation contract.
+- Compat-level: stdout byte-diff gate must show ZERO change on all fixtures
+  (warning goes to stderr only; scenario "pipe color strip" in
+  `scripts/test/compat.sh` must stay green).
+
+**Interaction with Item 2:** if the overlap lands first, the failure surfaces
+after the join; same message, same stderr channel. Implement whichever lands
+first, wire the other to it.
+
 ## Backlog (not yet implementation-ready)
 
 - 002 (per-pattern query compile cost) — SKIPPED by user decision 2026-07-18.
@@ -197,4 +241,5 @@ Verification:
   release-build instrumentation must use write(2)/fputs directly.
 - dog silently renders a language UNHIGHLIGHTED if its query fails to compile
   (see experiment 001) — after any query or runtime change, byte-diff outputs;
-  "it runs" proves nothing.
+  "it runs" proves nothing. Item 3 above makes the failure visible on stderr;
+  the byte-diff discipline still applies.
