@@ -242,6 +242,54 @@ dog: highlight query for 'python' failed to compile (offset 1633); rendering wit
 after the join; same message, same stderr channel. Implement whichever lands
 first, wire the other to it.
 
+## Item 4 — build-time precompiled queries (experiment 003, prototype confirmed — NOT yet implemented)
+
+**Evidence:** `~/Projects/dog/perf/experiments/003-query-cache/NOTES.md` —
+serialize/reload of compiled TSQuery proven on 10 grammars: byte-identical
+captures, ~3µs loads vs 10–130ms compiles, blobs 2–34KB. Working
+serializer/deserializer code: `003-query-cache/harness/serialize-bench.c`
+(the WRITE_ARRAY/READ_ARRAY functions port directly).
+
+**Design (build-time embed — NOT a runtime file cache):**
+
+1. Generator tool (`tools/query-precompile/` or a scripts/ step): a small C
+   program built from the serialize harness that, for each language, compiles
+   the .scm via ts_query_new and emits the blob. Runs as a build step (Makefile
+   target or SPM plugin — Makefile is simpler and matches existing release
+   flow). Output: byte arrays appended to something like
+   `Sources/dog/Parsing/Languages/EmbeddedCompiledQueries.swift` (same pattern
+   as EmbeddedQueries.swift), or a binary resource. Blobs are versioned WITH
+   the binary — no cache-invalidation surface at runtime.
+2. dog load path: `LanguageEntry.compileQuery` gains a fast path — if an
+   embedded blob exists for the language, deserialize (port of
+   deserialize_query, needs the same internal-struct access: either a tiny C
+   shim target that #includes the runtime's query.c internals, or a patched
+   runtime in LocalPackages exposing ts_query_deserialize). On ANY mismatch
+   (magic/version/sizeof asserts) fall back to ts_query_new — fail-open, with
+   the Item 3 stderr warning noting the fallback.
+3. Safety rails: header in each blob = magic + format version + runtime
+   version + query-bytes hash; static asserts on sizeof(TSQuery)/
+   sizeof(QueryStep) in BOTH generator and loader so a runtime bump fails the
+   build loudly instead of corrupting at runtime.
+4. Keep the compile/parse overlap (Item 2) — it becomes the fallback path's
+   optimization; with blobs present compile cost ≈ 0 and the overlap is a
+   harmless no-op.
+
+**Expected result:** tiny tier ~5ms for all languages; dog beats bat 17/17 at
+every size. Docs benchmarks change dramatically again after this ships.
+
+**Verification gates:** byte-diff all 17 languages tiny+large vs pre-change
+binary (must be identical); capture-stream equality already proven at harness
+level but re-verify one language end-to-end; swift test (3 known coverage
+failures only); startup-decomp re-run showing blank-file times ~5ms across the
+board; full bench matrix + docs refresh.
+
+**Risk notes:** blob format is arch/compiler-specific — fine because generator
+and binary share a toolchain per build; universal (dual-arch) builds must
+generate per-arch blobs or verify layout equality across arm64/x86_64 slices
+(bitfield layout is identical on both for clang, but VERIFY with a cross-arch
+capture-equality run before shipping the universal binary).
+
 ## Backlog (not yet implementation-ready)
 
 - 002 (per-pattern query compile cost) — SKIPPED by user decision 2026-07-18.
