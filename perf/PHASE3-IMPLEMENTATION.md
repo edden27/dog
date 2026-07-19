@@ -189,7 +189,16 @@ Verification:
 
 ---
 
-## Item 3 — surface query-compile failures (robustness fix from experiment 001)
+## Item 3 — surface query-compile failures (robustness fix from experiment 001) — IMPLEMENTED 2026-07-18 (e9141f5)
+
+As designed below, with one deviation: instead of widening LanguageEntry
+internals for tests, the test target gained a direct TreeSitterJSON dependency
+(Package.swift testTarget) so QueryFailureTests builds a broken-query entry on
+the real grammar pointer. Verified: stdout byte-identical + stderr silent on
+all 17 healthy languages; warning fires with language name + offset on broken
+query; 196 tests, only the 3 known coverage failures remain.
+
+Original design notes:
 
 **Evidence:** during experiment 001, python's query failed to compile on the
 0.26 runtime and dog silently rendered the whole language as plain
