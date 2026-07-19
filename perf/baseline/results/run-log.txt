@@ -1,0 +1,900 @@
+[18:02:32] tiny/bash
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/bash/tiny.sh > /dev/null
+  Time (mean ± σ):      23.2 ms ±   0.8 ms    [User: 19.9 ms, System: 2.3 ms]
+  Range (min … max):    22.3 ms …  25.7 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/bash/tiny.sh > /dev/null
+  Time (mean ± σ):      13.5 ms ±   1.9 ms    [User: 10.6 ms, System: 3.0 ms]
+  Range (min … max):    12.4 ms …  21.4 ms    20 runs
+ 
+  Warning: The first benchmarking run for this command was significantly slower than the rest (21.4 ms). This could be caused by (filesystem) caches that were not filled until after the first run. You should consider using the '--warmup' option to fill those caches before the actual benchmark. Alternatively, use the '--prepare' option to clear the caches before each timing run.
+ 
+Summary
+  bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/bash/tiny.sh > /dev/null ran
+    1.72 ± 0.25 times faster than /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/bash/tiny.sh > /dev/null
+[18:02:33] tiny/c
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/c/tiny.c > /dev/null
+  Time (mean ± σ):      14.9 ms ±   0.5 ms    [User: 12.1 ms, System: 1.9 ms]
+  Range (min … max):    14.3 ms …  16.7 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/c/tiny.c > /dev/null
+  Time (mean ± σ):      11.8 ms ±   0.4 ms    [User: 9.4 ms, System: 2.7 ms]
+  Range (min … max):    11.3 ms …  13.0 ms    20 runs
+ 
+Summary
+  bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/c/tiny.c > /dev/null ran
+    1.27 ± 0.06 times faster than /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/c/tiny.c > /dev/null
+[18:02:33] tiny/cpp
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/cpp/tiny.cpp > /dev/null
+  Time (mean ± σ):     125.6 ms ±   1.8 ms    [User: 119.4 ms, System: 4.7 ms]
+  Range (min … max):   123.2 ms … 131.9 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/cpp/tiny.cpp > /dev/null
+  Time (mean ± σ):      14.4 ms ±   0.6 ms    [User: 11.6 ms, System: 3.1 ms]
+  Range (min … max):    13.5 ms …  16.2 ms    20 runs
+ 
+Summary
+  bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/cpp/tiny.cpp > /dev/null ran
+    8.69 ± 0.40 times faster than /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/cpp/tiny.cpp > /dev/null
+[18:02:36] tiny/css
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/css/tiny.css > /dev/null
+  Time (mean ± σ):       5.4 ms ±   0.4 ms    [User: 3.0 ms, System: 1.6 ms]
+  Range (min … max):     5.1 ms …   6.7 ms    20 runs
+ 
+  Warning: The first benchmarking run for this command was significantly slower than the rest (6.7 ms). This could be caused by (filesystem) caches that were not filled until after the first run. You should consider using the '--warmup' option to fill those caches before the actual benchmark. Alternatively, use the '--prepare' option to clear the caches before each timing run.
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/css/tiny.css > /dev/null
+  Time (mean ± σ):      16.9 ms ±   0.5 ms    [User: 14.1 ms, System: 3.1 ms]
+  Range (min … max):    16.4 ms …  18.2 ms    20 runs
+ 
+Summary
+  /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/css/tiny.css > /dev/null ran
+    3.13 ± 0.23 times faster than bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/css/tiny.css > /dev/null
+[18:02:37] tiny/go
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/go/tiny.go > /dev/null
+  Time (mean ± σ):       7.3 ms ±   0.6 ms    [User: 4.6 ms, System: 1.7 ms]
+  Range (min … max):     6.8 ms …   9.2 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/go/tiny.go > /dev/null
+  Time (mean ± σ):      10.9 ms ±   0.5 ms    [User: 8.4 ms, System: 2.9 ms]
+  Range (min … max):    10.1 ms …  12.3 ms    20 runs
+ 
+Summary
+  /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/go/tiny.go > /dev/null ran
+    1.49 ± 0.13 times faster than bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/go/tiny.go > /dev/null
+[18:02:38] tiny/html
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/html/tiny.html > /dev/null
+  Time (mean ± σ):       5.5 ms ±   0.4 ms    [User: 3.0 ms, System: 1.6 ms]
+  Range (min … max):     5.0 ms …   7.0 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/html/tiny.html > /dev/null
+  Time (mean ± σ):      10.7 ms ±   0.3 ms    [User: 8.3 ms, System: 2.8 ms]
+  Range (min … max):    10.3 ms …  11.6 ms    20 runs
+ 
+  Warning: The first benchmarking run for this command was significantly slower than the rest (11.6 ms). This could be caused by (filesystem) caches that were not filled until after the first run. You should consider using the '--warmup' option to fill those caches before the actual benchmark. Alternatively, use the '--prepare' option to clear the caches before each timing run.
+ 
+Summary
+  /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/html/tiny.html > /dev/null ran
+    1.96 ± 0.16 times faster than bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/html/tiny.html > /dev/null
+[18:02:38] tiny/javascript
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/javascript/tiny.js > /dev/null
+  Time (mean ± σ):      30.0 ms ±   0.6 ms    [User: 26.6 ms, System: 2.3 ms]
+  Range (min … max):    29.2 ms …  31.6 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/javascript/tiny.js > /dev/null
+  Time (mean ± σ):      14.4 ms ±   0.4 ms    [User: 11.9 ms, System: 2.8 ms]
+  Range (min … max):    13.9 ms …  15.4 ms    20 runs
+ 
+Summary
+  bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/javascript/tiny.js > /dev/null ran
+    2.08 ± 0.07 times faster than /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/javascript/tiny.js > /dev/null
+[18:02:39] tiny/json
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/json/tiny.json > /dev/null
+  Time (mean ± σ):       5.0 ms ±   0.4 ms    [User: 2.7 ms, System: 1.5 ms]
+  Range (min … max):     4.6 ms …   6.4 ms    20 runs
+ 
+  Warning: Command took less than 5 ms to complete. Note that the results might be inaccurate because hyperfine can not calibrate the shell startup time much more precise than this limit. You can try to use the `-N`/`--shell=none` option to disable the shell completely.
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/json/tiny.json > /dev/null
+  Time (mean ± σ):      10.2 ms ±   0.2 ms    [User: 8.0 ms, System: 2.7 ms]
+  Range (min … max):     9.8 ms …  10.5 ms    20 runs
+ 
+Summary
+  /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/json/tiny.json > /dev/null ran
+    2.03 ± 0.17 times faster than bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/json/tiny.json > /dev/null
+[18:02:40] tiny/lua
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/lua/tiny.lua > /dev/null
+  Time (mean ± σ):       6.7 ms ±   0.9 ms    [User: 4.2 ms, System: 1.6 ms]
+  Range (min … max):     6.3 ms …  10.3 ms    20 runs
+ 
+  Warning: The first benchmarking run for this command was significantly slower than the rest (10.3 ms). This could be caused by (filesystem) caches that were not filled until after the first run. You should consider using the '--warmup' option to fill those caches before the actual benchmark. Alternatively, use the '--prepare' option to clear the caches before each timing run.
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/lua/tiny.lua > /dev/null
+  Time (mean ± σ):      12.1 ms ±   0.4 ms    [User: 9.4 ms, System: 3.0 ms]
+  Range (min … max):    11.4 ms …  13.1 ms    20 runs
+ 
+Summary
+  /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/lua/tiny.lua > /dev/null ran
+    1.80 ± 0.24 times faster than bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/lua/tiny.lua > /dev/null
+[18:02:41] tiny/markdown
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/markdown/tiny.md > /dev/null
+  Time (mean ± σ):      10.6 ms ±   0.4 ms    [User: 7.9 ms, System: 1.8 ms]
+  Range (min … max):    10.2 ms …  12.0 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/markdown/tiny.md > /dev/null
+  Time (mean ± σ):      14.5 ms ±   0.4 ms    [User: 11.8 ms, System: 3.1 ms]
+  Range (min … max):    13.9 ms …  15.2 ms    20 runs
+ 
+Summary
+  /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/markdown/tiny.md > /dev/null ran
+    1.37 ± 0.06 times faster than bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/markdown/tiny.md > /dev/null
+[18:02:41] tiny/python
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/python/tiny.py > /dev/null
+  Time (mean ± σ):      27.4 ms ±   1.0 ms    [User: 23.8 ms, System: 2.5 ms]
+  Range (min … max):    26.5 ms …  30.5 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/python/tiny.py > /dev/null
+  Time (mean ± σ):      12.9 ms ±   0.2 ms    [User: 10.3 ms, System: 2.8 ms]
+  Range (min … max):    12.4 ms …  13.4 ms    20 runs
+ 
+Summary
+  bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/python/tiny.py > /dev/null ran
+    2.13 ± 0.09 times faster than /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/python/tiny.py > /dev/null
+[18:02:43] tiny/ruby
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/ruby/tiny.rb > /dev/null
+  Time (mean ± σ):      46.9 ms ±   0.9 ms    [User: 42.9 ms, System: 2.8 ms]
+  Range (min … max):    46.0 ms …  49.9 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/ruby/tiny.rb > /dev/null
+  Time (mean ± σ):      13.1 ms ±   0.5 ms    [User: 10.5 ms, System: 2.8 ms]
+  Range (min … max):    12.5 ms …  14.2 ms    20 runs
+ 
+Summary
+  bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/ruby/tiny.rb > /dev/null ran
+    3.59 ± 0.14 times faster than /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/ruby/tiny.rb > /dev/null
+[18:02:44] tiny/rust
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/rust/tiny.rs > /dev/null
+  Time (mean ± σ):      33.6 ms ±   0.7 ms    [User: 30.0 ms, System: 2.5 ms]
+  Range (min … max):    32.7 ms …  35.6 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/rust/tiny.rs > /dev/null
+  Time (mean ± σ):      13.4 ms ±   0.2 ms    [User: 10.8 ms, System: 2.9 ms]
+  Range (min … max):    13.0 ms …  13.8 ms    20 runs
+ 
+Summary
+  bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/rust/tiny.rs > /dev/null ran
+    2.51 ± 0.07 times faster than /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/rust/tiny.rs > /dev/null
+[18:02:45] tiny/swift
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/swift/tiny.swift > /dev/null
+  Time (mean ± σ):      72.1 ms ±   1.0 ms    [User: 67.4 ms, System: 3.4 ms]
+  Range (min … max):    70.7 ms …  74.6 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/swift/tiny.swift > /dev/null
+  Time (mean ± σ):      11.5 ms ±   0.3 ms    [User: 9.0 ms, System: 2.8 ms]
+  Range (min … max):    11.0 ms …  12.5 ms    20 runs
+ 
+Summary
+  bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/swift/tiny.swift > /dev/null ran
+    6.27 ± 0.21 times faster than /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/swift/tiny.swift > /dev/null
+[18:02:47] tiny/tsx
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/tsx/tiny.tsx > /dev/null
+  Time (mean ± σ):      62.3 ms ±   1.5 ms    [User: 58.3 ms, System: 2.9 ms]
+  Range (min … max):    61.0 ms …  67.1 ms    20 runs
+ 
+  Warning: Statistical outliers were detected. Consider re-running this benchmark on a quiet system without any interferences from other programs. It might help to use the '--warmup' or '--prepare' options.
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/tsx/tiny.tsx > /dev/null
+  Time (mean ± σ):      21.7 ms ±   0.5 ms    [User: 19.1 ms, System: 2.7 ms]
+  Range (min … max):    21.2 ms …  23.6 ms    20 runs
+ 
+Summary
+  bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/tsx/tiny.tsx > /dev/null ran
+    2.87 ± 0.09 times faster than /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/tsx/tiny.tsx > /dev/null
+[18:02:49] tiny/typescript
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/typescript/tiny.ts > /dev/null
+  Time (mean ± σ):      49.0 ms ±   0.8 ms    [User: 45.2 ms, System: 2.7 ms]
+  Range (min … max):    47.8 ms …  51.1 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/typescript/tiny.ts > /dev/null
+  Time (mean ± σ):      24.3 ms ±   2.0 ms    [User: 21.2 ms, System: 3.3 ms]
+  Range (min … max):    23.5 ms …  32.9 ms    20 runs
+ 
+  Warning: Statistical outliers were detected. Consider re-running this benchmark on a quiet system without any interferences from other programs. It might help to use the '--warmup' or '--prepare' options.
+ 
+Summary
+  bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/typescript/tiny.ts > /dev/null ran
+    2.01 ± 0.17 times faster than /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/typescript/tiny.ts > /dev/null
+[18:02:51] tiny/yaml
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/yaml/tiny.yml > /dev/null
+  Time (mean ± σ):       9.9 ms ±   0.4 ms    [User: 7.3 ms, System: 1.8 ms]
+  Range (min … max):     9.6 ms …  11.5 ms    20 runs
+ 
+  Warning: The first benchmarking run for this command was significantly slower than the rest (11.5 ms). This could be caused by (filesystem) caches that were not filled until after the first run. You should consider using the '--warmup' option to fill those caches before the actual benchmark. Alternatively, use the '--prepare' option to clear the caches before each timing run.
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/yaml/tiny.yml > /dev/null
+  Time (mean ± σ):      11.7 ms ±   2.2 ms    [User: 9.1 ms, System: 2.9 ms]
+  Range (min … max):    10.9 ms …  20.7 ms    20 runs
+ 
+  Warning: Statistical outliers were detected. Consider re-running this benchmark on a quiet system without any interferences from other programs. It might help to use the '--warmup' or '--prepare' options.
+ 
+Summary
+  /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/yaml/tiny.yml > /dev/null ran
+    1.18 ± 0.22 times faster than bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/yaml/tiny.yml > /dev/null
+[18:02:51] small/bash
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/bash/small.sh > /dev/null
+  Time (mean ± σ):      23.9 ms ±   0.4 ms    [User: 20.4 ms, System: 2.4 ms]
+  Range (min … max):    23.2 ms …  25.1 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/bash/small.sh > /dev/null
+  Time (mean ± σ):      18.9 ms ±   0.4 ms    [User: 16.1 ms, System: 3.1 ms]
+  Range (min … max):    18.3 ms …  19.4 ms    20 runs
+ 
+Summary
+  bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/bash/small.sh > /dev/null ran
+    1.27 ± 0.03 times faster than /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/bash/small.sh > /dev/null
+[18:02:53] small/c
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/c/small.c > /dev/null
+  Time (mean ± σ):      16.2 ms ±   0.6 ms    [User: 13.2 ms, System: 1.9 ms]
+  Range (min … max):    15.3 ms …  17.9 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/c/small.c > /dev/null
+  Time (mean ± σ):      18.6 ms ±   0.6 ms    [User: 15.8 ms, System: 3.0 ms]
+  Range (min … max):    17.7 ms …  20.0 ms    20 runs
+ 
+Summary
+  /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/c/small.c > /dev/null ran
+    1.15 ± 0.05 times faster than bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/c/small.c > /dev/null
+[18:02:54] small/cpp
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/cpp/small.cpp > /dev/null
+  Time (mean ± σ):     126.9 ms ±   1.9 ms    [User: 121.4 ms, System: 3.9 ms]
+  Range (min … max):   124.1 ms … 132.6 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/cpp/small.cpp > /dev/null
+  Time (mean ± σ):      26.8 ms ±   0.6 ms    [User: 23.8 ms, System: 3.2 ms]
+  Range (min … max):    26.4 ms …  29.2 ms    20 runs
+ 
+  Warning: The first benchmarking run for this command was significantly slower than the rest (29.2 ms). This could be caused by (filesystem) caches that were not filled until after the first run. You should consider using the '--warmup' option to fill those caches before the actual benchmark. Alternatively, use the '--prepare' option to clear the caches before each timing run.
+ 
+Summary
+  bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/cpp/small.cpp > /dev/null ran
+    4.73 ± 0.13 times faster than /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/cpp/small.cpp > /dev/null
+[18:02:57] small/css
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/css/small.css > /dev/null
+  Time (mean ± σ):       5.9 ms ±   0.4 ms    [User: 3.3 ms, System: 1.7 ms]
+  Range (min … max):     5.3 ms …   7.2 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/css/small.css > /dev/null
+  Time (mean ± σ):      20.2 ms ±   2.0 ms    [User: 17.3 ms, System: 3.2 ms]
+  Range (min … max):    18.9 ms …  27.8 ms    20 runs
+ 
+  Warning: Statistical outliers were detected. Consider re-running this benchmark on a quiet system without any interferences from other programs. It might help to use the '--warmup' or '--prepare' options.
+ 
+Summary
+  /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/css/small.css > /dev/null ran
+    3.41 ± 0.41 times faster than bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/css/small.css > /dev/null
+[18:02:58] small/go
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/go/small.go > /dev/null
+  Time (mean ± σ):       8.7 ms ±   0.4 ms    [User: 6.0 ms, System: 1.8 ms]
+  Range (min … max):     8.4 ms …   9.9 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/go/small.go > /dev/null
+  Time (mean ± σ):      20.4 ms ±   0.3 ms    [User: 17.6 ms, System: 3.1 ms]
+  Range (min … max):    19.8 ms …  21.1 ms    20 runs
+ 
+Summary
+  /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/go/small.go > /dev/null ran
+    2.34 ± 0.11 times faster than bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/go/small.go > /dev/null
+[18:02:59] small/html
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/html/small.html > /dev/null
+  Time (mean ± σ):       9.8 ms ±   0.6 ms    [User: 7.1 ms, System: 1.8 ms]
+  Range (min … max):     9.2 ms …  11.3 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/html/small.html > /dev/null
+  Time (mean ± σ):      27.2 ms ±   1.3 ms    [User: 23.9 ms, System: 3.5 ms]
+  Range (min … max):    25.9 ms …  30.3 ms    20 runs
+ 
+Summary
+  /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/html/small.html > /dev/null ran
+    2.77 ± 0.21 times faster than bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/html/small.html > /dev/null
+[18:03:00] small/javascript
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/javascript/small.js > /dev/null
+  Time (mean ± σ):      30.1 ms ±   0.6 ms    [User: 26.8 ms, System: 2.3 ms]
+  Range (min … max):    29.4 ms …  31.5 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/javascript/small.js > /dev/null
+  Time (mean ± σ):      17.0 ms ±   0.3 ms    [User: 14.5 ms, System: 2.8 ms]
+  Range (min … max):    16.5 ms …  17.6 ms    20 runs
+ 
+Summary
+  bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/javascript/small.js > /dev/null ran
+    1.77 ± 0.04 times faster than /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/javascript/small.js > /dev/null
+[18:03:01] small/json
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/json/small.json > /dev/null
+  Time (mean ± σ):       5.9 ms ±   0.8 ms    [User: 3.3 ms, System: 1.7 ms]
+  Range (min … max):     5.2 ms …   7.6 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/json/small.json > /dev/null
+  Time (mean ± σ):      13.4 ms ±   0.2 ms    [User: 11.1 ms, System: 2.7 ms]
+  Range (min … max):    13.1 ms …  13.7 ms    20 runs
+ 
+Summary
+  /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/json/small.json > /dev/null ran
+    2.27 ± 0.29 times faster than bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/json/small.json > /dev/null
+[18:03:01] small/lua
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/lua/small.lua > /dev/null
+  Time (mean ± σ):       8.2 ms ±   0.3 ms    [User: 5.6 ms, System: 1.8 ms]
+  Range (min … max):     7.9 ms …   8.9 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/lua/small.lua > /dev/null
+  Time (mean ± σ):      18.4 ms ±   1.0 ms    [User: 15.6 ms, System: 3.1 ms]
+  Range (min … max):    17.3 ms …  21.1 ms    20 runs
+ 
+Summary
+  /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/lua/small.lua > /dev/null ran
+    2.24 ± 0.14 times faster than bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/lua/small.lua > /dev/null
+[18:03:02] small/markdown
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/markdown/small.md > /dev/null
+  Time (mean ± σ):      10.3 ms ±   0.5 ms    [User: 7.6 ms, System: 1.8 ms]
+  Range (min … max):     9.9 ms …  11.8 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/markdown/small.md > /dev/null
+  Time (mean ± σ):      16.2 ms ±   0.3 ms    [User: 13.6 ms, System: 2.8 ms]
+  Range (min … max):    15.5 ms …  16.7 ms    20 runs
+ 
+Summary
+  /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/markdown/small.md > /dev/null ran
+    1.57 ± 0.08 times faster than bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/markdown/small.md > /dev/null
+[18:03:03] small/python
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/python/small.py > /dev/null
+  Time (mean ± σ):      27.9 ms ±   0.8 ms    [User: 24.6 ms, System: 2.2 ms]
+  Range (min … max):    27.4 ms …  30.7 ms    20 runs
+ 
+  Warning: Statistical outliers were detected. Consider re-running this benchmark on a quiet system without any interferences from other programs. It might help to use the '--warmup' or '--prepare' options.
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/python/small.py > /dev/null
+  Time (mean ± σ):      21.3 ms ±   0.3 ms    [User: 18.6 ms, System: 3.1 ms]
+  Range (min … max):    21.1 ms …  22.4 ms    20 runs
+ 
+Summary
+  bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/python/small.py > /dev/null ran
+    1.31 ± 0.04 times faster than /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/python/small.py > /dev/null
+[18:03:04] small/ruby
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/ruby/small.rb > /dev/null
+  Time (mean ± σ):      47.9 ms ±   0.7 ms    [User: 44.1 ms, System: 2.7 ms]
+  Range (min … max):    47.0 ms …  50.2 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/ruby/small.rb > /dev/null
+  Time (mean ± σ):      22.7 ms ±   0.2 ms    [User: 20.0 ms, System: 3.0 ms]
+  Range (min … max):    22.3 ms …  23.3 ms    20 runs
+ 
+Summary
+  bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/ruby/small.rb > /dev/null ran
+    2.11 ± 0.04 times faster than /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/ruby/small.rb > /dev/null
+[18:03:06] small/rust
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/rust/small.rs > /dev/null
+  Time (mean ± σ):      33.8 ms ±   0.4 ms    [User: 30.4 ms, System: 2.3 ms]
+  Range (min … max):    33.3 ms …  34.9 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/rust/small.rs > /dev/null
+  Time (mean ± σ):      17.4 ms ±   0.3 ms    [User: 14.7 ms, System: 2.9 ms]
+  Range (min … max):    17.0 ms …  18.3 ms    20 runs
+ 
+Summary
+  bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/rust/small.rs > /dev/null ran
+    1.94 ± 0.04 times faster than /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/rust/small.rs > /dev/null
+[18:03:07] small/swift
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/swift/small.swift > /dev/null
+  Time (mean ± σ):      72.4 ms ±   1.2 ms    [User: 67.8 ms, System: 3.4 ms]
+  Range (min … max):    71.3 ms …  76.5 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/swift/small.swift > /dev/null
+  Time (mean ± σ):      17.9 ms ±   1.1 ms    [User: 15.0 ms, System: 3.1 ms]
+  Range (min … max):    17.1 ms …  22.3 ms    20 runs
+ 
+  Warning: The first benchmarking run for this command was significantly slower than the rest (22.3 ms). This could be caused by (filesystem) caches that were not filled until after the first run. You should consider using the '--warmup' option to fill those caches before the actual benchmark. Alternatively, use the '--prepare' option to clear the caches before each timing run.
+ 
+Summary
+  bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/swift/small.swift > /dev/null ran
+    4.05 ± 0.26 times faster than /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/swift/small.swift > /dev/null
+[18:03:09] small/tsx
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/tsx/small.tsx > /dev/null
+  Time (mean ± σ):      62.7 ms ±   0.6 ms    [User: 58.7 ms, System: 2.9 ms]
+  Range (min … max):    61.9 ms …  64.6 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/tsx/small.tsx > /dev/null
+  Time (mean ± σ):      33.0 ms ±   1.1 ms    [User: 29.6 ms, System: 3.6 ms]
+  Range (min … max):    31.8 ms …  35.8 ms    20 runs
+ 
+Summary
+  bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/tsx/small.tsx > /dev/null ran
+    1.90 ± 0.06 times faster than /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/tsx/small.tsx > /dev/null
+[18:03:11] small/typescript
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/typescript/small.ts > /dev/null
+  Time (mean ± σ):      49.1 ms ±   0.5 ms    [User: 45.4 ms, System: 2.6 ms]
+  Range (min … max):    48.6 ms …  50.2 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/typescript/small.ts > /dev/null
+  Time (mean ± σ):      32.3 ms ±   0.5 ms    [User: 29.0 ms, System: 3.6 ms]
+  Range (min … max):    31.8 ms …  33.8 ms    20 runs
+ 
+Summary
+  bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/typescript/small.ts > /dev/null ran
+    1.52 ± 0.03 times faster than /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/typescript/small.ts > /dev/null
+[18:03:13] small/yaml
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/yaml/small.yml > /dev/null
+  Time (mean ± σ):      10.2 ms ±   0.4 ms    [User: 7.5 ms, System: 1.8 ms]
+  Range (min … max):     9.8 ms …  11.3 ms    20 runs
+ 
+  Warning: The first benchmarking run for this command was significantly slower than the rest (11.3 ms). This could be caused by (filesystem) caches that were not filled until after the first run. You should consider using the '--warmup' option to fill those caches before the actual benchmark. Alternatively, use the '--prepare' option to clear the caches before each timing run.
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/yaml/small.yml > /dev/null
+  Time (mean ± σ):      12.6 ms ±   0.3 ms    [User: 10.1 ms, System: 2.9 ms]
+  Range (min … max):    12.3 ms …  13.3 ms    20 runs
+ 
+Summary
+  /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/yaml/small.yml > /dev/null ran
+    1.25 ± 0.06 times faster than bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/yaml/small.yml > /dev/null
+[18:03:14] medium/bash
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/bash/medium.sh > /dev/null
+  Time (mean ± σ):      35.7 ms ±   0.4 ms    [User: 32.0 ms, System: 2.6 ms]
+  Range (min … max):    35.1 ms …  36.7 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/bash/medium.sh > /dev/null
+  Time (mean ± σ):      81.7 ms ±   1.1 ms    [User: 77.4 ms, System: 4.6 ms]
+  Range (min … max):    80.5 ms …  85.6 ms    20 runs
+ 
+Summary
+  /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/bash/medium.sh > /dev/null ran
+    2.29 ± 0.04 times faster than bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/bash/medium.sh > /dev/null
+[18:03:17] medium/c
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/c/medium.c > /dev/null
+  Time (mean ± σ):      28.3 ms ±   0.6 ms    [User: 24.9 ms, System: 2.3 ms]
+  Range (min … max):    27.7 ms …  29.7 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/c/medium.c > /dev/null
+  Time (mean ± σ):      85.5 ms ±   1.1 ms    [User: 81.2 ms, System: 4.5 ms]
+  Range (min … max):    83.8 ms …  88.2 ms    20 runs
+ 
+Summary
+  /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/c/medium.c > /dev/null ran
+    3.02 ± 0.07 times faster than bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/c/medium.c > /dev/null
+[18:03:19] medium/cpp
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/cpp/medium.cpp > /dev/null
+  Time (mean ± σ):     142.1 ms ±   1.3 ms    [User: 136.3 ms, System: 4.6 ms]
+  Range (min … max):   139.8 ms … 144.5 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/cpp/medium.cpp > /dev/null
+  Time (mean ± σ):     149.2 ms ±   3.0 ms    [User: 142.9 ms, System: 6.4 ms]
+  Range (min … max):   146.6 ms … 160.2 ms    20 runs
+ 
+Summary
+  /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/cpp/medium.cpp > /dev/null ran
+    1.05 ± 0.02 times faster than bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/cpp/medium.cpp > /dev/null
+[18:03:25] medium/css
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/css/medium.css > /dev/null
+  Time (mean ± σ):      10.3 ms ±   0.4 ms    [User: 7.7 ms, System: 1.8 ms]
+  Range (min … max):    10.0 ms …  11.7 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/css/medium.css > /dev/null
+  Time (mean ± σ):      55.5 ms ±   3.4 ms    [User: 51.5 ms, System: 4.3 ms]
+  Range (min … max):    53.6 ms …  69.2 ms    20 runs
+ 
+  Warning: Statistical outliers were detected. Consider re-running this benchmark on a quiet system without any interferences from other programs. It might help to use the '--warmup' or '--prepare' options.
+ 
+Summary
+  /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/css/medium.css > /dev/null ran
+    5.39 ± 0.38 times faster than bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/css/medium.css > /dev/null
+[18:03:27] medium/go
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/go/medium.go > /dev/null
+  Time (mean ± σ):      16.6 ms ±   0.4 ms    [User: 13.8 ms, System: 1.9 ms]
+  Range (min … max):    16.1 ms …  18.1 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/go/medium.go > /dev/null
+  Time (mean ± σ):      74.0 ms ±   1.7 ms    [User: 69.4 ms, System: 4.8 ms]
+  Range (min … max):    71.6 ms …  79.7 ms    20 runs
+ 
+Summary
+  /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/go/medium.go > /dev/null ran
+    4.44 ± 0.15 times faster than bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/go/medium.go > /dev/null
+[18:03:29] medium/html
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/html/medium.html > /dev/null
+  Time (mean ± σ):      36.1 ms ±   0.9 ms    [User: 32.5 ms, System: 2.5 ms]
+  Range (min … max):    35.3 ms …  38.4 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/html/medium.html > /dev/null
+  Time (mean ± σ):      79.3 ms ±   1.6 ms    [User: 74.5 ms, System: 4.9 ms]
+  Range (min … max):    77.3 ms …  83.6 ms    20 runs
+ 
+Summary
+  /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/html/medium.html > /dev/null ran
+    2.20 ± 0.07 times faster than bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/html/medium.html > /dev/null
+[18:03:31] medium/javascript
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/javascript/medium.js > /dev/null
+  Time (mean ± σ):      50.3 ms ±   1.4 ms    [User: 46.0 ms, System: 3.1 ms]
+  Range (min … max):    48.5 ms …  53.4 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/javascript/medium.js > /dev/null
+  Time (mean ± σ):     168.7 ms ±   1.8 ms    [User: 162.4 ms, System: 6.4 ms]
+  Range (min … max):   166.1 ms … 173.0 ms    20 runs
+ 
+Summary
+  /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/javascript/medium.js > /dev/null ran
+    3.36 ± 0.10 times faster than bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/javascript/medium.js > /dev/null
+[18:03:36] medium/json
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/json/medium.json > /dev/null
+  Time (mean ± σ):      12.4 ms ±   0.6 ms    [User: 9.3 ms, System: 2.0 ms]
+  Range (min … max):    11.8 ms …  13.8 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/json/medium.json > /dev/null
+  Time (mean ± σ):      68.4 ms ±   0.7 ms    [User: 64.3 ms, System: 4.4 ms]
+  Range (min … max):    67.6 ms …  70.3 ms    20 runs
+ 
+Summary
+  /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/json/medium.json > /dev/null ran
+    5.53 ± 0.27 times faster than bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/json/medium.json > /dev/null
+[18:03:38] medium/lua
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/lua/medium.lua > /dev/null
+  Time (mean ± σ):      23.5 ms ±   0.6 ms    [User: 20.3 ms, System: 2.2 ms]
+  Range (min … max):    22.9 ms …  25.1 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/lua/medium.lua > /dev/null
+  Time (mean ± σ):      81.6 ms ±   2.1 ms    [User: 76.9 ms, System: 4.8 ms]
+  Range (min … max):    79.9 ms …  89.5 ms    20 runs
+ 
+  Warning: Statistical outliers were detected. Consider re-running this benchmark on a quiet system without any interferences from other programs. It might help to use the '--warmup' or '--prepare' options.
+ 
+Summary
+  /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/lua/medium.lua > /dev/null ran
+    3.47 ± 0.13 times faster than bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/lua/medium.lua > /dev/null
+[18:03:40] medium/markdown
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/markdown/medium.md > /dev/null
+  Time (mean ± σ):      31.3 ms ±   0.7 ms    [User: 27.6 ms, System: 2.7 ms]
+  Range (min … max):    30.7 ms …  34.0 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/markdown/medium.md > /dev/null
+  Time (mean ± σ):     118.6 ms ±   0.8 ms    [User: 113.6 ms, System: 5.2 ms]
+  Range (min … max):   117.3 ms … 120.4 ms    20 runs
+ 
+Summary
+  /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/markdown/medium.md > /dev/null ran
+    3.79 ± 0.09 times faster than bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/markdown/medium.md > /dev/null
+[18:03:43] medium/python
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/python/medium.py > /dev/null
+  Time (mean ± σ):      39.6 ms ±   0.5 ms    [User: 36.3 ms, System: 2.3 ms]
+  Range (min … max):    38.8 ms …  41.1 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/python/medium.py > /dev/null
+  Time (mean ± σ):      91.8 ms ±   0.9 ms    [User: 88.0 ms, System: 4.0 ms]
+  Range (min … max):    89.8 ms …  93.3 ms    20 runs
+ 
+Summary
+  /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/python/medium.py > /dev/null ran
+    2.32 ± 0.04 times faster than bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/python/medium.py > /dev/null
+[18:03:46] medium/ruby
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/ruby/medium.rb > /dev/null
+  Time (mean ± σ):      63.3 ms ±   0.9 ms    [User: 58.6 ms, System: 3.4 ms]
+  Range (min … max):    62.0 ms …  65.9 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/ruby/medium.rb > /dev/null
+  Time (mean ± σ):     111.1 ms ±   1.2 ms    [User: 106.2 ms, System: 5.0 ms]
+  Range (min … max):   109.4 ms … 114.2 ms    20 runs
+ 
+Summary
+  /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/ruby/medium.rb > /dev/null ran
+    1.76 ± 0.03 times faster than bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/ruby/medium.rb > /dev/null
+[18:03:50] medium/rust
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/rust/medium.rs > /dev/null
+  Time (mean ± σ):      44.4 ms ±   0.6 ms    [User: 40.8 ms, System: 2.6 ms]
+  Range (min … max):    43.8 ms …  46.0 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/rust/medium.rs > /dev/null
+  Time (mean ± σ):      83.8 ms ±   0.6 ms    [User: 79.3 ms, System: 4.7 ms]
+  Range (min … max):    83.0 ms …  85.4 ms    20 runs
+ 
+Summary
+  /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/rust/medium.rs > /dev/null ran
+    1.89 ± 0.03 times faster than bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/rust/medium.rs > /dev/null
+[18:03:53] medium/swift
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/swift/medium.swift > /dev/null
+  Time (mean ± σ):      86.5 ms ±   1.2 ms    [User: 81.4 ms, System: 3.7 ms]
+  Range (min … max):    84.8 ms …  88.9 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/swift/medium.swift > /dev/null
+  Time (mean ± σ):      97.5 ms ±   1.2 ms    [User: 92.5 ms, System: 5.1 ms]
+  Range (min … max):    95.9 ms …  99.6 ms    20 runs
+ 
+Summary
+  /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/swift/medium.swift > /dev/null ran
+    1.13 ± 0.02 times faster than bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/swift/medium.swift > /dev/null
+[18:03:57] medium/tsx
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/tsx/medium.tsx > /dev/null
+  Time (mean ± σ):      68.9 ms ±   1.1 ms    [User: 64.5 ms, System: 3.1 ms]
+  Range (min … max):    67.6 ms …  72.9 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/tsx/medium.tsx > /dev/null
+  Time (mean ± σ):      98.5 ms ±   0.9 ms    [User: 93.4 ms, System: 5.2 ms]
+  Range (min … max):    97.3 ms … 101.4 ms    20 runs
+ 
+Summary
+  /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/tsx/medium.tsx > /dev/null ran
+    1.43 ± 0.03 times faster than bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/tsx/medium.tsx > /dev/null
+[18:04:00] medium/typescript
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/typescript/medium.ts > /dev/null
+  Time (mean ± σ):      61.5 ms ±   0.7 ms    [User: 56.9 ms, System: 3.3 ms]
+  Range (min … max):    60.2 ms …  63.3 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/typescript/medium.ts > /dev/null
+  Time (mean ± σ):     193.1 ms ±   2.3 ms    [User: 186.0 ms, System: 7.2 ms]
+  Range (min … max):   190.7 ms … 201.2 ms    20 runs
+ 
+Summary
+  /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/typescript/medium.ts > /dev/null ran
+    3.14 ± 0.05 times faster than bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/typescript/medium.ts > /dev/null
+[18:04:06] medium/yaml
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/yaml/medium.yml > /dev/null
+  Time (mean ± σ):      19.9 ms ±   0.4 ms    [User: 16.8 ms, System: 2.2 ms]
+  Range (min … max):    19.4 ms …  21.1 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/yaml/medium.yml > /dev/null
+  Time (mean ± σ):     117.8 ms ±  51.1 ms    [User: 112.5 ms, System: 5.5 ms]
+  Range (min … max):    99.2 ms … 267.3 ms    20 runs
+ 
+  Warning: Statistical outliers were detected. Consider re-running this benchmark on a quiet system without any interferences from other programs. It might help to use the '--warmup' or '--prepare' options.
+ 
+Summary
+  /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/yaml/medium.yml > /dev/null ran
+    5.91 ± 2.57 times faster than bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/yaml/medium.yml > /dev/null
+[18:04:09] done: tiny small medium
+[18:08:41] large/bash
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/bash/large.sh > /dev/null
+  Time (mean ± σ):      62.2 ms ±   1.0 ms    [User: 57.5 ms, System: 3.6 ms]
+  Range (min … max):    60.9 ms …  65.2 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/bash/large.sh > /dev/null
+  Time (mean ± σ):     278.7 ms ±  43.8 ms    [User: 254.9 ms, System: 10.3 ms]
+  Range (min … max):   254.8 ms … 435.4 ms    20 runs
+ 
+  Warning: Statistical outliers were detected. Consider re-running this benchmark on a quiet system without any interferences from other programs. It might help to use the '--warmup' or '--prepare' options.
+ 
+Summary
+  /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/bash/large.sh > /dev/null ran
+    4.48 ± 0.71 times faster than bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/bash/large.sh > /dev/null
+[18:08:48] large/c
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/c/large.c > /dev/null
+  Time (mean ± σ):      83.5 ms ±  21.3 ms    [User: 72.2 ms, System: 4.3 ms]
+  Range (min … max):    73.9 ms … 164.8 ms    20 runs
+ 
+  Warning: Statistical outliers were detected. Consider re-running this benchmark on a quiet system without any interferences from other programs. It might help to use the '--warmup' or '--prepare' options.
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/c/large.c > /dev/null
+  Time (mean ± σ):     357.6 ms ±   6.1 ms    [User: 345.8 ms, System: 11.7 ms]
+  Range (min … max):   351.8 ms … 374.4 ms    20 runs
+ 
+Summary
+  /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/c/large.c > /dev/null ran
+    4.28 ± 1.10 times faster than bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/c/large.c > /dev/null
+[18:08:57] large/cpp
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/cpp/large.cpp > /dev/null
+  Time (mean ± σ):     281.2 ms ±   2.5 ms    [User: 271.7 ms, System: 7.8 ms]
+  Range (min … max):   278.1 ms … 287.7 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/cpp/large.cpp > /dev/null
+  Time (mean ± σ):      1.188 s ±  0.009 s    [User: 1.160 s, System: 0.028 s]
+  Range (min … max):    1.176 s …  1.211 s    20 runs
+ 
+Summary
+  /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/cpp/large.cpp > /dev/null ran
+    4.23 ± 0.05 times faster than bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/cpp/large.cpp > /dev/null
+[18:09:26] large/css
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/css/large.css > /dev/null
+  Time (mean ± σ):      59.9 ms ±   1.2 ms    [User: 54.0 ms, System: 4.5 ms]
+  Range (min … max):    58.4 ms …  64.1 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/css/large.css > /dev/null
+  Time (mean ± σ):     199.2 ms ±   2.4 ms    [User: 191.1 ms, System: 8.2 ms]
+  Range (min … max):   195.8 ms … 204.1 ms    20 runs
+ 
+Summary
+  /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/css/large.css > /dev/null ran
+    3.33 ± 0.08 times faster than bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/css/large.css > /dev/null
+[18:09:32] large/go
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/go/large.go > /dev/null
+  Time (mean ± σ):     394.5 ms ±   3.7 ms    [User: 372.7 ms, System: 19.3 ms]
+  Range (min … max):   386.5 ms … 400.5 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/go/large.go > /dev/null
+  Time (mean ± σ):      2.390 s ±  0.019 s    [User: 2.324 s, System: 0.065 s]
+  Range (min … max):    2.365 s …  2.433 s    20 runs
+ 
+Summary
+  /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/go/large.go > /dev/null ran
+    6.06 ± 0.07 times faster than bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/go/large.go > /dev/null
+[18:10:28] large/html
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/html/large.html > /dev/null
+  Time (mean ± σ):      55.2 ms ±   0.6 ms    [User: 51.4 ms, System: 2.6 ms]
+  Range (min … max):    54.3 ms …  56.8 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/html/large.html > /dev/null
+  Time (mean ± σ):      82.1 ms ±   1.2 ms    [User: 77.5 ms, System: 4.8 ms]
+  Range (min … max):    80.7 ms …  85.7 ms    20 runs
+ 
+Summary
+  /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/html/large.html > /dev/null ran
+    1.49 ± 0.03 times faster than bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/html/large.html > /dev/null
+[18:10:31] large/javascript
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/javascript/large.js > /dev/null
+  Time (mean ± σ):      92.1 ms ±   1.1 ms    [User: 86.0 ms, System: 4.7 ms]
+  Range (min … max):    91.1 ms …  95.5 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/javascript/large.js > /dev/null
+  Time (mean ± σ):     626.3 ms ±   4.8 ms    [User: 609.4 ms, System: 16.7 ms]
+  Range (min … max):   612.4 ms … 636.0 ms    20 runs
+ 
+Summary
+  /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/javascript/large.js > /dev/null ran
+    6.80 ± 0.10 times faster than bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/javascript/large.js > /dev/null
+[18:10:45] large/json
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/json/large.json > /dev/null
+  Time (mean ± σ):      42.6 ms ±   0.6 ms    [User: 38.0 ms, System: 3.5 ms]
+  Range (min … max):    42.0 ms …  44.7 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/json/large.json > /dev/null
+  Time (mean ± σ):     350.4 ms ±   2.5 ms    [User: 337.3 ms, System: 13.1 ms]
+  Range (min … max):   346.2 ms … 357.7 ms    20 runs
+ 
+Summary
+  /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/json/large.json > /dev/null ran
+    8.22 ± 0.13 times faster than bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/json/large.json > /dev/null
+[18:10:54] large/lua
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/lua/large.lua > /dev/null
+  Time (mean ± σ):      38.5 ms ±   0.4 ms    [User: 34.4 ms, System: 3.0 ms]
+  Range (min … max):    37.8 ms …  39.8 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/lua/large.lua > /dev/null
+  Time (mean ± σ):     181.7 ms ±   1.7 ms    [User: 172.6 ms, System: 9.2 ms]
+  Range (min … max):   178.7 ms … 184.6 ms    20 runs
+ 
+Summary
+  /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/lua/large.lua > /dev/null ran
+    4.72 ± 0.07 times faster than bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/lua/large.lua > /dev/null
+[18:10:58] large/markdown
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/markdown/large.md > /dev/null
+  Time (mean ± σ):      82.1 ms ±   1.8 ms    [User: 75.1 ms, System: 5.5 ms]
+  Range (min … max):    80.5 ms …  87.0 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/markdown/large.md > /dev/null
+  Time (mean ± σ):     536.3 ms ±   3.8 ms    [User: 520.3 ms, System: 16.1 ms]
+  Range (min … max):   527.0 ms … 543.3 ms    20 runs
+ 
+Summary
+  /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/markdown/large.md > /dev/null ran
+    6.53 ± 0.15 times faster than bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/markdown/large.md > /dev/null
+[18:11:11] large/python
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/python/large.py > /dev/null
+  Time (mean ± σ):     146.1 ms ±   1.1 ms    [User: 137.6 ms, System: 7.0 ms]
+  Range (min … max):   144.3 ms … 149.3 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/python/large.py > /dev/null
+  Time (mean ± σ):     702.3 ms ±   2.6 ms    [User: 683.6 ms, System: 18.7 ms]
+  Range (min … max):   698.2 ms … 707.5 ms    20 runs
+ 
+Summary
+  /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/python/large.py > /dev/null ran
+    4.81 ± 0.04 times faster than bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/python/large.py > /dev/null
+[18:11:28] large/ruby
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/ruby/large.rb > /dev/null
+  Time (mean ± σ):      75.2 ms ±   0.8 ms    [User: 70.2 ms, System: 3.7 ms]
+  Range (min … max):    73.8 ms …  77.0 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/ruby/large.rb > /dev/null
+  Time (mean ± σ):     161.8 ms ±   5.3 ms    [User: 155.6 ms, System: 6.4 ms]
+  Range (min … max):   157.6 ms … 182.0 ms    20 runs
+ 
+  Warning: Statistical outliers were detected. Consider re-running this benchmark on a quiet system without any interferences from other programs. It might help to use the '--warmup' or '--prepare' options.
+ 
+Summary
+  /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/ruby/large.rb > /dev/null ran
+    2.15 ± 0.07 times faster than bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/ruby/large.rb > /dev/null
+[18:11:33] large/rust
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/rust/large.rs > /dev/null
+  Time (mean ± σ):      66.0 ms ±   1.0 ms    [User: 61.0 ms, System: 3.8 ms]
+  Range (min … max):    64.8 ms …  68.0 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/rust/large.rs > /dev/null
+  Time (mean ± σ):     237.5 ms ±   2.0 ms    [User: 228.6 ms, System: 8.9 ms]
+  Range (min … max):   235.2 ms … 242.3 ms    20 runs
+ 
+Summary
+  /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/rust/large.rs > /dev/null ran
+    3.60 ± 0.06 times faster than bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/rust/large.rs > /dev/null
+[18:11:39] large/swift
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/swift/large.swift > /dev/null
+  Time (mean ± σ):     109.3 ms ±   1.4 ms    [User: 103.2 ms, System: 4.7 ms]
+  Range (min … max):   107.6 ms … 113.1 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/swift/large.swift > /dev/null
+  Time (mean ± σ):     199.3 ms ±   1.9 ms    [User: 192.9 ms, System: 6.6 ms]
+  Range (min … max):   196.5 ms … 204.7 ms    20 runs
+ 
+Summary
+  /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/swift/large.swift > /dev/null ran
+    1.82 ± 0.03 times faster than bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/swift/large.swift > /dev/null
+[18:11:46] large/tsx
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/tsx/large.tsx > /dev/null
+  Time (mean ± σ):     111.1 ms ±   1.5 ms    [User: 104.6 ms, System: 5.0 ms]
+  Range (min … max):   109.3 ms … 114.5 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/tsx/large.tsx > /dev/null
+  Time (mean ± σ):     570.0 ms ±   3.1 ms    [User: 553.1 ms, System: 16.6 ms]
+  Range (min … max):   565.6 ms … 577.2 ms    20 runs
+ 
+Summary
+  /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/tsx/large.tsx > /dev/null ran
+    5.13 ± 0.07 times faster than bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/tsx/large.tsx > /dev/null
+[18:12:00] large/typescript
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/typescript/large.ts > /dev/null
+  Time (mean ± σ):     482.0 ms ±   2.9 ms    [User: 457.5 ms, System: 22.0 ms]
+  Range (min … max):   477.2 ms … 489.8 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/typescript/large.ts > /dev/null
+  Time (mean ± σ):      5.877 s ±  0.037 s    [User: 5.755 s, System: 0.120 s]
+  Range (min … max):    5.823 s …  6.002 s    20 runs
+ 
+Summary
+  /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/typescript/large.ts > /dev/null ran
+   12.19 ± 0.11 times faster than bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/typescript/large.ts > /dev/null
+[18:14:07] large/yaml
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/yaml/large.yaml > /dev/null
+  Time (mean ± σ):      23.3 ms ±   0.4 ms    [User: 19.9 ms, System: 2.3 ms]
+  Range (min … max):    22.7 ms …  24.1 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/yaml/large.yaml > /dev/null
+  Time (mean ± σ):     163.9 ms ±   1.8 ms    [User: 158.6 ms, System: 5.5 ms]
+  Range (min … max):   161.0 ms … 166.8 ms    20 runs
+ 
+Summary
+  /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/yaml/large.yaml > /dev/null ran
+    7.04 ± 0.14 times faster than bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/yaml/large.yaml > /dev/null
+[18:14:11] done: large
+skip xlarge/bash — no fixture
+[18:15:33] xlarge/c
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/c/xlarge.c > /dev/null
+  Time (mean ± σ):      1.272 s ±  0.010 s    [User: 1.211 s, System: 0.056 s]
+  Range (min … max):    1.246 s …  1.285 s    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/c/xlarge.c > /dev/null
+  Time (mean ± σ):      7.002 s ±  0.027 s    [User: 6.810 s, System: 0.190 s]
+  Range (min … max):    6.933 s …  7.062 s    20 runs
+ 
+Summary
+  /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/c/xlarge.c > /dev/null ran
+    5.51 ± 0.05 times faster than bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/c/xlarge.c > /dev/null
+skip xlarge/cpp — no fixture
+skip xlarge/css — no fixture
+skip xlarge/go — no fixture
+skip xlarge/html — no fixture
+[18:18:19] xlarge/javascript
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/javascript/xlarge.js > /dev/null
+  Time (mean ± σ):     291.2 ms ±   2.3 ms    [User: 278.4 ms, System: 10.7 ms]
+  Range (min … max):   287.7 ms … 296.9 ms    20 runs
+ 
+Benchmark 2: bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/javascript/xlarge.js > /dev/null
+  Time (mean ± σ):      2.471 s ±  0.115 s    [User: 2.398 s, System: 0.051 s]
+  Range (min … max):    2.414 s …  2.947 s    20 runs
+ 
+  Warning: Statistical outliers were detected. Consider re-running this benchmark on a quiet system without any interferences from other programs. It might help to use the '--warmup' or '--prepare' options.
+ 
+Summary
+  /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /Users/eddenamber/Projects/dog/scripts/fixtures/performance/javascript/xlarge.js > /dev/null ran
+    8.49 ± 0.40 times faster than bat --paging=never --color=always /Users/eddenamber/Projects/dog/scripts/fixtures/performance/javascript/xlarge.js > /dev/null
+skip xlarge/json — no fixture
+skip xlarge/lua — no fixture
+skip xlarge/markdown — no fixture
+skip xlarge/python — no fixture
+skip xlarge/ruby — no fixture
+skip xlarge/rust — no fixture
+skip xlarge/swift — no fixture
+skip xlarge/tsx — no fixture
+skip xlarge/typescript — no fixture
+skip xlarge/yaml — no fixture
+[18:19:14] done: xlarge
