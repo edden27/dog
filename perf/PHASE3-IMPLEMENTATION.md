@@ -98,7 +98,19 @@ Gotchas:
 
 ---
 
-## Item 2 — overlap query compile with parse (from experiment 004, confirmed at harness level)
+## Item 2 — overlap query compile with parse (from experiment 004) — IMPLEMENTED 2026-07-18 (f530725)
+
+**Measured in dog** (hyperfine warmup 1 runs 15, C-LTO builds both sides):
+cpp/large −32.5% (279.9→188.9ms), swift/large −19.4% (104.3→84.1ms),
+typescript/large −10.3% (443.5→398.0ms); cpp/tiny, swift/tiny, c/xlarge
+unchanged. Output byte-identical all 17 languages tiny+large; test failures
+unchanged (3 known coverage misses only). Correction to an earlier assumption
+below: dog takes exactly ONE file argument (multi-file invocation exits 64 by
+design), so the "second file warm path" concern never applies in practice —
+the warm path exists only for API-level reuse.
+
+Original design notes (implemented as described, except executeQuery takes the
+CompiledQuery directly instead of committing fields back to actor state):
 
 **Evidence:** `~/Projects/dog/perf/experiments/004-overlap-compile-parse/NOTES.md`
 — saving ≈ min(parse, compile): 86.7ms (36%) cpp/large, 42.6ms (14.7%)
