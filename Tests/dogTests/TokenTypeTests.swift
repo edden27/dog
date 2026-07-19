@@ -6,7 +6,7 @@ import Testing
 struct TokenTypeTests {
 
   /// Every capture name from all 17 grammar highlight queries must resolve.
-  @Test("All 95 real capture names resolve to a TokenType")
+  @Test("All 96 real capture names resolve to a TokenType")
   func allCaptureNamesResolve() {
     let allCaptureNames = [
       // Keywords & Control Flow
@@ -19,7 +19,7 @@ struct TokenTypeTests {
       // Functions & Methods
       "function", "function.builtin", "function.call", "function.macro",
       "function.method", "function.method.builtin", "function.method.call",
-      "function.special", "method", "constructor",
+      "function.special", "function.command", "method", "constructor",
       // Types
       "type", "type.builtin", "type.definition",
       // Variables & Parameters
@@ -53,7 +53,7 @@ struct TokenTypeTests {
       "escape", "embedded", "error"
     ]
 
-    #expect(allCaptureNames.count == 95, "Expected 95 capture names, got \(allCaptureNames.count)")
+    #expect(allCaptureNames.count == 96, "Expected 96 capture names, got \(allCaptureNames.count)")
 
     for name in allCaptureNames {
       let resolved = TokenType.from(captureName: name)
@@ -84,8 +84,8 @@ struct TokenTypeTests {
     #expect(TokenType.from(captureName: "") == nil)
   }
 
-  @Test("CaseIterable covers all 95 token types")
+  @Test("CaseIterable covers all 96 token types")
   func caseCount() {
-    #expect(TokenType.allCases.count == 95, "Expected 95 cases, got \(TokenType.allCases.count)")
+    #expect(TokenType.allCases.count == 96, "Expected 96 cases, got \(TokenType.allCases.count)")
   }
 }

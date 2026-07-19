@@ -1,6 +1,6 @@
 /// Maps tree-sitter capture names to known token types for theming.
 ///
-/// All 73 capture names from the 17 v1 language highlight queries are covered.
+/// All 96 capture names from the 17 v1 language highlight queries are covered.
 /// The theme layer assigns a color to each case. Unknown capture names fall
 /// back via `from(captureName:)` which tries hierarchical matching
 /// (e.g. "function.method" → try exact, fall back to "function").
