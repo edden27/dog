@@ -13,15 +13,25 @@ struct SendablePointer: @unchecked Sendable {
 /// Uses the tree-sitter C API directly for maximum performance.
 /// SwiftTreeSitter's wrapper adds ~67% overhead from string splitting,
 /// Dictionary allocation, and redundant predicate lookups per match.
+/// Immutable result of highlight-query compilation. Safe to send across task
+/// boundaries for the same reason as SendablePointer: the query pointer is
+/// created once inside compileQuery and never mutated afterwards.
+struct CompiledQuery: @unchecked Sendable {
+  let query: SendablePointer
+  let patternPredicates: [[PredicateEvaluator.QueryPredicate]]
+  /// Pre-resolved TokenType per capture index. Built once from the query at compile time.
+  /// Eliminates ts_query_capture_name_for_id + String alloc + dict lookup from the hot loop.
+  let captureTokenTypes: [TokenType?]
+}
+
 actor LanguageEntry {
   private let tsLanguage: SendablePointer
   private let queryBytes: [UInt8]?
-  private var tsQuery: SendablePointer?
-  private var patternPredicates: [[PredicateEvaluator.QueryPredicate]] = []
-  /// Pre-resolved TokenType per capture index. Built once from the query at ready time.
-  /// Eliminates ts_query_capture_name_for_id + String alloc + dict lookup from the hot loop.
-  private var captureTokenTypes: [TokenType?] = []
-  private var isReady = false
+  /// In-flight or finished query compilation. Created on first parse; later
+  /// parses (and reentrant callers during the first await) reuse the same task,
+  /// so the query compiles exactly once. Task.value caches its result.
+  private var compileTask: Task<CompiledQuery?, Never>?
+  private var compiledQuery: CompiledQuery?
 
   init(tsLanguage: SendablePointer, queryBytes: [UInt8]?) {
     self.tsLanguage = tsLanguage
@@ -29,14 +39,50 @@ actor LanguageEntry {
   }
 
   deinit {
-    if let tsQuery { ts_query_delete(tsQuery.raw) }
+    if let compiledQuery { ts_query_delete(compiledQuery.query.raw) }
+    // If compileTask finished but its result was never committed (parse threw
+    // before the await), the TSQuery leaks until process exit — acceptable for
+    // a single-invocation CLI, and the next parse() would reclaim it by
+    // awaiting the same task.
   }
 
   /// Parse source code and return syntax tokens with UTF-8 byte offsets.
-  func parse(sourceBytes: [UInt8]) throws -> [SyntaxToken] {
-    try ensureReady()
-    guard let tsQuery else { return [] }
+  ///
+  /// Query compilation overlaps with parsing (perf experiment 004): the
+  /// compile runs on a detached task while the tree parses on the actor,
+  /// hiding min(parse, compile) — up to 36% of the pipeline on heavy-grammar
+  /// files. Warm calls await the already-finished task at no cost.
+  func parse(sourceBytes: [UInt8]) async throws -> [SyntaxToken] {
+    let compileTask = ensureCompileTask()
 
+    let tsTree = try parseTree(sourceBytes: sourceBytes)
+    defer { ts_tree_delete(tsTree) }
+
+    guard let compiled = await compileTask.value else { return [] }
+    compiledQuery = compiled
+
+    return executeQuery(compiled, tree: tsTree, sourceBytes: sourceBytes)
+  }
+
+  // MARK: - Private
+
+  /// Start (or reuse) the one-shot query compilation task. Stored before any
+  /// suspension point, so a reentrant caller during the first parse's await
+  /// picks up the same task instead of compiling twice.
+  private func ensureCompileTask() -> Task<CompiledQuery?, Never> {
+    if let compileTask { return compileTask }
+    let language = tsLanguage
+    let bytes = queryBytes
+    let task = Task.detached(priority: .userInitiated) {
+      Self.compileQuery(tsLanguage: language, queryBytes: bytes)
+    }
+    compileTask = task
+    return task
+  }
+
+  /// Parse the source into a tree-sitter tree. Runs synchronously on the actor
+  /// while the compile task runs on the global executor — this is the overlap.
+  private func parseTree(sourceBytes: [UInt8]) throws -> OpaquePointer {
     let tsParser = ts_parser_new()!
     defer { ts_parser_delete(tsParser) }
     ts_parser_set_language(tsParser, tsLanguage.raw)
@@ -50,16 +96,14 @@ actor LanguageEntry {
         detail: "tree-sitter returned nil tree"
       )
     }
-    defer { ts_tree_delete(tsTree) }
-
-    return executeQuery(tsQuery.raw, tree: tsTree, sourceBytes: sourceBytes)
+    return tsTree
   }
 
-  // MARK: - Private
-
   private func executeQuery(
-    _ query: OpaquePointer, tree: OpaquePointer, sourceBytes: [UInt8]
+    _ compiled: CompiledQuery, tree: OpaquePointer, sourceBytes: [UInt8]
   ) -> [SyntaxToken] {
+    let query = compiled.query.raw
+    let patternPredicates = compiled.patternPredicates
     let rootNode = ts_tree_root_node(tree)
     let tsCursor = ts_query_cursor_new()!
     defer { ts_query_cursor_delete(tsCursor) }
@@ -81,7 +125,11 @@ actor LanguageEntry {
         }
       }
 
-      appendCaptures(from: match, query: query, sourceBytes: sourceBytes, to: &tokens)
+      appendCaptures(
+        from: match, query: query,
+        captureTokenTypes: compiled.captureTokenTypes,
+        sourceBytes: sourceBytes, to: &tokens
+      )
     }
 
     return tokens
@@ -89,6 +137,7 @@ actor LanguageEntry {
 
   private func appendCaptures(
     from match: TSQueryMatch, query: OpaquePointer,
+    captureTokenTypes: [TokenType?],
     sourceBytes: [UInt8], to tokens: inout [SyntaxToken]
   ) {
     let captureCount = Int(match.capture_count)
@@ -130,13 +179,15 @@ actor LanguageEntry {
     }
   }
 
-  private func ensureReady() throws {
-    guard !isReady else { return }
-    defer { isReady = true }
-
+  /// Compile the highlight query and derive its lookup tables. Pure: touches
+  /// no actor state, so it can run on a detached task concurrently with
+  /// parsing. Returns nil on failure — caller renders unhighlighted.
+  private nonisolated static func compileQuery(
+    tsLanguage: SendablePointer, queryBytes: [UInt8]?
+  ) -> CompiledQuery? {
     guard let bytes = queryBytes else {
       Bark.warning("no highlight query for language")
-      return
+      return nil
     }
 
     var errorOffset: UInt32 = 0
@@ -154,11 +205,8 @@ actor LanguageEntry {
     guard let query else {
       Bark.warning(
         "failed to compile query: error at offset \(errorOffset), type \(errorType.rawValue)")
-      return
+      return nil
     }
-
-    self.tsQuery = SendablePointer(raw: query)
-    self.patternPredicates = PredicateEvaluator.parseAll(query: query)
 
     // Build capture index → TokenType? table once.
     // ts_query_capture_count returns the number of unique capture names in the query.
@@ -171,6 +219,11 @@ actor LanguageEntry {
       // nil in table = skip (underscore captures). TokenType.none = recognised but unstyled.
       table[i] = TokenType.from(captureName: String(cString: namePtr)) ?? TokenType.none
     }
-    self.captureTokenTypes = table
+
+    return CompiledQuery(
+      query: SendablePointer(raw: query),
+      patternPredicates: PredicateEvaluator.parseAll(query: query),
+      captureTokenTypes: table
+    )
   }
 }
