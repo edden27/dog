@@ -175,8 +175,26 @@ Verification:
 
 ## Backlog (not yet implementation-ready)
 
-- 005 (query/startup audit) and 007 (Swift alloc reduction on token path) —
-  in progress on perf-tuning; sections land here when confirmed.
 - 002 (per-pattern query compile cost) — SKIPPED by user decision 2026-07-18.
 - 003 (compiled-query serialization/cache) — only if the tiny-tier story is
-  worth the tree-sitter patch; revisit after 004/006 ship.
+  worth the tree-sitter patch; revisit after 004/006 ship. After 005 closed the
+  audit, this is the ONLY remaining tiny-tier lever.
+- 007 alloc patches — REJECTED by user (~1% wall, −11% peak memory, judged not
+  worth churn). Exact re-appliable patches + measurements:
+  `~/Projects/dog/perf/experiments/007-alloc-reduction/NOTES.md`. Deeper
+  capture-loop restructuring: uncertain payoff, high risk, do not attempt
+  without fresh profile evidence.
+- 005 found `TreeSitterMarkdownInline` linked + `EmbeddedQueries.markdown_inline`
+  embedded but never used — binary-size dead weight only. Ask user before
+  removing (may be scaffolding for future inline-markdown highlighting).
+
+## Additional gotchas discovered during experiments
+
+- Thin-LTO builds emit stray `*.bc` files into the repo root — clean with
+  `rm ~/Projects/dog/*.bc` before committing (or gitignore them as part of
+  Item 1 adoption).
+- `Bark` logging compiles out of release (`#if DEBUG` around everything) —
+  release-build instrumentation must use write(2)/fputs directly.
+- dog silently renders a language UNHIGHLIGHTED if its query fails to compile
+  (see experiment 001) — after any query or runtime change, byte-diff outputs;
+  "it runs" proves nothing.

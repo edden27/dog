@@ -21,6 +21,7 @@ Rules for this directory:
 | [004](experiments/004-overlap-compile-parse/NOTES.md) | overlap query compile with parse: saves min(parse, compile) — 86.7ms/36% on cpp/large, 42.6ms/14.7% on ts/large, nil on tiny | confirmed (harness) |
 | 002 | per-pattern query compile cost | skipped (user) |
 | [005](experiments/005-query-audit/NOTES.md) | query/startup audit: no waste — lazy compile already implemented, floor 0.6ms; markdown_inline embedded+linked but unused (size-only dead weight) | confirmed |
+| [007](experiments/007-alloc-reduction/NOTES.md) | alloc fixes (token reserve, in-place sort, buffer estimate): ~1% wall, −11% peak mem — user rejected as not worth churn; patches preserved in NOTES | rejected |
 
 ## Layout
 
