@@ -68,6 +68,23 @@ enum Bark {
     }
   #endif
 
+  /// Warning that survives release builds — for user-actionable degradation
+  /// (e.g. a highlight query failing to compile) where silence would hide a
+  /// broken mode. Writes straight to stderr; the leveled logging above
+  /// compiles out of release entirely.
+  static func releaseWarning(_ message: String) {
+    let line = "dog: \(message)\n"
+    let utf8 = Array(line.utf8)
+    utf8.withUnsafeBufferPointer { buf in
+      var offset = 0
+      while offset < buf.count {
+        let written = write(STDERR_FILENO, buf.baseAddress! + offset, buf.count - offset)
+        if written <= 0 { break }
+        offset += written
+      }
+    }
+  }
+
   /// Log a debug message (dim grey). Only in DEBUG builds.
   static func debug(_ message: @autoclosure () -> String) {
     #if DEBUG

@@ -123,7 +123,8 @@ final class LanguageRegistry: Sendable {
       let sendable = SendablePointer(raw: pointer)
       entries[name] = LanguageEntry(
         tsLanguage: sendable,
-        queryBytes: queryBytes
+        queryBytes: queryBytes,
+        languageName: name
       )
       names.insert(name)
     }

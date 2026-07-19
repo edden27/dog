@@ -27,15 +27,18 @@ struct CompiledQuery: @unchecked Sendable {
 actor LanguageEntry {
   private let tsLanguage: SendablePointer
   private let queryBytes: [UInt8]?
+  /// Canonical language name, used in user-facing degradation warnings.
+  private let languageName: String
   /// In-flight or finished query compilation. Created on first parse; later
   /// parses (and reentrant callers during the first await) reuse the same task,
   /// so the query compiles exactly once. Task.value caches its result.
   private var compileTask: Task<CompiledQuery?, Never>?
   private var compiledQuery: CompiledQuery?
 
-  init(tsLanguage: SendablePointer, queryBytes: [UInt8]?) {
+  init(tsLanguage: SendablePointer, queryBytes: [UInt8]?, languageName: String) {
     self.tsLanguage = tsLanguage
     self.queryBytes = queryBytes
+    self.languageName = languageName
   }
 
   deinit {
@@ -73,8 +76,9 @@ actor LanguageEntry {
     if let compileTask { return compileTask }
     let language = tsLanguage
     let bytes = queryBytes
+    let name = languageName
     let task = Task.detached(priority: .userInitiated) {
-      Self.compileQuery(tsLanguage: language, queryBytes: bytes)
+      Self.compileQuery(tsLanguage: language, queryBytes: bytes, languageName: name)
     }
     compileTask = task
     return task
@@ -183,10 +187,11 @@ actor LanguageEntry {
   /// no actor state, so it can run on a detached task concurrently with
   /// parsing. Returns nil on failure — caller renders unhighlighted.
   private nonisolated static func compileQuery(
-    tsLanguage: SendablePointer, queryBytes: [UInt8]?
+    tsLanguage: SendablePointer, queryBytes: [UInt8]?, languageName: String
   ) -> CompiledQuery? {
     guard let bytes = queryBytes else {
-      Bark.warning("no highlight query for language")
+      Bark.releaseWarning(
+        "no highlight query for '\(languageName)'; rendering without highlighting")
       return nil
     }
 
@@ -203,8 +208,10 @@ actor LanguageEntry {
     }
 
     guard let query else {
-      Bark.warning(
-        "failed to compile query: error at offset \(errorOffset), type \(errorType.rawValue)")
+      Bark.releaseWarning(
+        "highlight query for '\(languageName)' failed to compile "
+          + "(offset \(errorOffset), error type \(errorType.rawValue)); "
+          + "rendering without highlighting")
       return nil
     }
 

@@ -217,7 +217,13 @@ let package = Package(
         ),
         .testTarget(
             name: "dogTests",
-            dependencies: ["dog"],
+            dependencies: [
+                "dog",
+                // Direct grammar access for tests that construct LanguageEntry
+                // with deliberately broken query bytes (QueryFailureTests).
+                .product(name: "TreeSitterJSON", package: "tree-sitter-json",
+                         condition: .when(traits: ["JSONLib"])),
+            ],
             path: "Tests/dogTests"
         )
     ]
