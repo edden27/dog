@@ -17,6 +17,7 @@ A [yazi plugin](https://github.com/edden27/dog-yazi) wraps `dog` as a previewer 
 
 - **800+ Zed themes** — drop a JSON file in, or point `--theme-dir` at your existing `~/.config/zed/themes` and use what you already have. Backgrounds, line numbers, and gutter are all theme-controlled. Two zero-cost built-ins ship too — dark is the default, `--light` flips to the bright one.
 - **Up to 14.6× faster than bat on large files** — 55k lines of JS in 245ms vs 2.4s. 100% syntax coverage across all 17 supported languages.
+- **~5ms startup, every language** — precompiled highlight queries mean there's no per-language warmup. In fzf or yazi, that's the latency on every keystroke.
 - **Single binary, no runtime deps** — 17 grammars statically compiled in. Copy it anywhere, it runs.
 - **Built on tree-sitter** — full AST parse, not regex. Highlight queries from [nvim-treesitter](https://github.com/nvim-treesitter/nvim-treesitter).
 - **Written in Swift** — direct tree-sitter C API. Custom ANSI renderer, custom JSON and TOML parsers (sub-millisecond).
