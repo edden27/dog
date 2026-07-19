@@ -307,6 +307,32 @@ required". First run 2026-07-18: arm64 == x86_64 byte-identical (cpp + json).
 Exit 2 = inconclusive environment (no Rosetta / missing checkout) and blocks
 release rather than passing silently.
 
+## Idea to explore (explicitly NOT a committed plan): streaming render
+
+User-observed problem (2026-07-18, no pager): on xlarge files dog is silent for
+the whole pipeline, then floods the terminal — measured first byte == last byte
+(~1.18s on c/xlarge). Breakdown: parse ~0.63s + query exec ~0.3s + render
+~0.2s, all serialized before a single flush.
+
+Two exploration stages, IF this is ever picked up:
+
+1. Stream render+write once tokens exist → first byte ~0.95s (saves ~0.2s).
+   Mechanically simple: flush points in ANSIOutput, incremental write.
+2. "Watermark" streaming during query exec → first byte ~0.65s (saves ~0.5s):
+   the query cursor emits matches in near-document-order (see the needsSort
+   data in experiment 007 notes — half the languages have mild out-of-order
+   matches), so dog could render everything above a byte mark the cursor has
+   safely passed. Correctness-sensitive: the watermark must be conservative or
+   a line paints before a later token that colors it. Final output bytes MUST
+   stay identical — only WHEN they are written changes; byte-diff gate applies
+   unchanged.
+
+Hard floor either way: parse (~0.63s on c/xlarge). Chunked/partial parsing to
+go below it is ruled out — cross-chunk constructs would highlight wrongly.
+Total wall time does not improve; this is purely time-to-first-paint. If
+explored, start with an experiment measuring per-language out-of-order
+distance to size the watermark margin before touching dog.
+
 ## Backlog (not yet implementation-ready)
 
 - 002 (per-pattern query compile cost) — SKIPPED by user decision 2026-07-18.
