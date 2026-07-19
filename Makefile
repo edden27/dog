@@ -26,9 +26,17 @@ help:
 # measured -7..-9% on medium+ files with byte-identical output. C-only on
 # purpose: -Xswiftc -lto=llvm-thin breaks dual-arch/cross builds (linker looks
 # for .o where swiftc emitted bitcode) and adds <1% over C-only.
-release-macos:
+#
+# verify-blob-arch: precompiled-query blobs (perf Item 4) are struct-layout
+# dependent; universal builds are only safe if arm64 and x86_64 produce
+# byte-identical blobs. The check proves it per-toolchain on every release.
+release-macos: verify-blob-arch
 	swift build -c release --arch arm64 --arch x86_64 -Xcc -flto=thin
 	@ls -la .build/apple/Products/Release/dog
+
+.PHONY: verify-blob-arch
+verify-blob-arch:
+	bash scripts/verify-query-blob-arch.sh
 
 release-linux:
 	bash scripts/generate/linux.sh binary

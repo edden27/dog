@@ -19,7 +19,11 @@
 //    #included below.)
 //
 // Run:
-//   ./serialize-bench-cpp <query.scm> <source-fixture> [iterations]
+//   ./serialize-bench-cpp <query.scm> <source-fixture> [iterations] [dump-prefix]
+//
+// With dump-prefix, writes <prefix>.blob (serialized query) and
+// <prefix>.captures (capture-record stream) — used by the cross-arch layout
+// verification script to byte-compare arm64 vs x86_64 output.
 //
 // Caveat by design: the byte format is arch/compiler-specific (bitfields,
 // struct layout). That is acceptable for the intended use — queries
@@ -244,6 +248,19 @@ int main(int argument_count, char **arguments) {
   printf("captures:     %s (%zu bytes of capture records)\n",
          identical ? "IDENTICAL" : "MISMATCH — DO NOT PROCEED",
          fresh_captures.length);
+
+  if (argument_count > 4) {
+    char dump_path[1024];
+    snprintf(dump_path, sizeof dump_path, "%s.blob", arguments[4]);
+    FILE *blob_file = fopen(dump_path, "wb");
+    fwrite(serialized.bytes, 1, serialized.length, blob_file);
+    fclose(blob_file);
+    snprintf(dump_path, sizeof dump_path, "%s.captures", arguments[4]);
+    FILE *captures_file = fopen(dump_path, "wb");
+    fwrite(fresh_captures.bytes, 1, fresh_captures.length, captures_file);
+    fclose(captures_file);
+    printf("dumped:       %s.blob / %s.captures\n", arguments[4], arguments[4]);
+  }
 
   // exercise ts_query_delete on the loaded query — allocator consistency
   ts_query_delete(loaded_query);

@@ -285,10 +285,15 @@ failures only); startup-decomp re-run showing blank-file times ~5ms across the
 board; full bench matrix + docs refresh.
 
 **Risk notes:** blob format is arch/compiler-specific — fine because generator
-and binary share a toolchain per build; universal (dual-arch) builds must
-generate per-arch blobs or verify layout equality across arm64/x86_64 slices
-(bitfield layout is identical on both for clang, but VERIFY with a cross-arch
-capture-equality run before shipping the universal binary).
+and binary share a toolchain per build. The universal-build (dual-arch) risk is
+AUTOMATED: `~/Projects/dog/scripts/verify-query-blob-arch.sh` cross-compiles
+the serialize harness for arm64 + x86_64, runs both (Rosetta), and
+byte-compares blobs + capture streams; it is a prerequisite of
+`make release-macos` (`verify-blob-arch` target), so every universal release
+proves layout equality for its toolchain or fails loudly with "per-arch blobs
+required". First run 2026-07-18: arm64 == x86_64 byte-identical (cpp + json).
+Exit 2 = inconclusive environment (no Rosetta / missing checkout) and blocks
+release rather than passing silently.
 
 ## Backlog (not yet implementation-ready)
 
