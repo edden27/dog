@@ -15,7 +15,7 @@ Rules for this directory:
 
 | # | What | Status |
 | - | ---- | ------ |
-| baseline | Phase 1 state capture: env, hyperfine matrix vs docs table — no regressions, dog ≥ docs everywhere | confirmed (profiles pending) |
+| baseline | Phase 1 complete: no regressions vs docs; tiny-tier deficit = ts_query_new pattern analysis (84–95%); large-tier = ts parse 54% + query exec 22% + swift alloc 14–19%; write cost 0.2% (buffering dead end); memory clean | confirmed |
 
 ## Layout
 

@@ -60,6 +60,68 @@ Data-quality notes:
 Confirmed Phase 2 target: tiny/small heavy-grammar startup cost — cpp 0.1x,
 swift 0.2x, ruby 0.3x, tsx 0.3x, rust 0.4x — unchanged since April.
 
+## Results — startup decomposition (B)
+
+Raw: `startup/`. Summary: `startup/summary.md`. Repro:
+
+```sh
+bash perf/scripts/startup-decomp.sh perf/baseline/startup     # warmup 3, runs 50
+uv run python3 perf/scripts/summarize-startup.py perf/baseline/startup perf/baseline/results
+```
+
+- `dog --version`: 4.5±0.3ms — pure process startup is cheap.
+- Blank 1-line file ≈ tiny 30-line fixture for ALL 17 languages (content cost
+  −1.0 to +0.9ms, i.e. zero). **The entire tiny-tier deficit is per-language
+  init cost:** cpp +122ms, swift +68ms, tsx +59ms, typescript +45ms, ruby +43ms,
+  rust +29ms, javascript +25ms … css/html/json under 1ms.
+- If init cost were removed, every language would run tiny in ~5ms and dog
+  would beat bat (11–24ms) on all 17 languages at every size.
+
+## Results — time profiles (C)
+
+Traces + exported XML: `profiles/`. Repro:
+
+```sh
+xcrun xctrace record --template 'Time Profiler' --output <name>.trace \
+  --target-stdout /dev/null --launch -- .build/release/dog --color always -P <fixture>
+xcrun xctrace export --input <name>.trace \
+  --xpath '/trace-toc/run[@number="1"]/data/table[@schema="time-profile"]' --output <name>-timeprofile.xml
+uv run python3 perf/scripts/parse-timeprofile.py <name>-timeprofile.xml --top 20
+```
+
+- **Init cost is tree-sitter query compilation**, specifically `ts_query_new`'s
+  pattern-analysis pass (`ts_query__perform_analysis`, `ts_lookahead_iterator__next`,
+  `analysis_*`): 84% of swift/tiny total runtime, 95% of cpp/tiny.
+- **c/xlarge (1.28s):** ts parse 54%, ts query exec 22%, Swift runtime/alloc
+  14%, dog render 4%, write ~0%. Big-file bottleneck is the tree-sitter C
+  library, not dog's Swift.
+- **typescript/large (486ms):** parse 35%, query exec 20%, Swift alloc 19%,
+  query compile ~45ms (9%) — fixed cost visible even at large size, matches B.
+
+## Results — memory/allocations (D, reduced scope)
+
+xctrace Allocations cannot attach on this machine (xctrace 16.0 injection vs
+macOS 26.2 — `liboainject` hangs pre-main or attach fails outright). Fallback
+metrics captured instead:
+
+```sh
+/usr/bin/time -l .build/release/dog --color always -P <fixture> > /dev/null
+MallocStackLogging=1 leaks --atExit -- .build/release/dog --color always -P <fixture> > /dev/null
+```
+
+- typescript/large: 92MB peak footprint, 6.5B instructions, 0.47s.
+- c/xlarge: 299MB peak footprint (426MB RSS), 16.5B instructions, 1.24s.
+- leaks: **0 leaks, 1,297 live nodes / 198KB at exit** — peak memory is
+  transient parse-tree allocation (~40–60× source size), all freed.
+- Allocation *time* cost is quantified by the time-profile bucket instead:
+  13.8% (c/xlarge) to 18.7% (typescript/large) in swift runtime/alloc.
+
+## Results — syscall/write pattern (E): DROPPED
+
+Time profiles put output write at 0.2% of runtime on both throughput fixtures —
+output buffering (old opportunity #4) is a dead end. File Activity tracing also
+proved impractical (xctrace post-processing runaway). Decision: user dropped E.
+
 ## Heads-up
 
 - Run sizes sequentially, never two hyperfine invocations at once — timing noise.
@@ -70,6 +132,12 @@ swift 0.2x, ruby 0.3x, tsx 0.3x, rust 0.4x — unchanged since April.
   highlighting (~30x faster than real — documented trap).
 - `scripts/benchmarks/bench.sh` discards hyperfine JSONs (means only); that is
   why `perf/scripts/bench-matrix.sh` exists. Command strings are mirrored 1:1.
+- Homebrew Python 3.14's `pyexpat` is broken against system libexpat
+  (`_XML_SetAllocTrackerActivationThreshold` symbol missing) — XML parsing
+  scripts here must run via `uv run python3`, not bare `python3`.
+- The parser's "other" bucket originally hid query compile: `ts_query_new`
+  never appears as a leaf — its cost shows as `ts_query__perform_analysis` /
+  `analysis_*` internals. Bucket rules updated accordingly when reading output.
 
 ## Decision
 
