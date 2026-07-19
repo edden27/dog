@@ -91,10 +91,10 @@ let package = Package(
             url: "https://github.com/apple/swift-argument-parser",
             from: "1.7.0"
         ),
-        .package(
-            url: "https://github.com/tree-sitter/tree-sitter",
-            .upToNextMinor(from: "0.25.0")
-        ),
+        // Vendored 0.25.10 + local patch: ts_query_serialize/ts_query_deserialize
+        // for build-time precompiled highlight queries (perf Item 4 / experiment
+        // 003). Was: url tree-sitter/tree-sitter, .upToNextMinor(from: "0.25.0").
+        .package(name: "tree-sitter", path: "LocalPackages/tree-sitter"),
 
         // MARK: - Grammar repos (conditional on traits)
 

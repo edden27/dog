@@ -1,0 +1,126 @@
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --version > /dev/null
+  Time (mean ± σ):       4.5 ms ±   0.4 ms    [User: 2.4 ms, System: 1.4 ms]
+  Range (min … max):     4.0 ms …   5.6 ms    50 runs
+ 
+  Warning: Command took less than 5 ms to complete. Note that the results might be inaccurate because hyperfine can not calibrate the shell startup time much more precise than this limit. You can try to use the `-N`/`--shell=none` option to disable the shell completely.
+ 
+[21:33:13] blank bash (.sh)
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /var/folders/d3/qxmm_9hn4wj3mwtj5w1vrk8w0000gn/T/tmp.TbnkP1f8U6/blank.sh > /dev/null
+  Time (mean ± σ):       5.3 ms ±   0.5 ms    [User: 2.7 ms, System: 1.7 ms]
+  Range (min … max):     4.8 ms …   7.3 ms    50 runs
+ 
+  Warning: Command took less than 5 ms to complete. Note that the results might be inaccurate because hyperfine can not calibrate the shell startup time much more precise than this limit. You can try to use the `-N`/`--shell=none` option to disable the shell completely.
+ 
+[21:33:13] blank c (.c)
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /var/folders/d3/qxmm_9hn4wj3mwtj5w1vrk8w0000gn/T/tmp.TbnkP1f8U6/blank.c > /dev/null
+  Time (mean ± σ):       5.2 ms ±   0.4 ms    [User: 2.7 ms, System: 1.7 ms]
+  Range (min … max):     4.6 ms …   6.0 ms    50 runs
+ 
+  Warning: Command took less than 5 ms to complete. Note that the results might be inaccurate because hyperfine can not calibrate the shell startup time much more precise than this limit. You can try to use the `-N`/`--shell=none` option to disable the shell completely.
+ 
+[21:33:14] blank cpp (.cpp)
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /var/folders/d3/qxmm_9hn4wj3mwtj5w1vrk8w0000gn/T/tmp.TbnkP1f8U6/blank.cpp > /dev/null
+  Time (mean ± σ):       5.3 ms ±   0.4 ms    [User: 2.8 ms, System: 1.8 ms]
+  Range (min … max):     4.8 ms …   6.4 ms    50 runs
+ 
+  Warning: Command took less than 5 ms to complete. Note that the results might be inaccurate because hyperfine can not calibrate the shell startup time much more precise than this limit. You can try to use the `-N`/`--shell=none` option to disable the shell completely.
+ 
+[21:33:14] blank css (.css)
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /var/folders/d3/qxmm_9hn4wj3mwtj5w1vrk8w0000gn/T/tmp.TbnkP1f8U6/blank.css > /dev/null
+  Time (mean ± σ):       5.0 ms ±   0.3 ms    [User: 2.7 ms, System: 1.6 ms]
+  Range (min … max):     4.4 ms …   6.0 ms    50 runs
+ 
+  Warning: Command took less than 5 ms to complete. Note that the results might be inaccurate because hyperfine can not calibrate the shell startup time much more precise than this limit. You can try to use the `-N`/`--shell=none` option to disable the shell completely.
+ 
+[21:33:15] blank go (.go)
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /var/folders/d3/qxmm_9hn4wj3mwtj5w1vrk8w0000gn/T/tmp.TbnkP1f8U6/blank.go > /dev/null
+  Time (mean ± σ):       5.1 ms ±   0.4 ms    [User: 2.7 ms, System: 1.6 ms]
+  Range (min … max):     4.6 ms …   6.7 ms    50 runs
+ 
+  Warning: Command took less than 5 ms to complete. Note that the results might be inaccurate because hyperfine can not calibrate the shell startup time much more precise than this limit. You can try to use the `-N`/`--shell=none` option to disable the shell completely.
+ 
+[21:33:16] blank html (.html)
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /var/folders/d3/qxmm_9hn4wj3mwtj5w1vrk8w0000gn/T/tmp.TbnkP1f8U6/blank.html > /dev/null
+  Time (mean ± σ):       5.1 ms ±   0.4 ms    [User: 2.7 ms, System: 1.7 ms]
+  Range (min … max):     4.7 ms …   6.2 ms    50 runs
+ 
+  Warning: Command took less than 5 ms to complete. Note that the results might be inaccurate because hyperfine can not calibrate the shell startup time much more precise than this limit. You can try to use the `-N`/`--shell=none` option to disable the shell completely.
+ 
+[21:33:16] blank javascript (.js)
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /var/folders/d3/qxmm_9hn4wj3mwtj5w1vrk8w0000gn/T/tmp.TbnkP1f8U6/blank.js > /dev/null
+  Time (mean ± σ):       5.1 ms ±   0.4 ms    [User: 2.7 ms, System: 1.6 ms]
+  Range (min … max):     4.6 ms …   6.1 ms    50 runs
+ 
+  Warning: Command took less than 5 ms to complete. Note that the results might be inaccurate because hyperfine can not calibrate the shell startup time much more precise than this limit. You can try to use the `-N`/`--shell=none` option to disable the shell completely.
+ 
+[21:33:17] blank json (.json)
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /var/folders/d3/qxmm_9hn4wj3mwtj5w1vrk8w0000gn/T/tmp.TbnkP1f8U6/blank.json > /dev/null
+  Time (mean ± σ):       5.2 ms ±   0.4 ms    [User: 2.7 ms, System: 1.7 ms]
+  Range (min … max):     4.7 ms …   6.2 ms    50 runs
+ 
+  Warning: Command took less than 5 ms to complete. Note that the results might be inaccurate because hyperfine can not calibrate the shell startup time much more precise than this limit. You can try to use the `-N`/`--shell=none` option to disable the shell completely.
+ 
+[21:33:17] blank lua (.lua)
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /var/folders/d3/qxmm_9hn4wj3mwtj5w1vrk8w0000gn/T/tmp.TbnkP1f8U6/blank.lua > /dev/null
+  Time (mean ± σ):       5.1 ms ±   0.3 ms    [User: 2.7 ms, System: 1.7 ms]
+  Range (min … max):     4.7 ms …   6.5 ms    50 runs
+ 
+  Warning: Command took less than 5 ms to complete. Note that the results might be inaccurate because hyperfine can not calibrate the shell startup time much more precise than this limit. You can try to use the `-N`/`--shell=none` option to disable the shell completely.
+ 
+[21:33:18] blank markdown (.md)
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /var/folders/d3/qxmm_9hn4wj3mwtj5w1vrk8w0000gn/T/tmp.TbnkP1f8U6/blank.md > /dev/null
+  Time (mean ± σ):       5.7 ms ±   0.7 ms    [User: 2.9 ms, System: 1.9 ms]
+  Range (min … max):     4.8 ms …   7.9 ms    50 runs
+ 
+  Warning: Command took less than 5 ms to complete. Note that the results might be inaccurate because hyperfine can not calibrate the shell startup time much more precise than this limit. You can try to use the `-N`/`--shell=none` option to disable the shell completely.
+ 
+[21:33:18] blank python (.py)
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /var/folders/d3/qxmm_9hn4wj3mwtj5w1vrk8w0000gn/T/tmp.TbnkP1f8U6/blank.py > /dev/null
+  Time (mean ± σ):       4.8 ms ±   0.2 ms    [User: 2.6 ms, System: 1.4 ms]
+  Range (min … max):     4.5 ms …   5.4 ms    50 runs
+ 
+  Warning: Command took less than 5 ms to complete. Note that the results might be inaccurate because hyperfine can not calibrate the shell startup time much more precise than this limit. You can try to use the `-N`/`--shell=none` option to disable the shell completely.
+ 
+[21:33:19] blank ruby (.rb)
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /var/folders/d3/qxmm_9hn4wj3mwtj5w1vrk8w0000gn/T/tmp.TbnkP1f8U6/blank.rb > /dev/null
+  Time (mean ± σ):       5.0 ms ±   0.2 ms    [User: 2.6 ms, System: 1.5 ms]
+  Range (min … max):     4.6 ms …   5.7 ms    50 runs
+ 
+  Warning: Command took less than 5 ms to complete. Note that the results might be inaccurate because hyperfine can not calibrate the shell startup time much more precise than this limit. You can try to use the `-N`/`--shell=none` option to disable the shell completely.
+ 
+[21:33:20] blank rust (.rs)
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /var/folders/d3/qxmm_9hn4wj3mwtj5w1vrk8w0000gn/T/tmp.TbnkP1f8U6/blank.rs > /dev/null
+  Time (mean ± σ):       5.1 ms ±   0.4 ms    [User: 2.7 ms, System: 1.6 ms]
+  Range (min … max):     4.7 ms …   6.7 ms    50 runs
+ 
+  Warning: Command took less than 5 ms to complete. Note that the results might be inaccurate because hyperfine can not calibrate the shell startup time much more precise than this limit. You can try to use the `-N`/`--shell=none` option to disable the shell completely.
+ 
+[21:33:20] blank swift (.swift)
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /var/folders/d3/qxmm_9hn4wj3mwtj5w1vrk8w0000gn/T/tmp.TbnkP1f8U6/blank.swift > /dev/null
+  Time (mean ± σ):       5.1 ms ±   0.2 ms    [User: 2.7 ms, System: 1.7 ms]
+  Range (min … max):     4.7 ms …   6.1 ms    50 runs
+ 
+  Warning: Command took less than 5 ms to complete. Note that the results might be inaccurate because hyperfine can not calibrate the shell startup time much more precise than this limit. You can try to use the `-N`/`--shell=none` option to disable the shell completely.
+ 
+[21:33:21] blank tsx (.tsx)
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /var/folders/d3/qxmm_9hn4wj3mwtj5w1vrk8w0000gn/T/tmp.TbnkP1f8U6/blank.tsx > /dev/null
+  Time (mean ± σ):       4.9 ms ±   0.2 ms    [User: 2.6 ms, System: 1.5 ms]
+  Range (min … max):     4.5 ms …   5.5 ms    50 runs
+ 
+  Warning: Command took less than 5 ms to complete. Note that the results might be inaccurate because hyperfine can not calibrate the shell startup time much more precise than this limit. You can try to use the `-N`/`--shell=none` option to disable the shell completely.
+ 
+[21:33:21] blank typescript (.ts)
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /var/folders/d3/qxmm_9hn4wj3mwtj5w1vrk8w0000gn/T/tmp.TbnkP1f8U6/blank.ts > /dev/null
+  Time (mean ± σ):       5.0 ms ±   0.2 ms    [User: 2.7 ms, System: 1.6 ms]
+  Range (min … max):     4.8 ms …   5.8 ms    50 runs
+ 
+  Warning: Command took less than 5 ms to complete. Note that the results might be inaccurate because hyperfine can not calibrate the shell startup time much more precise than this limit. You can try to use the `-N`/`--shell=none` option to disable the shell completely.
+ 
+[21:33:22] blank yaml (.yml)
+Benchmark 1: /Users/eddenamber/Projects/dog/.build/release/dog --color always -P /var/folders/d3/qxmm_9hn4wj3mwtj5w1vrk8w0000gn/T/tmp.TbnkP1f8U6/blank.yml > /dev/null
+  Time (mean ± σ):       4.9 ms ±   0.2 ms    [User: 2.6 ms, System: 1.5 ms]
+  Range (min … max):     4.6 ms …   5.5 ms    50 runs
+ 
+  Warning: Command took less than 5 ms to complete. Note that the results might be inaccurate because hyperfine can not calibrate the shell startup time much more precise than this limit. You can try to use the `-N`/`--shell=none` option to disable the shell completely.
+ 
+done

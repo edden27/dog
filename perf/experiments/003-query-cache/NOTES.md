@@ -1,6 +1,6 @@
-# 003 — precompiled query serialization (003a prototype)
+# 003 — precompiled query serialization (003a prototype + 003b implementation)
 
-Status: confirmed at prototype level (003a); dog integration (003b) designed below, not implemented
+Status: IMPLEMENTED (003b shipped 2026-07-18; results at bottom)
 Date: 2026-07-18 · dog commit: f1f2c92 · tree-sitter 0.25.10 · M2 Max, macOS 26.2
 
 ## Question
@@ -74,6 +74,30 @@ overlap becomes a no-op rather than a conflict — keep it for the fallback path
 
 ## Decision
 
-003a: prototype CONFIRMED — serialize/reload works, byte-identical captures,
-µs loads, 10/10 grammars. 003b (dog integration) design is in
-perf/PHASE3-IMPLEMENTATION.md Item 4; awaiting user go-ahead to implement.
+003a: prototype CONFIRMED. 003b: IMPLEMENTED same day (user go-ahead).
+
+## 003b implementation results (2026-07-18)
+
+Shipped as: vendored runtime `LocalPackages/tree-sitter` (0.25.10, byte-verified
+against the SPM checkout) + local patch adding `ts_query_serialize`/
+`ts_query_deserialize` (query.c end, api.h decls; magic + format version +
+struct sizes + grammar ABI + query FNV-1a hash all validated inside
+deserialize, bounds-checked reads, NULL on any mismatch). Generator:
+`scripts/generate/gen-query-blob.c` + `scripts/generate/query-blobs.sh`
+(`make generate-query-blobs`) emits the committed
+`Sources/dog/Parsing/Languages/EmbeddedCompiledQueries.swift` (17 blobs, 266KB,
+each round-trip self-checked at generation). Load path:
+`LanguageEntry.compileQuery` tries the blob first; rejection warns on stderr
+and falls back to `ts_query_new` (fail-open). Cross-arch layout gate already
+wired into `make release-macos` (scripts/verify-query-blob-arch.sh).
+
+Measured (blank-file init cost, warmup 3 runs 50): **+0.3 to +1.2ms for ALL 17
+languages** — was +0.8 (json) to +122ms (cpp). Tiny/small matrix vs bat
+(warmup 0 runs 20, docs conditions): **tiny avg 2.7x, small avg 3.5x, dog wins
+17/17 at BOTH sizes** (was 1.0x losing 10/17, 1.3x losing 9/17). cpp/tiny
+0.1x -> 2.7x. Raw: `results-003b-startup/`, `results-003b-bench/`.
+
+Gates passed: stdout byte-identical + stderr silent, all 17 languages
+tiny+large vs pre-003b binary; swift test 197 tests, only the 3 known coverage
+failures; corrupt-blob fallback + fast-path-equality pinned by
+QueryFailureTests."Corrupt precompiled blob falls back to source compilation".

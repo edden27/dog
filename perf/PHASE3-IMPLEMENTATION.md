@@ -242,7 +242,19 @@ dog: highlight query for 'python' failed to compile (offset 1633); rendering wit
 after the join; same message, same stderr channel. Implement whichever lands
 first, wire the other to it.
 
-## Item 4 — build-time precompiled queries (experiment 003, prototype confirmed — NOT yet implemented)
+## Item 4 — build-time precompiled queries (experiment 003) — IMPLEMENTED 2026-07-18
+
+Implemented as designed below plus: runtime vendored to
+`~/Projects/dog/LocalPackages/tree-sitter` (0.25.10 + serialize/deserialize
+patch at the end of lib/src/query.c, decls in include/tree_sitter/api.h);
+generator = `make generate-query-blobs` -> committed
+`Sources/dog/Parsing/Languages/EmbeddedCompiledQueries.swift`. Regenerate after
+ANY query/grammar/runtime change (stale = safe fallback + stderr warning, but
+slow). Measured: init +0.3..+1.2ms all languages; tiny 2.7x avg, small 3.5x
+avg, dog wins 17/17 at every size. Full results:
+`~/Projects/dog/perf/experiments/003-query-cache/NOTES.md`.
+
+Original design notes:
 
 **Evidence:** `~/Projects/dog/perf/experiments/003-query-cache/NOTES.md` —
 serialize/reload of compiled TSQuery proven on 10 grammars: byte-identical

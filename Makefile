@@ -38,6 +38,14 @@ release-macos: verify-blob-arch
 verify-blob-arch:
 	bash scripts/verify-query-blob-arch.sh
 
+# Regenerate Sources/dog/Parsing/Languages/EmbeddedCompiledQueries.swift.
+# Run after ANY change to highlight queries, grammars, or the vendored
+# tree-sitter runtime. Stale blobs are safe (hash-checked, fall back to
+# compiling with a stderr warning) but forfeit the fast path.
+.PHONY: generate-query-blobs
+generate-query-blobs:
+	bash scripts/generate/query-blobs.sh
+
 release-linux:
 	bash scripts/generate/linux.sh binary
 

@@ -27,6 +27,10 @@ struct CompiledQuery: @unchecked Sendable {
 actor LanguageEntry {
   private let tsLanguage: SendablePointer
   private let queryBytes: [UInt8]?
+  /// Precompiled query blob (ts_query_serialize output, generated at build
+  /// time by scripts/generate/query-blobs.sh). nil or rejected-by-validation
+  /// falls back to compiling queryBytes with ts_query_new.
+  private let compiledQueryBlob: [UInt8]?
   /// Canonical language name, used in user-facing degradation warnings.
   private let languageName: String
   /// In-flight or finished query compilation. Created on first parse; later
@@ -35,9 +39,13 @@ actor LanguageEntry {
   private var compileTask: Task<CompiledQuery?, Never>?
   private var compiledQuery: CompiledQuery?
 
-  init(tsLanguage: SendablePointer, queryBytes: [UInt8]?, languageName: String) {
+  init(
+    tsLanguage: SendablePointer, queryBytes: [UInt8]?,
+    compiledQueryBlob: [UInt8]? = nil, languageName: String
+  ) {
     self.tsLanguage = tsLanguage
     self.queryBytes = queryBytes
+    self.compiledQueryBlob = compiledQueryBlob
     self.languageName = languageName
   }
 
@@ -76,9 +84,12 @@ actor LanguageEntry {
     if let compileTask { return compileTask }
     let language = tsLanguage
     let bytes = queryBytes
+    let blob = compiledQueryBlob
     let name = languageName
     let task = Task.detached(priority: .userInitiated) {
-      Self.compileQuery(tsLanguage: language, queryBytes: bytes, languageName: name)
+      Self.compileQuery(
+        tsLanguage: language, queryBytes: bytes,
+        compiledQueryBlob: blob, languageName: name)
     }
     compileTask = task
     return task
@@ -186,13 +197,43 @@ actor LanguageEntry {
   /// Compile the highlight query and derive its lookup tables. Pure: touches
   /// no actor state, so it can run on a detached task concurrently with
   /// parsing. Returns nil on failure — caller renders unhighlighted.
+  ///
+  /// Fast path: a precompiled blob deserializes in ~3µs instead of the
+  /// 10-130ms ts_query_new pattern analysis (perf experiment 003).
+  /// ts_query_deserialize validates magic/format/struct-sizes/grammar-ABI/
+  /// query-hash internally; ANY mismatch (e.g. stale blob after a query edit
+  /// without regenerating) returns nil here and falls through to ts_query_new
+  /// — slower but never wrong.
   private nonisolated static func compileQuery(
-    tsLanguage: SendablePointer, queryBytes: [UInt8]?, languageName: String
+    tsLanguage: SendablePointer, queryBytes: [UInt8]?,
+    compiledQueryBlob: [UInt8]?, languageName: String
   ) -> CompiledQuery? {
     guard let bytes = queryBytes else {
       Bark.releaseWarning(
         "no highlight query for '\(languageName)'; rendering without highlighting")
       return nil
+    }
+
+    if let blob = compiledQueryBlob {
+      let deserializedQuery = blob.withUnsafeBufferPointer { blobBuffer -> OpaquePointer? in
+        bytes.withUnsafeBufferPointer { queryBuffer -> OpaquePointer? in
+          guard let blobPointer = blobBuffer.baseAddress,
+            let queryPointer = queryBuffer.baseAddress
+          else { return nil }
+          return ts_query_deserialize(
+            tsLanguage.raw,
+            blobPointer, UInt32(blobBuffer.count),
+            UnsafeRawPointer(queryPointer).assumingMemoryBound(to: CChar.self),
+            UInt32(queryBuffer.count)
+          )
+        }
+      }
+      if let deserializedQuery {
+        return buildCompiledQuery(from: deserializedQuery)
+      }
+      Bark.releaseWarning(
+        "precompiled query for '\(languageName)' rejected (stale or mismatched blob); "
+          + "compiling from source — regenerate with scripts/generate/query-blobs.sh")
     }
 
     var errorOffset: UInt32 = 0
@@ -215,6 +256,13 @@ actor LanguageEntry {
       return nil
     }
 
+    return buildCompiledQuery(from: query)
+  }
+
+  /// Derive the per-query lookup tables (predicates, capture -> TokenType).
+  /// Shared by both the deserialize fast path and the ts_query_new fallback —
+  /// tables build from the query pointer via public API in microseconds.
+  private nonisolated static func buildCompiledQuery(from query: OpaquePointer) -> CompiledQuery {
     // Build capture index → TokenType? table once.
     // ts_query_capture_count returns the number of unique capture names in the query.
     let captureCount = Int(ts_query_capture_count(query))

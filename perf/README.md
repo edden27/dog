@@ -22,8 +22,8 @@ Rules for this directory:
 | 002 | per-pattern query compile cost | skipped (user) |
 | [005](experiments/005-query-audit/NOTES.md) | query/startup audit: no waste — lazy compile already implemented, floor 0.6ms; markdown_inline embedded+linked but unused (size-only dead weight) | confirmed |
 | [007](experiments/007-alloc-reduction/NOTES.md) | alloc fixes (token reserve, in-place sort, buffer estimate): ~1% wall, −11% peak mem — user rejected as not worth churn; patches preserved in NOTES | rejected |
-| [003](experiments/003-query-cache/NOTES.md) | precompiled query serialization: 10/10 grammars, ~3µs loads vs 10–130ms compiles, captures byte-identical — build-time embed design in handoff Item 4 | confirmed (prototype) |
-| [008](experiments/008-query-coverage-gaps/NOTES.md) | coverage gap evidence for css/html/markdown queries (subagent) | in progress |
+| [008](experiments/008-query-coverage-gaps/NOTES.md) | query coverage gaps css/html/md: none is a thin query (dog captures every upstream node type). md +17.5%→100% via pure-query table-cell + html_block captures; html +9%→100% via raw_text stopgap (real fix=injection); css deficit is a grammar ERROR on CodeMirror U+037x class names in large.css, not the query | analysis (validated at harness) |
+| [003](experiments/003-query-cache/NOTES.md) | precompiled query serialization: prototype 10/10 grammars ~3µs loads; 003b IMPLEMENTED — blobs embedded at build time, tiny-tier init now +0.3..+1.2ms for all languages | implemented |
 
 ## Layout
 

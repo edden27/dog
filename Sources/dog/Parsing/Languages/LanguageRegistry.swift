@@ -119,11 +119,15 @@ final class LanguageRegistry: Sendable {
     var entries: [String: LanguageEntry] = [:]
     var names: Set<String> = []
 
-    func register(_ name: String, _ pointer: OpaquePointer, queryBytes: [UInt8]?) {
+    func register(
+      _ name: String, _ pointer: OpaquePointer,
+      queryBytes: [UInt8]?, compiledQueryBlob: [UInt8]? = nil
+    ) {
       let sendable = SendablePointer(raw: pointer)
       entries[name] = LanguageEntry(
         tsLanguage: sendable,
         queryBytes: queryBytes,
+        compiledQueryBlob: compiledQueryBlob,
         languageName: name
       )
       names.insert(name)
@@ -138,55 +142,106 @@ final class LanguageRegistry: Sendable {
     // html.scm = html_tags + html additions
 
     #if BashLib
-      register("bash", tree_sitter_bash()!, queryBytes: EmbeddedQueries.bash)
+      register(
+        "bash", tree_sitter_bash()!,
+        queryBytes: EmbeddedQueries.bash,
+        compiledQueryBlob: EmbeddedCompiledQueries.bash)
     #endif
     #if CLib
-      register("c", tree_sitter_c()!, queryBytes: EmbeddedQueries.c)
+      register(
+        "c", tree_sitter_c()!,
+        queryBytes: EmbeddedQueries.c,
+        compiledQueryBlob: EmbeddedCompiledQueries.c)
     #endif
     #if CppLib
-      register("cpp", tree_sitter_cpp()!, queryBytes: EmbeddedQueries.cpp)
+      register(
+        "cpp", tree_sitter_cpp()!,
+        queryBytes: EmbeddedQueries.cpp,
+        compiledQueryBlob: EmbeddedCompiledQueries.cpp)
     #endif
     #if CSSLib
-      register("css", tree_sitter_css()!, queryBytes: EmbeddedQueries.css)
+      register(
+        "css", tree_sitter_css()!,
+        queryBytes: EmbeddedQueries.css,
+        compiledQueryBlob: EmbeddedCompiledQueries.css)
     #endif
     #if GoLib
-      register("go", tree_sitter_go()!, queryBytes: EmbeddedQueries.go)
+      register(
+        "go", tree_sitter_go()!,
+        queryBytes: EmbeddedQueries.go,
+        compiledQueryBlob: EmbeddedCompiledQueries.go)
     #endif
     #if HTMLLib
-      register("html", tree_sitter_html()!, queryBytes: EmbeddedQueries.html)
+      register(
+        "html", tree_sitter_html()!,
+        queryBytes: EmbeddedQueries.html,
+        compiledQueryBlob: EmbeddedCompiledQueries.html)
     #endif
     #if JavaScriptLib
-      register("javascript", tree_sitter_javascript()!, queryBytes: EmbeddedQueries.javascript)
+      register(
+        "javascript", tree_sitter_javascript()!,
+        queryBytes: EmbeddedQueries.javascript,
+        compiledQueryBlob: EmbeddedCompiledQueries.javascript)
     #endif
     #if JSONLib
-      register("json", tree_sitter_json()!, queryBytes: EmbeddedQueries.json)
+      register(
+        "json", tree_sitter_json()!,
+        queryBytes: EmbeddedQueries.json,
+        compiledQueryBlob: EmbeddedCompiledQueries.json)
     #endif
     #if LuaLib
-      register("lua", tree_sitter_lua()!, queryBytes: EmbeddedQueries.lua)
+      register(
+        "lua", tree_sitter_lua()!,
+        queryBytes: EmbeddedQueries.lua,
+        compiledQueryBlob: EmbeddedCompiledQueries.lua)
     #endif
     #if MarkdownLib
-      register("markdown", tree_sitter_markdown()!, queryBytes: EmbeddedQueries.markdown)
+      register(
+        "markdown", tree_sitter_markdown()!,
+        queryBytes: EmbeddedQueries.markdown,
+        compiledQueryBlob: EmbeddedCompiledQueries.markdown)
     #endif
     #if PythonLib
-      register("python", tree_sitter_python()!, queryBytes: EmbeddedQueries.python)
+      register(
+        "python", tree_sitter_python()!,
+        queryBytes: EmbeddedQueries.python,
+        compiledQueryBlob: EmbeddedCompiledQueries.python)
     #endif
     #if RubyLib
-      register("ruby", tree_sitter_ruby()!, queryBytes: EmbeddedQueries.ruby)
+      register(
+        "ruby", tree_sitter_ruby()!,
+        queryBytes: EmbeddedQueries.ruby,
+        compiledQueryBlob: EmbeddedCompiledQueries.ruby)
     #endif
     #if RustLib
-      register("rust", tree_sitter_rust()!, queryBytes: EmbeddedQueries.rust)
+      register(
+        "rust", tree_sitter_rust()!,
+        queryBytes: EmbeddedQueries.rust,
+        compiledQueryBlob: EmbeddedCompiledQueries.rust)
     #endif
     #if SwiftLib
-      register("swift", tree_sitter_swift()!, queryBytes: EmbeddedQueries.swift)
+      register(
+        "swift", tree_sitter_swift()!,
+        queryBytes: EmbeddedQueries.swift,
+        compiledQueryBlob: EmbeddedCompiledQueries.swift)
     #endif
     #if TSXLib
-      register("tsx", tree_sitter_tsx()!, queryBytes: EmbeddedQueries.tsx)
+      register(
+        "tsx", tree_sitter_tsx()!,
+        queryBytes: EmbeddedQueries.tsx,
+        compiledQueryBlob: EmbeddedCompiledQueries.tsx)
     #endif
     #if TypeScriptLib
-      register("typescript", tree_sitter_typescript()!, queryBytes: EmbeddedQueries.typescript)
+      register(
+        "typescript", tree_sitter_typescript()!,
+        queryBytes: EmbeddedQueries.typescript,
+        compiledQueryBlob: EmbeddedCompiledQueries.typescript)
     #endif
     #if YAMLLib
-      register("yaml", tree_sitter_yaml()!, queryBytes: EmbeddedQueries.yaml)
+      register(
+        "yaml", tree_sitter_yaml()!,
+        queryBytes: EmbeddedQueries.yaml,
+        compiledQueryBlob: EmbeddedCompiledQueries.yaml)
     #endif
 
     // TODO: core expansion registrations

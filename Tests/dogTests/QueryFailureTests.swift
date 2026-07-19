@@ -34,4 +34,41 @@ struct QueryFailureTests {
     let tokens = try await querylessEntry.parse(sourceBytes: Array("{\"key\": 1}".utf8))
     #expect(tokens.isEmpty, "missing query must yield zero tokens, got \(tokens.count)")
   }
+
+  @Test("Corrupt precompiled blob falls back to source compilation")
+  func corruptBlobFallsBack() async throws {
+    let sourceBytes = Array("{\"key\": 1}".utf8)
+
+    // Reference: normal compile-from-source tokens.
+    let referenceEntry = LanguageEntry(
+      tsLanguage: SendablePointer(raw: tree_sitter_json()!),
+      queryBytes: EmbeddedQueries.json,
+      languageName: "json"
+    )
+    let referenceTokens = try await referenceEntry.parse(sourceBytes: sourceBytes)
+    #expect(!referenceTokens.isEmpty)
+
+    // Garbage blob must be rejected by ts_query_deserialize and fall back to
+    // ts_query_new, producing the same tokens (perf Item 4 fail-open contract).
+    let corruptEntry = LanguageEntry(
+      tsLanguage: SendablePointer(raw: tree_sitter_json()!),
+      queryBytes: EmbeddedQueries.json,
+      compiledQueryBlob: [UInt8](repeating: 0xAB, count: 512),
+      languageName: "json-corrupt-blob-test"
+    )
+    let fallbackTokens = try await corruptEntry.parse(sourceBytes: sourceBytes)
+    #expect(fallbackTokens.count == referenceTokens.count,
+            "fallback tokens \(fallbackTokens.count) != reference \(referenceTokens.count)")
+
+    // Valid blob produces identical tokens through the fast path.
+    let fastPathEntry = LanguageEntry(
+      tsLanguage: SendablePointer(raw: tree_sitter_json()!),
+      queryBytes: EmbeddedQueries.json,
+      compiledQueryBlob: EmbeddedCompiledQueries.json,
+      languageName: "json"
+    )
+    let fastPathTokens = try await fastPathEntry.parse(sourceBytes: sourceBytes)
+    #expect(fastPathTokens.count == referenceTokens.count,
+            "fast-path tokens \(fastPathTokens.count) != reference \(referenceTokens.count)")
+  }
 }
