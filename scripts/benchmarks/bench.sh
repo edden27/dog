@@ -45,7 +45,7 @@ if [[ -z "$DOG" ]]; then
 fi
 
 if [[ -z "$DOG" || ! -x "$DOG" ]]; then
-  echo "${R}Error:${Z} dog binary not found. Run 'swift build -c release' first."
+  echo "${R}Error:${Z} dog binary not found. Run 'swift build -c release -Xcc -flto=thin' first."
   exit 1
 fi
 

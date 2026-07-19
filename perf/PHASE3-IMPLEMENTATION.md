@@ -51,46 +51,50 @@ then `uv run python3 ~/Projects/dog/perf/scripts/summarize-baseline.py <outdir>`
 
 ---
 
-## Item 1 — thin LTO release build (from experiment 006, confirmed)
+## Item 1 — thin LTO release build (from experiment 006) — IMPLEMENTED 2026-07-18
 
-**Evidence:** `~/Projects/dog/perf/experiments/006-build-flags/NOTES.md` —
-−6..−10% on medium/large/xlarge, −1..−2.5% tiny, output byte-identical, binary
-size unchanged, link time +~2s.
+**Final form: C-only thin LTO — `swift build -c release -Xcc -flto=thin`.**
 
-**The change is documentation/build-script only — NOT Package.swift.** Adding
-these via `unsafeFlags` in Package.swift would make dog unconsumable as an SPM
-dependency (SPM refuses dependencies with unsafeFlags; dogtml consumes dog by
-reference).
+**Evidence:** `~/Projects/dog/perf/experiments/006-build-flags/NOTES.md` plus
+Phase 3 follow-up measurements:
 
-New canonical release build command:
+- Full LTO (`-Xswiftc -lto=llvm-thin -Xcc -flto=thin`) gives −6..−10% but
+  **breaks non-native builds**: the dual-arch (`--arch arm64 --arch x86_64`)
+  and cross-arch (`--arch x86_64`) link steps look for `.o` files where swiftc
+  emitted bitcode ("File not found: ... ToolInfo.o"). The native arm64 build
+  only worked by accident (bitcode sprayed into cwd — the `*.bc` mess).
+- C-only LTO (`-Xcc -flto=thin`) measured within 0–1% of full LTO on every
+  probe (c/xlarge −6.7% vs −7.2%, go/large −8.7% vs −9.0%, typescript/large
+  −6.6% vs −6.4%) — the win is C↔C inlining in tree-sitter, the Swift half is
+  noise. Works in native, cross-arch, AND universal builds; no `.bc` spray;
+  output byte-identical (all 17 languages, tiny+large).
 
-```sh
-swift build -c release -Xswiftc -lto=llvm-thin -Xcc -flto=thin
-```
+**Done:**
 
-Places to update (verify each still exists before editing):
+- `~/Projects/dog/Makefile` `release-macos` → `swift build -c release --arch
+  arm64 --arch x86_64 -Xcc -flto=thin` (with rationale comment).
+- `~/Projects/dog/scripts/benchmarks/bench.sh` error message names the new
+  canonical command.
+- `~/Projects/dog/.gitignore` ignores `*.bc` (defends against anyone using the
+  Swift-LTO flag again).
+- NOT in Package.swift (`unsafeFlags` would make dog unconsumable as an SPM
+  dependency for dogtml).
 
-1. `~/Projects/dog/.claude/skills/build-check/SKILL.md` — the build command the
-   skill runs.
-2. `~/Projects/dog/scripts/benchmarks/bench.sh` — header comment says
-   "Run 'swift build -c release' first" (line ~48 error message too).
-3. Docs site build/install instructions:
-   `~/Code/vitepress-test/docs/` — grep for `swift build -c release`.
-4. Any CI/release scripts that appear later.
+**Still open for this item:**
+
+- Docs site (`~/Code/vitepress-test/docs/`) build/install instructions — needs
+  user sign-off (front-facing).
+- Linux: `-flto=thin` under the Docker build (`make release-linux` →
+  `scripts/generate/linux.sh`) unverified — needs lld with LTO plugin. Verify
+  before adding the flag to the Linux path; macOS-only until then.
 
 Gotchas:
 
+- NEVER re-add `-Xswiftc -lto=llvm-thin` — see breakage above.
 - After an Xcode/toolchain update, stale LTO bitcode in `.build` can produce
   odd link errors → `swift package clean` and rebuild.
-- Linux: thin LTO needs lld with LTO support. Verify via the Docker
-  linux-test script (old repo: `~/Code/treesiter-cli-tmp/tests/scripts/linux-test.sh`,
-  not yet ported) BEFORE documenting the flags as the Linux build command.
-  If Linux fails, document flags as macOS-only.
 - Profiling note for future perf work: LTO inlining blurs Time Profiler
   attribution; profile non-LTO builds when attribution matters.
-
-Verification: byte-diff gate + `swift test` + bench regression check above.
-Expect ≈ the 006 numbers; anything outside ±2% of them, stop and investigate.
 
 ---
 

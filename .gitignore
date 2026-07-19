@@ -34,6 +34,9 @@ dog-linux-*
 *.trace
 Launch_*.trace
 
+# LLVM bitcode sprayed into the repo root by thin-LTO builds
+*.bc
+
 # Editors
 *.swp
 *~

@@ -22,8 +22,12 @@ help:
 	@echo "  shas            Print sha256 of existing tarballs"
 	@echo "  clean           Remove dist/ and build artifacts"
 
+# -Xcc -flto=thin: thin LTO on the C targets (tree-sitter runtime + grammars),
+# measured -7..-9% on medium+ files with byte-identical output. C-only on
+# purpose: -Xswiftc -lto=llvm-thin breaks dual-arch/cross builds (linker looks
+# for .o where swiftc emitted bitcode) and adds <1% over C-only.
 release-macos:
-	swift build -c release --arch arm64 --arch x86_64
+	swift build -c release --arch arm64 --arch x86_64 -Xcc -flto=thin
 	@ls -la .build/apple/Products/Release/dog
 
 release-linux:
