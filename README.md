@@ -45,8 +45,8 @@ sudo mv dog /usr/local/bin/
 
 ```sh
 git clone <REPO_URL>
-cd dog/cli
-swift build -c release
+cd dog
+swift build -c release -Xcc -flto=thin
 cp .build/release/dog /usr/local/bin/
 ```
 
@@ -92,7 +92,7 @@ Full benchmarks and methodology in the [docs](https://dog.dev/benchmarks).
 - `--list-languages` and `--range` are stubs
 - `$PAGER` not honored (pager is hardcoded to `less -R`)
 
-Test suite: 194 Swift unit tests across 12 suites + 49 integration assertions across 9 suites + 13 bat-compatibility scenarios.
+Test suite: 197 Swift unit tests across 29 suites + 49 integration assertions across 9 suites + 13 bat-compatibility scenarios.
 
 ## Acknowledgements
 
