@@ -1,0 +1,6 @@
+=== coverage: 62.2%  (nonWS=223773 covered=139229 gap=84544) ===
+node_type                           gap_bytes     runs  %ofgap
+ERROR                                   84544    15831  100.0%
+      | ͼ2
+      | ͼ2
+      | ͼ1

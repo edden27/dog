@@ -121,11 +121,3 @@
 (backslash_escape) @string.escape
 
 (inline) @spell
-
-; --- experiment 008 candidate additions ---
-; capture regular table-row cell bodies (block grammar leaves inline unparsed;
-; wholesale capture counts toward coverage, colored like default text/spell)
-(pipe_table_row
-  (pipe_table_cell) @spell)
-; capture embedded raw HTML blocks wholesale
-(html_block) @none @spell

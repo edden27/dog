@@ -106,16 +106,3 @@
 ] @tag.delimiter
 
 "=" @operator
-
-(doctype) @constant
-
-"<!" @tag.delimiter
-
-(entity) @character.special
-
-; --- experiment 008 candidate additions ---
-; wholesale-capture script/style bodies so they count toward coverage
-; (true JS/CSS highlighting still requires injection support)
-(raw_text) @none
-; trivial: erroneous end tag name
-(erroneous_end_tag_name) @tag.error

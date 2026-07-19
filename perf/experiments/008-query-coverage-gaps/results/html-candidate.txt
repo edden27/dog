@@ -1,0 +1,6 @@
+=== coverage: 100.0%  (nonWS=200211 covered=200188 gap=23) ===
+node_type                           gap_bytes     runs  %ofgap
+ERROR                                      23        3  100.0%
+      | &
+      | organizations
+      | worldwide

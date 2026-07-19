@@ -1,0 +1,10 @@
+=== coverage: 62.2%  (nonWS=223773 covered=139157 gap=84616) ===
+node_type                           gap_bytes     runs  %ofgap
+ERROR                                   84544    15831   99.9%
+      | ͼ2
+      | ͼ2
+      | ͼ1
+keyword_query                              72       12    0.1%
+      | screen
+      | screen
+      | screen

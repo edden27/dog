@@ -232,11 +232,11 @@ body.light *::-webkit-selection {
 }
 
 
-.ͼ2 .cm-selectionBackground{
+.cb2 .cm-selectionBackground{
 	background-color: #444;
 }
 
-body.light .ͼ2 .cm-selectionBackground{
+body.light .cb2 .cm-selectionBackground{
 	background-color: #bbb;
 }
 
@@ -3713,16 +3713,16 @@ body:not(.coder) #editor.code-editor div[spellcheck]{
 
 
 
-body:not(.coder) .ͼ1.cm-scroller{
+body:not(.coder) .cb1.cm-scroller{
 	font-family:inherit;
 }
 
 
-.ͼ1 .cm-gutter{
+.cb1 .cm-gutter{
 	overflow:visible;
 }
 
-.coder .ͼ1 .cm-lineNumbers .cm-gutterElement{
+.coder .cb1 .cm-lineNumbers .cm-gutterElement{
 	min-width:33px;
 }
 
@@ -3785,23 +3785,23 @@ body:not(.coder) .ͼ1.cm-scroller{
 }
 
 
-body .ͼ4 .cm-line, 
+body .cb4 .cm-line, 
 .cm-line{
 	color:var(--text-color);
 	border-left:1px solid transparent;
 	line-height:170%;
 }
-body.document-active .ͼ4 .cm-line, 
+body.document-active .cb4 .cm-line, 
 body.document-active .cm-line{
 	color:var(--strongest-text-color);
 }
 
-body .ͼ4 .cm-line.cm-activeLine,
-.ͼ2 .cm-activeLine{
+body .cb4 .cm-line.cm-activeLine,
+.cb2 .cm-activeLine{
 	border-left:1px solid rgba(255,255,255,.2);
 }
-body.light .ͼ4 .cm-line.cm-activeLine,
-body.light .ͼ2 .cm-activeLine{
+body.light .cb4 .cm-line.cm-activeLine,
+body.light .cb2 .cm-activeLine{
 	border-left:1px solid rgba(0,0,0,.2);
 }
 
@@ -3810,40 +3810,40 @@ body:not(.coder) .cm-line{
 }
 
 /*
-body .ͼ2 .cm-activeLine{
+body .cb2 .cm-activeLine{
 	background-color:rgba(255, 255, 255, .06);
 }
 */
 
-body .ͼ5{
+body .cb5{
 	color:inherit;
 	opacity:.5;
 	/*
 	text-decoration:underline;
 	*/
 }
-body:not(.document-active) .ͼ5:not(ͼ1):not(ͼ2):not(ͼ3):not(ͼ4):not(ͼ5):not(ͼ6):not(ͼ7):not(ͼ8){
+body:not(.document-active) .cb5:not(cb1):not(cb2):not(cb3):not(cb4):not(cb5):not(cb6):not(cb7):not(cb8){
 	color:var(--strongest-text-color);
 	opacity:1;
 	/*font-size:0;*/
 }
 /*
-body:not(.document-active) .ͼ5:not(ͼ1):not(ͼ2):not(ͼ3):not(ͼ4):not(ͼ5):not(ͼ6):not(ͼ7):not(ͼ8):after{
+body:not(.document-active) .cb5:not(cb1):not(cb2):not(cb3):not(cb4):not(cb5):not(cb6):not(cb7):not(cb8):after{
 	content:'O';
 	font-size:13px;
 }
 */
 
-body .ͼ7{
+body .cb7{
 	text-decoration:none;
 }
 
 
 /* markdown link */
-.cm-line > span.ͼ6.ͼ5 + span.ͼ6 + span.ͼ6.ͼ5 + span.ͼ6.ͼ5 + span.ͼ6.ͼc{
+.cm-line > span.cb6.cb5 + span.cb6 + span.cb6.cb5 + span.cb6.cb5 + span.cb6.cbc{
 	cursor:pointer;
 }
-.cm-line > span.ͼ6.ͼ5 + span.ͼ6 + span.ͼ6.ͼ5 + span.ͼ6.ͼ5 + span.ͼ6.ͼc:hover{
+.cm-line > span.cb6.cb5 + span.cb6 + span.cb6.cb5 + span.cb6.cb5 + span.cb6.cbc:hover{
 	background-color:var(--button-hover-bg);
 	color:var(--button-hover-text-color);
 }
@@ -3851,7 +3851,7 @@ body .ͼ7{
 
 /*  hide markdown marks when document does not have focus  */
 
-span.ͼ7.ͼ5{
+span.cb7.cb5{
 	display:inline-block;
 	transition:all ease .5s;
 	max-width:1000px;
@@ -3859,9 +3859,9 @@ span.ͼ7.ͼ5{
 	height:auto;
 }
 
-body:not(.document-active) span.ͼ7.ͼ5,
-body:not(.document-active) span.ͼ8.ͼ5,
-body:not(.document-active) span.ͼ9.ͼ5{
+body:not(.document-active) span.cb7.cb5,
+body:not(.document-active) span.cb8.cb5,
+body:not(.document-active) span.cb9.cb5{
 	display:inline-block;
 	height:0;
 	max-height:0;
@@ -3872,17 +3872,17 @@ body:not(.document-active) span.ͼ9.ͼ5{
 	opacity:0;
 }
 
-span.ͼ7:last-of-type{
+span.cb7:last-of-type{
 	margin-left:0;
 	transition: margin ease .5s;
 }
 
-body:not(.document-active) .cm-line > span.ͼ7.ͼ5 + span.ͼ7:last-of-type{
+body:not(.document-active) .cm-line > span.cb7.cb5 + span.cb7:last-of-type{
 	margin-left:-7px;
 	transition: margin ease .5s;
 }
 
-span.ͼ6{
+span.cb6{
 	text-decoration:none;
 }
 
@@ -4116,7 +4116,7 @@ body:not(.coder) .cm-gutter.cm-lineNumbers .cm-gutterElement{
 
 
 
-#editor.code-editor .ͼ1 .cm-scroller{
+#editor.code-editor .cb1 .cm-scroller{
 	padding:2rem 0;
 	width:100%;
 	max-width:100%;
@@ -4125,12 +4125,12 @@ body:not(.coder) .cm-gutter.cm-lineNumbers .cm-gutterElement{
 	flex-grow:1;
 }
 
-.coder #editor.code-editor .ͼ1 .cm-scroller{
+.coder #editor.code-editor .cb1 .cm-scroller{
 	padding:2rem 0 2rem 22px;
 }
 
 .cm-gutters,
-#editor.code-editor .ͼ2 .cm-gutters{
+#editor.code-editor .cb2 .cm-gutters{
 	background-color:transparent!important;
 	border-right:none!important;
 }
@@ -4464,11 +4464,11 @@ body:not(.model-loaded) .requires-model-loaded{
 
 /*   CODE MIRROR SEARCH   */
 
-.ͼ2 .cm-panels-bottom{
+.cb2 .cm-panels-bottom{
 	border-top:none;
 }
 
-.ͼ2 .cm-button{
+.cb2 .cm-button{
 	border: 0.1px solid var(--sidebar-header-bg);
 	border-radius:5px;
 	background:var(--button-bg);
@@ -4476,14 +4476,14 @@ body:not(.model-loaded) .requires-model-loaded{
 	font-size: inherit;
 }
 
-.ͼ2 .cm-button:hover{
+.cb2 .cm-button:hover{
 	background:var(--button-hover-bg);
 	color:#fff;
 }
 
 
 #search-input1,
-.ͼ1 .cm-panel.cm-search input{
+.cb1 .cm-panel.cm-search input{
 	background-color:rgba(255,255,255,.1);
 	border:1px solid transparent;
 	border-bottom:2px dashed var(--button-bg);
@@ -4492,27 +4492,27 @@ body:not(.model-loaded) .requires-model-loaded{
     font-size: inherit;
 }
 
-.ͼ1 .cm-panel.cm-search input, 
-.ͼ1 .cm-panel.cm-search button, 
-.ͼ1 .cm-panel.cm-search label{
+.cb1 .cm-panel.cm-search input, 
+.cb1 .cm-panel.cm-search button, 
+.cb1 .cm-panel.cm-search label{
 	margin:0;
 	font-family:inherit;
 }
 
-.ͼ1 .cm-panel.cm-search label{
+.cb1 .cm-panel.cm-search label{
 	cursor:pointer;
 }
-.ͼ1 .cm-panel.cm-search label:hover{
+.cb1 .cm-panel.cm-search label:hover{
 	background:var(--button-hover-bg);
 	color:#fff;
 }
 
-.ͼ1 .cm-panel.cm-search label > input[type=checkbox]{
+.cb1 .cm-panel.cm-search label > input[type=checkbox]{
 	transform:scale(1.2);
 	margin-right:7px;
 }
 
-.ͼ1 .cm-panel.cm-search{
+.cb1 .cm-panel.cm-search{
 	padding:0;
 	background-color: var(--sidebar-header-bg);
 	border:none;
@@ -4520,15 +4520,15 @@ body:not(.model-loaded) .requires-model-loaded{
 }
 
 
-.ͼ1 .cm-panel.cm-search input[name="search"],
+.cb1 .cm-panel.cm-search input[name="search"],
 #search-input1,
-.ͼ1 .cm-panel.cm-search input[name="replace"]{
+.cb1 .cm-panel.cm-search input[name="replace"]{
 	width: calc(100% - 32.5px);
 	min-height: 40px;
 	margin-left: 2px!important;
 	margin-bottom:2px;
 }
-.ͼ1 .cm-panel.cm-search input[name="replace"]{
+.cb1 .cm-panel.cm-search input[name="replace"]{
 	margin-top:10px;
 }
 
@@ -4548,11 +4548,11 @@ button.cm-button[name="search"]{
 }
 
 
-.ͼ1 .cm-panel.cm-search label{
+.cb1 .cm-panel.cm-search label{
 	margin:0;
 	text-align:center;
 }
-.ͼ1 .cm-panel.cm-search label:first-of-type{
+.cb1 .cm-panel.cm-search label:first-of-type{
 	margin-left:2px;
 }
 
@@ -4592,19 +4592,19 @@ body.settings-complexity-advanced button.cm-button[name="select"] + label + labe
 }
 
 
-.ͼ1 .cm-panel.cm-search button[name="replace"]{
+.cb1 .cm-panel.cm-search button[name="replace"]{
 	margin-left:2px;
 }
 
 
-.ͼ1 .cm-panel.cm-search button[name="replace"],
-.ͼ1 .cm-panel.cm-search button[name="replaceAll"]{
+.cb1 .cm-panel.cm-search button[name="replace"],
+.cb1 .cm-panel.cm-search button[name="replaceAll"]{
 	width:calc(50% - 16px);
 }
 
 
 
-.ͼ1 .cm-panel.cm-search [name=close]{
+.cb1 .cm-panel.cm-search [name=close]{
 	width:20px;
 	height:20px;
 	border-radius:10px;
@@ -4616,7 +4616,7 @@ body.settings-complexity-advanced button.cm-button[name="select"] + label + labe
 	top:10px;
 	right:6px;
 }
-.ͼ1 .cm-panel.cm-search [name=close]:hover{
+.cb1 .cm-panel.cm-search [name=close]:hover{
 	background:var(--button-hover-bg);
 }
 
@@ -9241,7 +9241,7 @@ body:not(.fairytale) #parchment{
 }
 
 
-body.fairytale.playing-document .ͼ4 .cm-line, 
+body.fairytale.playing-document .cb4 .cm-line, 
 body.fairytale.playing-document .cm-line{
 	font-family:cursive;
 	color:#5a4918;
@@ -10862,10 +10862,10 @@ body.light .spinner{
 
 
 
-.ͼ1 .cm-indent-markers::before{
+.cb1 .cm-indent-markers::before{
 	opacity:.3;
 }
-.light .ͼ1 .cm-indent-markers::before{
+.light .cb1 .cm-indent-markers::before{
 	opacity:.2;
 }
 
@@ -10887,12 +10887,12 @@ span[title="Fold line"]{
 }
 
 /*
-.ͼ5{
+.cb5{
 	display:none;
 }
 
 
-.ͼ5:not(.ͼ9) + .ͼ9.ͼ5 + .ͼ9:not(.ͼ5){
+.cb5:not(.cb9) + .cb9.cb5 + .cb9:not(.cb5){
 	display: list-item;
 	margin-left : 1em; 
 	list-style-type: disc; 

@@ -1,0 +1,14 @@
+=== coverage: 91.0%  (nonWS=200211 covered=182168 gap=18043) ===
+node_type                           gap_bytes     runs  %ofgap
+raw_text                                17986     3431   99.7%
+      | /*
+      | NOTE:
+      | Changes
+erroneous_end_tag_name                     34        7    0.2%
+      | option
+      | form
+      | option
+ERROR                                      23        3    0.1%
+      | &
+      | organizations
+      | worldwide

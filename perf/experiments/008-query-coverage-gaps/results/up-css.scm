@@ -75,16 +75,10 @@
 (keyframes_name) @variable
 
 ((property_name) @variable
-  (#match? @variable "^--"))
+  (#lua-match? @variable "^[-][-]"))
 
 ((plain_value) @variable
-  (#match? @variable "^--"))
-
-; keyword property values (auto, flex, sans-serif, ...) — disjoint from the
-; custom-property case above (experiment 008 follow-up: these failed the ^--
-; predicate and dropped, leaving ~5% of css bytes uncovered)
-((plain_value) @constant
-  (#not-match? @constant "^--"))
+  (#lua-match? @variable "^[-][-]"))
 
 [
   (string_value)
@@ -113,7 +107,3 @@
   "["
   "]"
 ] @punctuation.bracket
-
-; --- experiment 008 candidate additions ---
-; media-query keywords (screen, print, all, ...) and query keyword operators
-(keyword_query) @keyword

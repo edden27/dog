@@ -1,0 +1,5 @@
+=== coverage: 100.0%  (nonWS=194853 covered=194848 gap=5) ===
+node_type                           gap_bytes     runs  %ofgap
+js_comment                                  5        2  100.0%
+      | //
+      | ✅

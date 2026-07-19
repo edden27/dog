@@ -80,12 +80,6 @@
 ((plain_value) @variable
   (#match? @variable "^--"))
 
-; keyword property values (auto, flex, sans-serif, ...) — disjoint from the
-; custom-property case above (experiment 008 follow-up: these failed the ^--
-; predicate and dropped, leaving ~5% of css bytes uncovered)
-((plain_value) @constant
-  (#not-match? @constant "^--"))
-
 [
   (string_value)
   (color_value)

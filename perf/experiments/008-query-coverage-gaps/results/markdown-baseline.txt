@@ -1,0 +1,10 @@
+=== coverage: 82.5%  (nonWS=310136 covered=255711 gap=54425) ===
+node_type                           gap_bytes     runs  %ofgap
+pipe_table_cell                         28901     5515   53.1%
+      | Favorite
+      | pastime
+      | Shipping
+html_block                              25524     2038   46.9%
+      | <!--
+      | A
+      | condensed

@@ -1,0 +1,2 @@
+=== coverage: 100.0%  (nonWS=310136 covered=310136 gap=0) ===
+node_type                           gap_bytes     runs  %ofgap
