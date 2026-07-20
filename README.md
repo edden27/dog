@@ -53,7 +53,7 @@ cp .build/release/dog /usr/local/bin/
 
 Requires macOS 14+ or Linux with the Swift runtime (bundled in the Linux binary).
 
-**Tab completions** — dog generates its own completion script for bash, zsh, and fish (`dog --generate-completion-script zsh`); the [docs](https://dog.dev/how-to-integrate-dog#shell-completions) walk through the one-time install for your shell.
+**Tab completions** — dog generates its own completion script for bash, zsh, and fish (`dog --generate-completion-script zsh`); the [docs](https://sh.dog/how-to-integrate-dog#shell-completions) walk through the one-time install for your shell.
 
 
 ## How does it compare to bat?
@@ -75,16 +75,16 @@ Requires macOS 14+ or Linux with the Swift runtime (bundled in the Linux binary)
 | Binary size                                 | ~20 MB (macOS)           | ~6 MB          |
 
 
-Full benchmarks and methodology in the [docs](https://dog.dev/benchmarks).
+Full benchmarks and methodology in the [docs](https://sh.dog/benchmarks).
 
 ## Documentation
 
-- **[Getting started](https://dog.dev/getting-started)** — install, first highlight, theme, fzf
-- **[Configuration](https://dog.dev/configuration)** — every flag, env var, exit code
-- **[How to integrate dog](https://dog.dev/how-to-integrate-dog)** — fzf, tv, pager, shell pipes
-- **[How to set themes](https://dog.dev/how-to-use-themes)** — pick, install, author + Zed schema
-- **[Benchmarks](https://dog.dev/benchmarks)** — full speed and coverage matrix
-- **[How is dog different?](https://dog.dev/how-is-dog-different)** — what changes vs bat
+- **[Getting started](https://sh.dog/getting-started)** — install, first highlight, theme, fzf
+- **[Configuration](https://sh.dog/configuration)** — every flag, env var, exit code
+- **[How to integrate dog](https://sh.dog/how-to-integrate-dog)** — fzf, tv, pager, shell pipes
+- **[How to set themes](https://sh.dog/how-to-use-themes)** — pick, install, author + Zed schema
+- **[Benchmarks](https://sh.dog/benchmarks)** — full speed and coverage matrix
+- **[How is dog different?](https://sh.dog/how-is-dog-different)** — what changes vs bat
 
 ## Status
 
@@ -106,7 +106,7 @@ Test suite: 197 Swift unit tests across 29 suites + 49 integration assertions ac
 
 ## License
 
-TBD — pending 0.1 release.
+MIT — see [LICENSE](LICENSE).
 
 ---
 
