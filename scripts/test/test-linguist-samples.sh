@@ -15,8 +15,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
-SAMPLE_DIR="$PROJECT_DIR/tests/fixtures/linguist-samples"
-DOG="${DOG_BIN:-$PROJECT_DIR/cli/.build/release/dog}"
+SAMPLE_DIR="$PROJECT_DIR/scripts/fixtures/linguist-samples"
+DOG="${DOG_BIN:-$PROJECT_DIR/.build/release/dog}"
 
 GREEN='\033[38;2;136;169;141m'
 RED='\033[38;2;204;67;61m'
@@ -26,7 +26,7 @@ RESET='\033[0m'
 
 if [[ ! -f "$DOG" ]]; then
   echo -e "${DIM}Building release binary...${RESET}"
-  (cd "$PROJECT_DIR/cli" && swift build -c release --quiet 2>/dev/null)
+  (cd "$PROJECT_DIR" && swift build -c release --quiet 2>/dev/null)
 fi
 
 mkdir -p "$SAMPLE_DIR"

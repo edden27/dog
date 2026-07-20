@@ -12,15 +12,15 @@ START_TIME=$SECONDS
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-FIXTURE="$PROJECT_ROOT/tests/fixtures/jquery.js"
+FIXTURE="$PROJECT_ROOT/scripts/fixtures/jquery.js"
 
 # Find dog binary
 if [[ -n "${DOG_BIN:-}" ]] && [[ -x "$DOG_BIN" ]]; then
     DOG="$DOG_BIN"
-elif [[ -x "$PROJECT_ROOT/cli/.build/debug/dog" ]]; then
-    DOG="$PROJECT_ROOT/cli/.build/debug/dog"
+elif [[ -x "$PROJECT_ROOT/.build/debug/dog" ]]; then
+    DOG="$PROJECT_ROOT/.build/debug/dog"
 else
-    echo "dog binary not found — set DOG_BIN or run 'swift build' in cli/"
+    echo "dog binary not found — set DOG_BIN or run 'swift build'"
     exit 1
 fi
 

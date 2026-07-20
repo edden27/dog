@@ -3,7 +3,7 @@
 set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 TOTAL_PASS=0
 TOTAL_FAIL=0
 
@@ -22,9 +22,8 @@ FAILED_SUITES=()
 
 # Swift unit tests
 echo "Swift unit tests:"
-CLI_DIR="$PROJECT_ROOT/cli"
-if (cd "$CLI_DIR" && swift test 2>&1 | tail -1 | grep -q "passed"); then
-    SWIFT_RESULT=$(cd "$CLI_DIR" && swift test 2>&1 | tail -1)
+if (cd "$PROJECT_ROOT" && swift test 2>&1 | tail -1 | grep -q "passed"); then
+    SWIFT_RESULT=$(cd "$PROJECT_ROOT" && swift test 2>&1 | tail -1)
     echo -e "  ${GREEN}✓${RESET} $SWIFT_RESULT"
     TOTAL_PASS=$((TOTAL_PASS + 1))
 else
