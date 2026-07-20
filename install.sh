@@ -92,7 +92,7 @@ URL="${DOG_INSTALL_URL:-https://github.com/$REPO/releases/latest/download/$TARBA
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
-step "downloading $TARBALL"
+step "fetching $TARBALL"
 note "$URL"
 if command -v curl >/dev/null 2>&1; then
   # on a terminal, let curl draw its progress bar for the one slow step
