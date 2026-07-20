@@ -11,7 +11,7 @@ echo 'struct Point { let x, y: Int }' | dog -l swift
 fzf --preview 'dog --color=always {}'
 ```
 
-A [yazi plugin](https://github.com/edden27/dog-yazi) wraps `dog` as a previewer with caching and theme config.
+A [yazi plugin](https://github.com/edden27/dog.yazi) wraps `dog` as a previewer with caching and theme config.
 
 ## Why dog
 

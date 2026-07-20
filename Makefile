@@ -17,7 +17,8 @@ LINUX_ARM_TAR   := $(DIST)/dog-linux-arm64.tar.gz
 help:
 	@echo "Targets:"
 	@echo "  build           Build optimized binary for this machine"
-	@echo "  install         Build and install to $(PREFIX)/bin (override: make install PREFIX=~/.local)"
+	@echo "  install         Install built binary to $(PREFIX)/bin (sudo only if needed;"
+	@echo "                  override: make install PREFIX=~/.local). Run 'make build' first."
 	@echo "  uninstall       Remove $(PREFIX)/bin/dog"
 	@echo "  release-macos   Build universal macOS release binary (arm64+x86_64)"
 	@echo "  release-linux   Build Linux x86_64 + arm64 release binaries via Docker"
@@ -54,9 +55,21 @@ generate-query-blobs:
 build:
 	swift build -c release -Xcc -flto=thin
 
-install: build
-	install -d $(PREFIX)/bin
-	install -m 755 .build/release/dog $(PREFIX)/bin/dog
+# Not `install: build` — building under sudo leaves root-owned .build
+# files that break later normal builds. sudo is used only for the copy,
+# and only when the target dir isn't writable (so PREFIX=~/.local never
+# prompts). mkdir -p, not install -d: install -d chmods an existing dir,
+# which fails on /usr/local/bin even when copying into it would succeed.
+install:
+	@[ -f .build/release/dog ] || { echo "no release binary — run 'make build' first"; exit 1; }
+	@mkdir -p $(PREFIX)/bin 2>/dev/null || true
+	@if [ -w $(PREFIX)/bin ]; then \
+	  install -m 755 .build/release/dog $(PREFIX)/bin/dog; \
+	else \
+	  echo "$(PREFIX)/bin needs admin rights — using sudo:"; \
+	  sudo install -m 755 .build/release/dog $(PREFIX)/bin/dog; \
+	fi
+	@echo "installed $(PREFIX)/bin/dog"
 
 uninstall:
 	rm -f $(PREFIX)/bin/dog
