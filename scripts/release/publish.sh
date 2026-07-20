@@ -97,6 +97,7 @@ class Dog < Formula
 
   def install
     bin.install "dog"
+    generate_completions_from_executable(bin/"dog", "--generate-completion-script")
   end
 
   test do
