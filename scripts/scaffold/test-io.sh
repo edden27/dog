@@ -20,4 +20,16 @@ STDIN_OUT=$(echo "let x = 1" | "$DOG" 2>/dev/null)
 MULTI=$(printf "line1\nline2\nline3\n" | "$DOG" 2>/dev/null | wc -l | tr -d ' ')
 [[ "$MULTI" -eq 3 ]] && pass "multi-line stdin (3 lines)" || fail "multi-line stdin (got $MULTI)"
 
+# CRLF input: \r is part of the line terminator, must not reach the output
+CRLF_OUT=$(printf 'let x = 1\r\nlet y = 2\r\n' | "$DOG" -l swift 2>/dev/null)
+[[ "$CRLF_OUT" == $'let x = 1\nlet y = 2' ]] && pass "CRLF input: \\r stripped" || fail "CRLF input: \\r stripped (got: $(printf '%s' "$CRLF_OUT" | cat -v))"
+
+# CRLF with colors: no raw \r byte anywhere in the ANSI stream
+CRLF_ANSI=$(printf 'let x = 1\r\n// hi\r\n' | "$DOG" -l swift --color=always 2>/dev/null)
+if printf '%s' "$CRLF_ANSI" | LC_ALL=C grep -q "$(printf '\r')"; then
+    fail "CRLF colored output contains raw \\r"
+else
+    pass "CRLF colored output contains no \\r"
+fi
+
 summary

@@ -221,15 +221,22 @@ struct PrintCommand {
       while lineEnd < sourceBytes.count, sourceBytes[lineEnd] != 0x0A {
         lineEnd += 1
       }
+      // CRLF: a trailing \r belongs to the line terminator, not the content.
+      // Emitted raw it yanks the cursor to column 0 mid-line (overdraw, short
+      // bg fill); it must also not count toward display width.
+      var contentEnd = lineEnd
+      if contentEnd > lineStart, sourceBytes[contentEnd - 1] == 0x0D {
+        contentEnd -= 1
+      }
 
       // Emit gutter with line number
       emitGutter(lineNumber: lineNumber, gutterTable: gutterTable, into: &output)
 
-      let lineLen = lineEnd - lineStart
+      let lineLen = contentEnd - lineStart
       // Scan for ASCII-ness — needed by both bulk width math and truncation.
       var lineIsASCII = true
       var scan = lineStart
-      while scan < lineEnd {
+      while scan < contentEnd {
         if sourceBytes[scan] >= 0x80 {
           lineIsASCII = false
           break
@@ -242,7 +249,7 @@ struct PrintCommand {
       var lineDisplayWidth = 0
       if lineIsASCII {
         var ci = lineStart
-        while ci < lineEnd {
+        while ci < contentEnd {
           if sourceBytes[ci] == 0x09 {
             lineDisplayWidth += tabStopWidth - (lineDisplayWidth % tabStopWidth)
           } else {
@@ -257,7 +264,7 @@ struct PrintCommand {
       if canBulk {
         // Truncate: when wrap is disabled, clip the emitted range to contentCols
         // so long lines don't overflow the terminal and soft-wrap.
-        var emitEnd = lineEnd
+        var emitEnd = contentEnd
         if shouldTruncate, lineLen > contentCols {
           if lineIsASCII {
             // ASCII: 1 byte == 1 column
@@ -266,7 +273,7 @@ struct PrintCommand {
             // Non-ASCII: walk characters and stop at the column limit
             emitEnd = truncateByteEnd(
               sourceBytes: sourceBytes,
-              from: lineStart, to: lineEnd, maxCols: contentCols
+              from: lineStart, to: contentEnd, maxCols: contentCols
             )
           }
         }
@@ -292,7 +299,7 @@ struct PrintCommand {
           colUsed = str.unicodeScalars.reduce(0) { $0 + $1.terminalWidth }
         }
         // If truncated, advance tokenIndex past any tokens we skipped on this line
-        if emitEnd < lineEnd {
+        if emitEnd < contentEnd {
           while tokenIndex < tokens.count, tokens[tokenIndex].startByte < lineEnd {
             tokenIndex += 1
           }
@@ -305,7 +312,7 @@ struct PrintCommand {
         var wrapIndent = 0
         let indentCap = contentCols / 2
         var scanIdx = lineStart
-        while scanIdx < lineEnd, wrapIndent < indentCap {
+        while scanIdx < contentEnd, wrapIndent < indentCap {
           let byte = sourceBytes[scanIdx]
           if byte == 0x20 {
             wrapIndent += 1
@@ -323,7 +330,7 @@ struct PrintCommand {
           colorEnabled: colorEnabled, colorTable: colorTable, baseColor: baseColor)
         colUsed = lineWriter.emitLine(
           sourceBytes: sourceBytes,
-          lineStart: lineStart, lineEnd: lineEnd,
+          lineStart: lineStart, lineEnd: contentEnd,
           tokens: tokens, tokenIndex: &tokenIndex,
           into: &output
         )
