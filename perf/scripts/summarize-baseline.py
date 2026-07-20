@@ -2,7 +2,7 @@
 """Summarize baseline hyperfine JSONs and compare against the docs-site table.
 
 Usage:
-    python3 perf/scripts/summarize-baseline.py <results-dir> [--docs perf/baseline/docs-2026-04-12.csv]
+    python3 perf/scripts/summarize-baseline.py <results-dir> [--docs perf/baseline/docs-2026-07-18.csv]
 
 Reads every <size>-<language>.json produced by perf/scripts/bench-matrix.sh
 (result [0] = dog, result [1] = bat — same order bench.sh uses) and prints a
@@ -43,7 +43,9 @@ def main():
     if len(sys.argv) < 2:
         sys.exit(__doc__)
     results_dir = Path(sys.argv[1])
-    docs_path = "perf/baseline/docs-2026-04-12.csv"
+    # Keep pointed at the NEWEST baseline in perf/baseline/ — update this
+    # whenever a new bench run becomes the published docs numbers.
+    docs_path = "perf/baseline/docs-2026-07-18.csv"
     if "--docs" in sys.argv:
         docs_path = sys.argv[sys.argv.index("--docs") + 1]
     docs = load_docs(docs_path)
