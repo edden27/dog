@@ -72,18 +72,22 @@ struct Dog: AsyncParsableCommand {
 
   // MARK: - Arguments
 
-  @Argument(help: "File to display.")
+  @Argument(help: "File to display.", completion: .file())
   var file: String?
 
   // MARK: - Options
 
-  @Option(name: .shortAndLong, help: "Set the language.")
+  @Option(
+    name: .shortAndLong, help: "Set the language.",
+    completion: .custom(completeLanguages)
+  )
   var language: String?
 
   @Option(help: "When to use colors.")
   var color: ColorOption = .auto
 
   @Option(
+    name: [.customShort("t"), .long],
     help: ArgumentHelp(
       "Theme name.",
       discussion: """
@@ -97,7 +101,8 @@ struct Dog: AsyncParsableCommand {
         are zero-cost (compiled in, no file I/O). An explicit --theme overrides \
         --light and --dark.
         """
-    )
+    ),
+    completion: .custom(completeThemes)
   )
   var theme: String = "UtilityDark"
 
@@ -118,14 +123,15 @@ struct Dog: AsyncParsableCommand {
         substitution (e.g. ${HOME}, ${XDG_CONFIG_HOME}). Quote paths that \
         contain spaces or special characters.
         """
-    )
+    ),
+    completion: .directory
   )
   var themeDir: String?
 
   @Option(name: .long, help: "When to use the pager (auto, always, never).")
   var paging: PagingOption = .auto
 
-  @Flag(name: .customShort("P"), help: "Disable the pager.")
+  @Flag(name: [.customShort("P"), .long], help: "Disable the pager.")
   var noPager = false
 
   @Option(name: .shortAndLong, help: "Line range to display.")
@@ -314,6 +320,41 @@ struct Dog: AsyncParsableCommand {
     } catch {
       ErrorHandler.handle(error)
     }
+  }
+
+  // MARK: - Completion helpers
+
+  /// Shell-completion values for `--language`: every supported language.
+  private static func completeLanguages(
+    _: [String], _: Int, _: String
+  ) -> [String] {
+    LanguageRegistry.shared.languageNames
+  }
+
+  /// Shell-completion values for `--theme`: built-ins plus every variant in
+  /// the themes directory. Honors a `--theme-dir` typed earlier on the line.
+  private static func completeThemes(
+    _ arguments: [String], _: Int, _: String
+  ) -> [String] {
+    let directory = themeDirArgument(in: arguments) ?? ConfigPaths.themesDir
+    var names = ["UtilityDark", "UtilityBright"]
+    for (_, variants) in ZedThemeLoader.listVariantNames(in: directory) {
+      names.append(contentsOf: variants)
+    }
+    return names
+  }
+
+  /// Find the last `--theme-dir` value among `arguments`, expanded.
+  private static func themeDirArgument(in arguments: [String]) -> String? {
+    var value: String?
+    for (index, argument) in arguments.enumerated() {
+      if argument == "--theme-dir", index + 1 < arguments.count {
+        value = arguments[index + 1]
+      } else if argument.hasPrefix("--theme-dir=") {
+        value = String(argument.dropFirst("--theme-dir=".count))
+      }
+    }
+    return value.map(ConfigPaths.expand)
   }
 
   // MARK: - Listing helpers
