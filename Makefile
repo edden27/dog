@@ -1,19 +1,24 @@
-VERSION ?= 0.1.0
 DIST    := dist
+PREFIX  ?= /usr/local
 
 MAC_BIN         := .build/release/dog
 LINUX_X86_BIN   := dog-linux-x86_64
 LINUX_ARM_BIN   := dog-linux-arm64
 
-MAC_ARM_TAR     := $(DIST)/dog-$(VERSION)-macos-arm64.tar.gz
-MAC_X86_TAR     := $(DIST)/dog-$(VERSION)-macos-x86_64.tar.gz
-LINUX_X86_TAR   := $(DIST)/dog-$(VERSION)-linux-x86_64.tar.gz
-LINUX_ARM_TAR   := $(DIST)/dog-$(VERSION)-linux-arm64.tar.gz
+# No version in filenames: GitHub's /releases/latest/download/<name> URLs
+# only stay evergreen if the asset name is identical across releases.
+MAC_ARM_TAR     := $(DIST)/dog-macos-arm64.tar.gz
+MAC_X86_TAR     := $(DIST)/dog-macos-x86_64.tar.gz
+LINUX_X86_TAR   := $(DIST)/dog-linux-x86_64.tar.gz
+LINUX_ARM_TAR   := $(DIST)/dog-linux-arm64.tar.gz
 
-.PHONY: all release-macos release-linux package package-macos package-linux shas clean help
+.PHONY: all build install uninstall release-macos release-linux package package-macos package-linux shas clean help
 
 help:
 	@echo "Targets:"
+	@echo "  build           Build optimized binary for this machine"
+	@echo "  install         Build and install to $(PREFIX)/bin (override: make install PREFIX=~/.local)"
+	@echo "  uninstall       Remove $(PREFIX)/bin/dog"
 	@echo "  release-macos   Build universal macOS release binary (arm64+x86_64)"
 	@echo "  release-linux   Build Linux x86_64 + arm64 release binaries via Docker"
 	@echo "  package         Tar + sha256 all platforms (runs both releases)"
@@ -45,6 +50,16 @@ verify-blob-arch:
 .PHONY: generate-query-blobs
 generate-query-blobs:
 	bash scripts/generate/query-blobs.sh
+
+build:
+	swift build -c release -Xcc -flto=thin
+
+install: build
+	install -d $(PREFIX)/bin
+	install -m 755 .build/release/dog $(PREFIX)/bin/dog
+
+uninstall:
+	rm -f $(PREFIX)/bin/dog
 
 release-linux:
 	bash scripts/generate/linux.sh binary
