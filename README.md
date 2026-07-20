@@ -53,8 +53,7 @@ cp .build/release/dog /usr/local/bin/
 
 Requires macOS 14+ or Linux with the Swift runtime (bundled in the Linux binary).
 
-**Tab completions** — dog generates its own completion script for bash, zsh, and fish (`dog --generate-completion-script zsh`); the [docs](#) walk through the one-time install for your shell.
-<!-- TODO: point the link above at the completions section once it's live -->
+**Tab completions** — dog generates its own completion script for bash, zsh, and fish (`dog --generate-completion-script zsh`); the [docs](https://dog.dev/how-to-integrate-dog#shell-completions) walk through the one-time install for your shell.
 
 
 ## How does it compare to bat?
