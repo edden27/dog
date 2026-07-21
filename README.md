@@ -25,31 +25,38 @@ A [yazi plugin](https://github.com/edden27/dog.yazi) wraps `dog` as a previewer 
 ## Install
 
 ::: warning
-Release URLs are placeholders until 0.1 ships.
+The install script, Homebrew tap, and release URLs all go live when 0.1 ships — placeholders until then.
 :::
 
-**macOS** (Homebrew planned):
+**Install script** — figures out your OS and arch, installs the binary, and sets up shell completions:
+
+```sh
+curl -fsSL https://sh.dog/install | sh
+```
+
+**Homebrew**:
+
+```sh
+brew tap edden27/dog
+brew install dog
+```
+
+**Binary** — four builds: `dog-macos-arm64`, `dog-macos-x86_64`, `dog-linux-x86_64`, `dog-linux-arm64`. Grab yours:
 
 ```sh
 curl -L <REPO_URL>/releases/latest/download/dog-macos-arm64.tar.gz | tar xz
 sudo mv dog /usr/local/bin/
 ```
 
-**Linux**:
-
-```sh
-curl -L <REPO_URL>/releases/latest/download/dog-linux-x86_64.tar.gz | tar xz
-sudo mv dog /usr/local/bin/
-```
-
-**From source**:
+**From source** — needs Swift 6.3 or newer (Xcode 26 on macOS):
 
 ```sh
 git clone <REPO_URL>
 cd dog
-swift build -c release -Xcc -flto=thin
-cp .build/release/dog /usr/local/bin/
+make build && make install
 ```
+
+`make install` copies the binary into `/usr/local/bin`, asking for sudo only when it has to; `make install PREFIX=~/.local` avoids sudo entirely.
 
 Requires macOS 14+ or Linux with the Swift runtime (bundled in the Linux binary).
 

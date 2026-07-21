@@ -14,7 +14,7 @@
 #
 # Requirements:
 #   - Docker Desktop or OrbStack (preferred) for Linux tests
-#   - Swift 6.2+ toolchain for macOS tests
+#   - Swift 6.3+ toolchain for macOS tests
 
 set -euo pipefail
 
