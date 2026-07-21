@@ -2,6 +2,8 @@
 
 > Like bat, but powered by tree-sitter.
 
+![Animated terminal demo of dog highlighting a Swift file, cycling through themes — default UtilityDark, Catppuccin Frappé, Nord Dark, Tokyo Night, then --light](assets/hero.gif)
+
 A `cat` alternative for macOS and Linux that prints files to your terminal with syntax highlighting. Auto-pages with `less`. Built to be piped into previewers like `fzf`, `tv`, and `yazi`.
 
 ```sh
@@ -16,7 +18,7 @@ A [yazi plugin](https://github.com/edden27/dog.yazi) wraps `dog` as a previewer 
 ## Why dog
 
 - **800+ Zed themes** — drop a JSON file in, or point `--theme-dir` at your existing `~/.config/zed/themes` and use what you already have. Backgrounds, line numbers, and gutter are all theme-controlled. Two zero-cost built-ins ship too — dark is the default, `--light` flips to the bright one.
-- **Up to 14.6× faster than bat on large files** — 55k lines of JS in 245ms vs 2.4s. 100% syntax coverage across all 17 supported languages.
+- **Up to 14.6× faster than bat on large files** — 54k lines of TypeScript in 0.4s vs 5.8s. 100% syntax coverage across all 17 supported languages.
 - **~5ms startup, every language** — precompiled highlight queries mean there's no per-language warmup. In fzf or yazi, that's the latency on every keystroke.
 - **Single binary, no runtime deps** — 17 grammars statically compiled in. Copy it anywhere, it runs.
 - **Built on tree-sitter** — full AST parse, not regex. Highlight queries from [nvim-treesitter](https://github.com/nvim-treesitter/nvim-treesitter).
@@ -65,11 +67,13 @@ Requires macOS 14+ or Linux with the Swift runtime (bundled in the Linux binary)
 
 ## How does it compare to bat?
 
+![Side-by-side comparison of dog and bat rendering a 260,000-line C file — dog finishes in about a second while bat takes several](assets/xlarge-sidebyside.gif)
 
 |                                             | dog                      | bat            |
 | ------------------------------------------- | ------------------------ | -------------- |
 | Engine                                      | tree-sitter, full AST    | regex per line |
 | Themes                                      | Zed JSON, 800+ available | TextMate XML   |
+| Bold & italic fonts                         | Theme-controlled         | No             |
 | Line background, gutter, line-number colors | Theme-controlled         | Fixed          |
 | Languages                                   | 17                       | 200+           |
 | Tiny-file speed (~25 lines)                 | **2.8× faster**          | baseline       |
