@@ -57,7 +57,7 @@ cd dog
 make build && make install
 ```
 
-`make install` copies the binary into `/usr/local/bin`, asking for sudo only when it has to; `make install PREFIX=~/.local` avoids sudo entirely.
+`make install` copies the binary into `/usr/local/bin`, asking for sudo only when it has to; `make install PREFIX=~/.local` avoids sudo entirely. Only need a few languages? `dog` can compile a subset — a Swift+JSON-only build is ~5 MB instead of ~20. See [custom builds](https://sh.dog/installation#custom-language-builds).
 
 Requires macOS 14+ or Linux with the Swift runtime (bundled in the Linux binary).
 

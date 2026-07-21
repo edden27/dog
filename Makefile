@@ -17,6 +17,7 @@ LINUX_ARM_TAR   := $(DIST)/dog-linux-arm64.tar.gz
 help:
 	@echo "Targets:"
 	@echo "  build           Build optimized binary for this machine"
+	@echo "                  (TRAITS=SwiftLib,JSONLib builds a language subset)"
 	@echo "  install         Install built binary to $(PREFIX)/bin (sudo only if needed;"
 	@echo "                  override: make install PREFIX=~/.local). Run 'make build' first."
 	@echo "  uninstall       Remove $(PREFIX)/bin/dog"
@@ -52,8 +53,14 @@ verify-blob-arch:
 generate-query-blobs:
 	bash scripts/generate/query-blobs.sh
 
+# TRAITS: optional comma-separated language subset (SE-0450 package traits),
+# e.g. `make build TRAITS=SwiftLib,JSONLib` → a ~5MB binary with just those
+# grammars. Empty = all 17 default languages. Deliberately build-only:
+# release-*/package always ship the full default set.
+TRAIT_FLAGS = $(if $(TRAITS),--disable-default-traits --traits $(TRAITS))
+
 build:
-	swift build -c release -Xcc -flto=thin
+	swift build -c release $(TRAIT_FLAGS) -Xcc -flto=thin
 
 # Not `install: build` — building under sudo leaves root-owned .build
 # files that break later normal builds. sudo is used only for the copy,
