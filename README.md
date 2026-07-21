@@ -29,7 +29,7 @@ A [yazi plugin](https://github.com/edden27/dog.yazi) wraps `dog` as a previewer 
 > [!WARNING]
 > The install script, Homebrew tap, and release URLs all go live when 0.1 ships — placeholders until then.
 
-**Install script** — figures out your OS and arch, installs the binary, and sets up shell completions:
+**Install script** — picks the right build for your machine, installs it, and sets up shell completions:
 
 ```sh
 curl -fsSL https://sh.dog/install | sh
