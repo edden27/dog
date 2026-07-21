@@ -1,13 +1,13 @@
 # 🐶 dog
 
-> Like bat, but powered by tree-sitter.
+> Like bat, but faster & deeper theming. (powered by tree-sitter, btw)
 
 ![Animated terminal demo of dog highlighting a Swift file, cycling through themes — default UtilityDark, Catppuccin Frappé, Nord Dark, Tokyo Night, then --light](assets/hero.gif)
 
-A `cat` alternative for macOS and Linux that prints files to your terminal with syntax highlighting. Auto-pages with `less`. Built to be piped into previewers like `fzf`, `tv`, and `yazi`.
+A `cat` alternative for macOS and Linux that prints files to your terminal with syntax highlighting — backgrounds, line numbers, and gutter included. Auto-pages with `less`. Starts up in ~5ms, so it's great piped into previewers like `fzf`, `tv`, and `yazi`.
 
 ```sh
-dog Sources/Dog/main.swift
+dog Sources/dog/Dog.swift
 dog --light src/lib.rs
 echo 'struct Point { let x, y: Int }' | dog -l swift
 fzf --preview 'dog --color=always {}'
@@ -17,18 +17,17 @@ A [yazi plugin](https://github.com/edden27/dog.yazi) wraps `dog` as a previewer 
 
 ## Why dog
 
-- **800+ Zed themes** — drop a JSON file in, or point `--theme-dir` at your existing `~/.config/zed/themes` and use what you already have. Backgrounds, line numbers, and gutter are all theme-controlled. Two zero-cost built-ins ship too — dark is the default, `--light` flips to the bright one.
+- **800+ Zed themes** — drop a JSON file in, or point `--theme-dir` at your existing `~/.config/zed/themes` and use what you already have. Backgrounds, line numbers, and gutter are all theme-controlled, opacity included. Two zero-cost built-ins ship too — dark is the default, `--light` flips to the bright one.
 - **Up to 14.6× faster than bat on large files** — 54k lines of TypeScript in 0.4s vs 5.8s. 100% syntax coverage across all 17 supported languages.
 - **~5ms startup, every language** — precompiled highlight queries mean there's no per-language warmup. In fzf or yazi, that's the latency on every keystroke.
 - **Single binary, no runtime deps** — 17 grammars statically compiled in. Copy it anywhere, it runs.
 - **Built on tree-sitter** — full AST parse, not regex. Highlight queries from [nvim-treesitter](https://github.com/nvim-treesitter/nvim-treesitter).
-- **Written in Swift** — direct tree-sitter C API. Custom ANSI renderer, custom JSON and TOML parsers (sub-millisecond).
+- **Written in Swift** — direct tree-sitter C API. Custom ANSI renderer, custom zero-copy JSON parser (sub-millisecond theme loads).
 
 ## Install
 
-::: warning
-The install script, Homebrew tap, and release URLs all go live when 0.1 ships — placeholders until then.
-:::
+> [!WARNING]
+> The install script, Homebrew tap, and release URLs all go live when 0.1 ships — placeholders until then.
 
 **Install script** — figures out your OS and arch, installs the binary, and sets up shell completions:
 
@@ -76,14 +75,14 @@ Requires macOS 14+ or Linux with the Swift runtime (bundled in the Linux binary)
 | Bold & italic fonts                         | Theme-controlled         | No             |
 | Line background, gutter, line-number colors | Theme-controlled         | Fixed          |
 | Languages                                   | 17                       | 200+           |
-| Tiny-file speed (~25 lines)                 | **2.8× faster**          | baseline       |
+| Tiny-file speed (~30 lines)                 | **2.8× faster**          | baseline       |
 | Small-file speed (~200 lines)               | **3.5× faster**          | baseline       |
 | Medium-file speed (~2k lines)               | **6.0× faster**          | baseline       |
 | Large-file speed (16k lines avg)            | **7.4× faster**          | baseline       |
 | Extreme-file speed (55k–260k lines)         | **8.0× faster**          | baseline       |
 | Syntax coverage (avg)                       | **100%**                 | 77%            |
 | Multi-file, git gutter, Windows             | Not yet                  | Yes            |
-| Binary size                                 | ~20 MB (macOS)           | ~6 MB          |
+| Binary size                                 | ~20 MB (macOS)           | ~5 MB          |
 
 
 Full benchmarks and methodology in the [docs](https://sh.dog/benchmarks).
@@ -93,7 +92,7 @@ Full benchmarks and methodology in the [docs](https://sh.dog/benchmarks).
 - **[Getting started](https://sh.dog/getting-started)** — install, first highlight, theme, fzf
 - **[Configuration](https://sh.dog/configuration)** — every flag, env var, exit code
 - **[How to integrate dog](https://sh.dog/how-to-integrate-dog)** — fzf, tv, pager, shell pipes
-- **[How to set themes](https://sh.dog/how-to-use-themes)** — pick, install, author + Zed schema
+- **[How to use themes](https://sh.dog/how-to-use-themes)** — pick, install, author + Zed schema
 - **[Benchmarks](https://sh.dog/benchmarks)** — full speed and coverage matrix
 - **[How is dog different?](https://sh.dog/how-is-dog-different)** — what changes vs bat
 
@@ -104,10 +103,10 @@ Full benchmarks and methodology in the [docs](https://sh.dog/benchmarks).
 - Single file at a time (multi-file planned)
 - No git-diff gutter
 - No Windows
-- `--list-languages` and `--range` are stubs
+- `--range`, `--header`, and `--no-line-numbers` are stubs
 - `$PAGER` not honored (pager is hardcoded to `less -R`)
 
-Test suite: 197 Swift unit tests across 29 suites + 49 integration assertions across 9 suites + 13 bat-compatibility scenarios.
+Test suite: 197 Swift unit tests across 29 suites + 51 integration assertions across 9 suites + 13 bat-compatibility scenarios.
 
 ## Acknowledgements
 
@@ -121,6 +120,5 @@ MIT — see [LICENSE](LICENSE).
 
 ---
 
-::: info 🐕 Dog Fact
-Dogs love dark mode. They have superior night vision and motion detection, which was more important evolutionarily than color vision for their survival as hunters.
-:::
+> [!TIP]
+> **🐕 Dog Fact** — Dogs love dark mode. They have superior night vision and motion detection, which was more important evolutionarily than color vision for their survival as hunters.
