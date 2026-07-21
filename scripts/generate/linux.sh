@@ -100,7 +100,7 @@ build_linux_arch() {
         -v "$PROJECT_DIR:/workspace" \
         -w /tmp/src \
         "$SWIFT_IMAGE" \
-        bash -c "cp -a /workspace/. . && swift build -c release --build-path $LINUX_BUILD_PATH && cp $LINUX_BUILD_PATH/release/dog /workspace/dog-linux-$SUFFIX"; then
+        bash -c "cp -a /workspace/. . && swift build -c release --build-path $LINUX_BUILD_PATH -Xcc -flto=thin -Xswiftc -use-ld=lld --static-swift-stdlib && strip $LINUX_BUILD_PATH/release/dog && cp $LINUX_BUILD_PATH/release/dog /workspace/dog-linux-$SUFFIX"; then
         chmod +x "$OUTPUT"
         success "Binary built: $OUTPUT"
     else
@@ -148,7 +148,7 @@ case "$TARGET" in
         run_linux
         ;;
     binary)
-        run_binary
+        run_binary "$@"
         ;;
     shell)
         run_shell

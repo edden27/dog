@@ -93,15 +93,15 @@ package-macos: release-macos | $(DIST)
 	lipo -thin arm64  $$UNI -output $$TMP/dog-arm64; \
 	lipo -thin x86_64 $$UNI -output $$TMP/dog-x86_64; \
 	strip -x $$TMP/dog-arm64 $$TMP/dog-x86_64; \
-	install -m 755 $$TMP/dog-arm64  $$TMP/dog && tar -C $$TMP -czf $(MAC_ARM_TAR) dog && rm $$TMP/dog; \
-	install -m 755 $$TMP/dog-x86_64 $$TMP/dog && tar -C $$TMP -czf $(MAC_X86_TAR) dog && rm $$TMP/dog; \
+	install -m 755 $$TMP/dog-arm64  $$TMP/dog && COPYFILE_DISABLE=1 tar --no-xattrs -C $$TMP -czf $(MAC_ARM_TAR) dog && rm $$TMP/dog; \
+	install -m 755 $$TMP/dog-x86_64 $$TMP/dog && COPYFILE_DISABLE=1 tar --no-xattrs -C $$TMP -czf $(MAC_X86_TAR) dog && rm $$TMP/dog; \
 	rm -rf $$TMP
 	@$(MAKE) shas
 
 package-linux: release-linux | $(DIST)
 	@TMP=$$(mktemp -d); \
-	install -m 755 $(LINUX_X86_BIN) $$TMP/dog && tar -C $$TMP -czf $(LINUX_X86_TAR) dog && rm $$TMP/dog; \
-	install -m 755 $(LINUX_ARM_BIN) $$TMP/dog && tar -C $$TMP -czf $(LINUX_ARM_TAR) dog && rm $$TMP/dog; \
+	install -m 755 $(LINUX_X86_BIN) $$TMP/dog && COPYFILE_DISABLE=1 tar --no-xattrs -C $$TMP -czf $(LINUX_X86_TAR) dog && rm $$TMP/dog; \
+	install -m 755 $(LINUX_ARM_BIN) $$TMP/dog && COPYFILE_DISABLE=1 tar --no-xattrs -C $$TMP -czf $(LINUX_ARM_TAR) dog && rm $$TMP/dog; \
 	rm -rf $$TMP
 	@$(MAKE) shas
 

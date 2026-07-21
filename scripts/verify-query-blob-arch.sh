@@ -23,13 +23,13 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-TS_SRC="$PROJECT_ROOT/.build/checkouts/tree-sitter"
+TS_SRC="$PROJECT_ROOT/LocalPackages/tree-sitter"
 HARNESS="$PROJECT_ROOT/perf/experiments/003-query-cache/harness/serialize-bench.c"
 WORK_DIR=$(mktemp -d)
 trap 'rm -rf "$WORK_DIR"' EXIT
 
 if [[ ! -d "$TS_SRC" ]]; then
-  echo "verify-query-blob-arch: tree-sitter checkout missing — run 'swift package resolve' first" >&2
+  echo "verify-query-blob-arch: vendored tree-sitter missing at LocalPackages/tree-sitter" >&2
   exit 2
 fi
 
