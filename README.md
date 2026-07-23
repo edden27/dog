@@ -107,7 +107,7 @@ Requires macOS 14+ or Linux with the Swift runtime (bundled in the Linux binary)
 | ------------------------------------------- | ------------------------ | -------------- |
 | Engine                                      | tree-sitter, full AST    | regex per line |
 | Themes                                      | Zed JSON, 800+ available | TextMate XML   |
-| Bold & italic fonts                         | Theme-controlled         | No             |
+| Bold & italic fonts (all 4 styles)          | Theme-controlled         | Partial — italics opt-in, never combined |
 | Line background, gutter, line-number colors | Theme-controlled         | Fixed          |
 | Languages                                   | [17](#supported-languages) | 200+           |
 | Syntax coverage (avg)                       | **100%**                 | 77%            |
