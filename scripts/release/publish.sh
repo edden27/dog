@@ -101,6 +101,9 @@ class Dog < Formula
   end
 
   test do
+    (testpath/"point.swift").write "struct Point { let x, y: Int }"
+    assert_match "Point", shell_output("#{bin}/dog --color=always --paging=never point.swift")
+    assert_match "let", shell_output("echo 'let x = 1' | #{bin}/dog --color=always --paging=never -l swift")
     assert_match "$VERSION", shell_output("#{bin}/dog --version")
   end
 end
