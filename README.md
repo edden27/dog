@@ -147,6 +147,7 @@ Test suite: 197 Swift unit tests across 29 suites + 51 integration assertions ac
 - Highlight queries from [nvim-treesitter](https://github.com/nvim-treesitter/nvim-treesitter) (Apache 2.0)
 - Tree-sitter grammars from the upstream tree-sitter community
 - Theme format from [Zed](https://zed.dev)
+- Terminal recordings made with [vhs](https://github.com/charmbracelet/vhs) by Charm
 
 
 ---
