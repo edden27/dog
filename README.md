@@ -4,6 +4,8 @@
 
 ![Animated terminal demo of dog highlighting a Swift file, cycling through themes — default UtilityDark, Catppuccin Frappé, Nord Dark, Tokyo Night, then --light](assets/hero.gif)
 
+*Themes: UtilityDark (default), [Catppuccin Frappé](https://zed-themes.com/themes/catppuccin?name=Catppuccin%20Frapp%C3%A9), [Nord Dark](https://zed-themes.com/themes/nord?name=Nord%20Dark), [Tokyo Night](https://zed-themes.com/themes/tokyo-night?name=Tokyo%20Night), built-in [`--light`](https://sh.dog/configuration#light).*
+
 A `cat` alternative for macOS and Linux that prints files to your terminal with syntax highlighting — backgrounds, line numbers, and gutter included. Auto-pages with `less`. Starts up in ~5ms, so it's great piped into previewers like `fzf`, `tv`, and `yazi`.
 
 ```sh
@@ -102,6 +104,8 @@ Requires macOS 14+ or Linux with the Swift runtime (bundled in the Linux binary)
 ## How does it compare to bat?
 
 ![Side-by-side comparison of dog and bat rendering a 260,000-line C file — dog finishes in about a second while bat takes several](assets/xlarge-sidebyside.gif)
+
+*Left: `dog` in [1.1s](https://sh.dog/benchmarks#extreme), right: `bat` in [6.9s](https://sh.dog/benchmarks#extreme) — printing the same 260,493-line C file.*
 
 |                                             | dog                      | bat            |
 | ------------------------------------------- | ------------------------ | -------------- |
