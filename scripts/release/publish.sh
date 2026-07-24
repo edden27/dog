@@ -70,7 +70,7 @@ git clone --depth 1 "https://github.com/$TAP_REPO.git" "$TAP_DIR"
 mkdir -p "$TAP_DIR/Formula"
 cat > "$TAP_DIR/Formula/dog.rb" <<EOF
 class Dog < Formula
-  desc "Fast syntax-highlighting file viewer"
+  desc "Like bat but faster w/ deeper theming - perfect for fzf, tv, yazi"
   homepage "https://sh.dog"
   version "$VERSION"
   license "MIT"
