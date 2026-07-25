@@ -35,9 +35,10 @@ if [ -t 1 ] && [ "${TERM:-}" != dumb ] && [ -z "${NO_COLOR:-}" ]; then
   RED='\033[38;2;204;67;61m'
   DIM='\033[38;2;129;116;100m'
   BOLD='\033[1m'
+  UL='\033[4m'
   RESET='\033[0m'
 else
-  ACCENT=''; GREEN=''; YELLOW=''; RED=''; DIM=''; BOLD=''; RESET=''
+  ACCENT=''; GREEN=''; YELLOW=''; RED=''; DIM=''; BOLD=''; UL=''; RESET=''
 fi
 
 step() { printf "${ACCENT}▸${RESET} %s\n" "$*"; }
@@ -47,16 +48,18 @@ note() { printf "  ${DIM}%s${RESET}\n" "$*"; }
 fail() { printf "${RED}✗ %s${RESET}\n" "$*" >&2; exit 1; }
 
 # Manual follow-ups collected during the run, replayed after the done line:
-# the exact command, then a dim line saying where it goes and what it does.
+# a dim line saying where the command goes and what it does, then the exact
+# command last — nothing below it.
 TODO=""
 todo() {
-  TODO="${TODO}${ACCENT}\$${RESET} ${BOLD}$1${RESET}\n  ${DIM}$2${RESET}\n"
+  [ -n "$TODO" ] && TODO="${TODO}\n"
+  TODO="${TODO}  ${DIM}${BOLD}$2${RESET}\n${ACCENT}\$${RESET} $1\n"
 }
 finish() {
   printf "${GREEN}✓${RESET} done — try: ${ACCENT}dog --help${RESET}\n"
   if [ -n "$TODO" ]; then
     printf '%s\n' "---"
-    printf "${YELLOW}to finish setup:${RESET}\n"
+    printf "${YELLOW}${BOLD}${UL}TO FINISH SETUP${RESET}\n\n"
     printf "%b" "$TODO"
   fi
 }
@@ -123,14 +126,33 @@ step "installing to $BINDIR"
 mkdir -p "$BINDIR"
 install -m 755 "$TMP/dog" "$BINDIR/dog"
 VERSION="$("$BINDIR/dog" --version)" || fail "installed binary failed to run"
+# render smoke test — same idea as the brew formula's test block: pipe a line
+# of swift through and make sure highlighted output actually comes back
+RENDERED="$(printf 'let x = 1\n' | "$BINDIR/dog" -l swift --color=always --paging=never)" \
+  || fail "dog installed but failed to render"
+case "$RENDERED" in
+  *let*) ;;
+  *) fail "dog installed but produced no highlighted output" ;;
+esac
 ok "dog $VERSION installed"
 
 case ":$PATH:" in
   *":$BINDIR:"*) ;;
   *)
     warn "$BINDIR is not in your PATH"
-    todo "export PATH=\"$BINDIR:\$PATH\"" \
-         "add to your shell config — your shell can't find dog until this directory is on PATH"
+    USER_SHELL="$(basename "${SHELL:-}")"
+    if [ "$USER_SHELL" = fish ]; then
+      todo "fish_add_path $BINDIR" \
+           "Run this once to add dog to PATH:"
+    else
+      case "$USER_SHELL" in
+        zsh)  RC="~/.zshrc" ;;
+        bash) RC="~/.bashrc"; [ "$OS" = macos ] && RC="~/.bash_profile" ;;
+        *)    RC="shell config" ;;
+      esac
+      todo "export PATH=\"$BINDIR:\$PATH\"" \
+           "Place this in your $RC to add dog to PATH:"
+    fi
     ;;
 esac
 
@@ -165,7 +187,7 @@ case "$COMP_SHELL" in
       gen zsh > "$HOME/.zsh/completion/_dog"
       warn "no auto-loading completion directory found — wrote ~/.zsh/completion/_dog"
       todo 'fpath=(~/.zsh/completion $fpath); autoload -U compinit && compinit' \
-           "add to ~/.zshrc — tells zsh where the completion file lives and turns on autoloading"
+           "To finish setting up completions add this line to your ~/.zshrc:"
     fi
     note "if completions don't appear: rm -f ~/.zcompdump* && exec zsh"
     ;;
@@ -187,8 +209,9 @@ case "$COMP_SHELL" in
       mkdir -p "$HOME/.bash_completions"
       gen bash > "$HOME/.bash_completions/dog.bash"
       warn "bash-completion isn't installed — wrote ~/.bash_completions/dog.bash"
+      BRC="~/.bashrc"; [ "$OS" = macos ] && BRC="~/.bash_profile"
       todo 'source ~/.bash_completions/dog.bash' \
-           "add to ~/.bashrc (macOS: ~/.bash_profile) — loads dog's tab completions in each new shell"
+           "To finish setting up completions add this line to your $BRC:"
     fi
     ;;
   fish)
