@@ -156,9 +156,14 @@ struct PrintCommand {
       digitWidth += 1
       n /= 10
     }
-    // Plain mode: no gutter at all, full width is content
-    let gutterCols = plain ? 0 : digitWidth + Self.gutterSeparatorWidth
-    let contentCols = termWidth - gutterCols
+    // No gutter in plain mode; also dropped when it can't fit alongside at
+    // least one content column (a 3-col fzf preview pane, --terminal-width
+    // at or below gutter width). The width math must never go negative —
+    // 0..<contentCols traps — and never hit zero, or the wrap loop can't
+    // make progress; the floor covers --terminal-width 0.
+    let showGutter = !plain && termWidth > digitWidth + Self.gutterSeparatorWidth
+    let gutterCols = showGutter ? digitWidth + Self.gutterSeparatorWidth : 0
+    let contentCols = max(1, termWidth - gutterCols)
 
     var output = ANSIOutput(
       enabled: colorEnabled,
@@ -179,10 +184,11 @@ struct PrintCommand {
     }
 
     let lineNumStyle = lineNumberStyle ?? baseColor
-    // In plain mode, gutter table holds empty entries (just bg setup) so emitGutter
-    // still primes the editor bg without printing line numbers.
+    // With no gutter (plain mode, or a pane too narrow to fit one), the table
+    // holds empty entries (just bg setup) so emitGutter still primes the
+    // editor bg without printing line numbers.
     let gutterTable: ContiguousArray<ContiguousArray<UInt8>>
-    if plain {
+    if !showGutter {
       gutterTable = Self.buildPlainGutterTable(lineCount: lineCount, editorBg: editorBg)
     } else {
       gutterTable = Self.buildGutterTable(
@@ -200,7 +206,7 @@ struct PrintCommand {
     }
 
     let wrapGutterBytes: ContiguousArray<UInt8>
-    if plain {
+    if !showGutter {
       wrapGutterBytes = Self.buildPlainWrapGutter(editorBg: editorBg)
     } else {
       wrapGutterBytes = Self.buildWrapGutter(
