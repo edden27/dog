@@ -57,3 +57,8 @@ __pycache__/
 # Logs
 *.log
 dist/
+
+# Rotating local bench/startup runs (bench-check.sh / startup-check.sh)
+perf/latest-bench/
+perf/latest-startup/
+perf/reset-verify-bench/
