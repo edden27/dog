@@ -97,14 +97,14 @@ struct Dog: AsyncParsableCommand {
         editor.background is defined, it composites against it; otherwise the \
         raw RGB is used as a solid color.
 
-        Built-in names: 'UtilityDark' (default), 'UtilityBright'. Built-ins \
+        Built-in names: 'UtilityDark', 'UtilityBright'. Built-ins \
         are zero-cost (compiled in, no file I/O). An explicit --theme overrides \
         --light and --dark.
         """
     ),
     completion: .custom(completeThemes)
   )
-  var theme: String = "UtilityDark"
+  var theme: String?
 
   @Option(
     name: .long,
@@ -225,10 +225,11 @@ struct Dog: AsyncParsableCommand {
     if light && dark {
       throw ValidationError("--light and --dark are mutually exclusive")
     }
-    // --light/--dark override --theme only when --theme wasn't changed from its
-    // default. Explicit `--theme X` always wins.
+    // Explicit --theme always wins, including `--theme UtilityDark` over
+    // --light. The option carries no parser default so a typed value is
+    // distinguishable from an absent flag (nil).
     let effectiveTheme: String = {
-      if theme != "UtilityDark" { return theme }
+      if let theme { return theme }
       if light { return "UtilityBright" }
       return "UtilityDark"
     }()
@@ -281,7 +282,7 @@ struct Dog: AsyncParsableCommand {
         let didFzf =
           TTY.isTerminal
           && Self.launchWoofFzf(
-            theme: theme, themeDir: themeDir,
+            theme: effectiveTheme, themeDir: themeDir,
             color: color, plain: plain, noPager: noPager,
             wrap: wrap, terminalWidth: terminalWidth
           )
