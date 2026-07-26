@@ -64,7 +64,7 @@ struct Dog: AsyncParsableCommand {
     usage: """
       dog <FILE>
       dog [OPTIONS] [FILE]
-      cat <FILE> | dog -l swift
+      echo CODE | dog -l LANGUAGE
       """,
     discussion: "get out the cave, ditch the litter box",
     version: "0.1.0"

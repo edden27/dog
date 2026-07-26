@@ -15,19 +15,19 @@
 ///   4. Gap filling:        Track last color, emit on change
 ///   5. Buffer write:       2x append (color + text, no reset)
 ///
-/// Results (86k tokens × 50 iterations, Apple Silicon, -O, avg of 3 runs):
-///   Baseline:                       13.39ms  (6,105,473 bytes)  proof-style
-///   v1 (switch, all safe winners):   8.24ms  (5,417,473 bytes)  39% faster — our target
-///   v2 (array index):                8.13ms                     ~same as v1
-///   v3 (@inline switch):             8.17ms                     ~same as v1
-///   v4 (exact pre-size):             8.20ms                     ~same as v1
-///   v5 (UnsafeBufferPointer reads):  6.83ms                     49% faster — unsafe source reads
+/// Results (86k tokens × 50 iterations, Apple Silicon, -O, run 2026-07-25):
+///   Baseline:                       13.56ms  (6,105,473 bytes)  proof-style
+///   v1 (switch, all safe winners):   8.05ms  (5,417,473 bytes)  41% faster — our target
+///   v2 (array index):                7.98ms                     ~same as v1
+///   v3 (@inline switch):             7.98ms                     ~same as v1
+///   v4 (exact pre-size):             8.09ms                     ~same as v1
+///   v5 (UnsafeBufferPointer reads):  6.74ms                     50% faster — unsafe source reads
 ///
 ///   v1 is the winner for production. v2/v3/v4 are within noise — compiler already optimizes.
-///   v5 saves 1.4ms more with unsafe reads (safe writes) — lower risk than full unsafe,
-///   but not worth it for 1.4ms. Ship v1.
+///   v5 saves 1.3ms more with unsafe reads (safe writes) — lower risk than full unsafe,
+///   but not worth it for 1.3ms. Ship v1.
 ///
-///   Total savings: 13.39ms → 8.24ms = 5.15ms saved (38% faster render loop).
+///   Total savings: 13.56ms → 8.05ms = 5.51ms saved (41% faster render loop).
 ///   Biggest single win: pre-resolved TokenType (-3.86ms, 31% of baseline).
 import Foundation
 
