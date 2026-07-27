@@ -139,7 +139,7 @@ let package = Package(
         .executableTarget(
             name: "dog",
             dependencies: [
-                .target(name: "CWcwidth", condition: .when(platforms: [.linux])),
+                .target(name: "CWcwidth"),
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
                 .product(name: "TreeSitter", package: "tree-sitter"),
 

@@ -39,6 +39,10 @@ struct WrappedLineWriter {
     var pos = lineStart
     var column = 0
     var lastStyle: Style?
+    // One walker per line: cluster state (ZWJ, combining marks) must survive
+    // token-boundary slice splits.
+    var walker = WidthWalker()
+    var previousWasASCII = false
 
     while tokenIndex < tokens.count, tokens[tokenIndex].endByte <= lineStart {
       tokenIndex += 1
@@ -56,13 +60,15 @@ struct WrappedLineWriter {
         applyStyleIfNeeded(baseColor, lastStyle: &lastStyle, into: &output)
         emitSlice(
           sourceBytes: sourceBytes, from: pos, to: tokenStart,
-          column: &column, currentStyle: lastStyle, into: &output)
+          column: &column, currentStyle: lastStyle,
+          walker: &walker, previousWasASCII: &previousWasASCII, into: &output)
       }
       let style = colorTable[(token.tokenType ?? .none).rawValue]
       applyStyleIfNeeded(style, lastStyle: &lastStyle, into: &output)
       emitSlice(
         sourceBytes: sourceBytes, from: tokenStart, to: tokenEnd,
-        column: &column, currentStyle: lastStyle, into: &output)
+        column: &column, currentStyle: lastStyle,
+        walker: &walker, previousWasASCII: &previousWasASCII, into: &output)
       pos = tokenEnd
       if token.endByte <= lineEnd { tokenIndex += 1 } else { break }
     }
@@ -70,7 +76,8 @@ struct WrappedLineWriter {
       applyStyleIfNeeded(baseColor, lastStyle: &lastStyle, into: &output)
       emitSlice(
         sourceBytes: sourceBytes, from: pos, to: lineEnd,
-        column: &column, currentStyle: lastStyle, into: &output)
+        column: &column, currentStyle: lastStyle,
+        walker: &walker, previousWasASCII: &previousWasASCII, into: &output)
     }
     output.reset()
     return column
@@ -94,6 +101,7 @@ struct WrappedLineWriter {
   private func emitSlice(
     sourceBytes: [UInt8], from start: Int, to end: Int,
     column: inout Int, currentStyle: Style?,
+    walker: inout WidthWalker, previousWasASCII: inout Bool,
     into output: inout ANSIOutput
   ) {
     var index = start
@@ -103,10 +111,16 @@ struct WrappedLineWriter {
         index = emitASCIIByte(
           sourceBytes: sourceBytes, index: index, end: end, byte: byte,
           column: &column, currentStyle: currentStyle, into: &output)
+        previousWasASCII = true
       } else {
+        if previousWasASCII {
+          walker.noteASCIIRun()
+          previousWasASCII = false
+        }
         index = emitMultibyteChar(
           sourceBytes: sourceBytes, index: index, end: end,
-          column: &column, currentStyle: currentStyle, into: &output)
+          column: &column, currentStyle: currentStyle,
+          walker: &walker, into: &output)
       }
     }
   }
@@ -139,16 +153,19 @@ struct WrappedLineWriter {
   }
 
   /// Decode and emit a multi-byte UTF-8 character, wrapping if needed.
+  /// Cluster continuations (ZWJ tails, combining marks) report width 0 from
+  /// the walker, so a cluster is never split across a wrap.
   private func emitMultibyteChar(
     sourceBytes: [UInt8], index: Int, end: Int,
     column: inout Int, currentStyle: Style?,
+    walker: inout WidthWalker,
     into output: inout ANSIOutput
   ) -> Int {
     let charStart = index
     var cursor = index + 1
     while cursor < end, sourceBytes[cursor] & 0xC0 == 0x80 { cursor += 1 }
     let charString = String(decoding: sourceBytes[charStart..<cursor], as: UTF8.self)
-    let charWidth = charString.unicodeScalars.reduce(0) { $0 + $1.terminalWidth }
+    let charWidth = charString.unicodeScalars.reduce(0) { $0 + walker.consume($1.value) }
     if column + charWidth > contentCols {
       column = performWrap(column: column, currentStyle: currentStyle, into: &output)
     }

@@ -1,10 +1,9 @@
+import CWcwidth
+
 #if canImport(Darwin)
   import Darwin
 #elseif canImport(Glibc)
   import Glibc
-#endif
-#if canImport(CWcwidth)
-  import CWcwidth
 #endif
 
 // Character display-width measurement.
@@ -13,7 +12,8 @@
 // Three-tier fast path:
 //   1. ASCII          → 1 column, no lookup
 //   2. Wide range table (CJK, emoji, etc.) → 2 columns, no syscall
-//   3. Everything else → wcwidth() fallback (rarely hit for source code)
+//   3. Everything else → locale-aware wcwidth via the CWcwidth shim
+//      (0 = combining mark, -1 = control → treated as 1)
 
 extension UnicodeScalar {
   /// Returns true for known wide Unicode ranges (occupies 2 terminal columns).
@@ -57,19 +57,71 @@ extension UnicodeScalar {
     }
   }
 
-  /// Terminal column width of this scalar. Always >= 1 for printable characters.
+  /// Terminal column width of this scalar. 0 for combining marks (they share
+  /// the previous character's cell); 1 for controls and everything narrow.
   var terminalWidth: Int {
-    // Fast path: known wide ranges → 2, no syscall needed.
+    // Fast path: known wide ranges → 2, no lookup needed.
     if isWideCharacter { return 2 }
-    // Fallback for combining marks and obscure scripts.
-    // Almost never reached for real source code.
-    #if canImport(Darwin)
-      return max(1, Int(wcwidth(Int32(value))))
-    #elseif canImport(CWcwidth)
-      return max(1, Int(dog_wcwidth(wchar_t(value))))
-    #else
-      return isWideCharacter ? 2 : 1
-    #endif
+    let raw = Int(dog_wcwidth(wchar_t(value)))
+    // -1 = control/invalid → dog's long-standing 1-column policy;
+    // 0 = combining mark, keep it.
+    return raw < 0 ? 1 : raw
+  }
+}
+
+/// Single-pass display-width accumulator that handles grapheme clusters —
+/// ZWJ sequences (👨‍👩‍👧), skin-tone modifiers (👍🏽), variation selectors
+/// (❤️, keycaps), and combining marks (NFD é) — without Character iteration,
+/// so it is safe on hot paths.
+///
+/// Feed scalars in document order via `consume`. Call `noteASCIIRun()` when
+/// the surrounding loop bulk-emits ASCII bytes so a following variation
+/// selector can still upgrade the last ASCII character (keycap sequences).
+struct WidthWalker {
+  private var afterJoiner = false
+  private var previousWasWide = false
+  private var previousWasNarrowVisible = false
+
+  /// The surrounding loop emitted a run of ASCII: the last visible character
+  /// is narrow, and any pending join state is stale.
+  mutating func noteASCIIRun() {
+    afterJoiner = false
+    previousWasWide = false
+    previousWasNarrowVisible = true
+  }
+
+  /// Column contribution of the next scalar, given cluster state so far.
+  mutating func consume(_ value: UInt32) -> Int {
+    if value == 0x200D {  // zero-width joiner: cluster continues
+      afterJoiner = true
+      return 0
+    }
+    if afterJoiner {  // scalar joined into the previous cluster
+      afterJoiner = false
+      previousWasWide = UnicodeScalar(value)?.isWideCharacter ?? false
+      previousWasNarrowVisible = false
+      return 0
+    }
+    if (0x1F3FB...0x1F3FF).contains(value) {  // skin-tone modifier
+      if previousWasWide { return 0 }
+      previousWasWide = true
+      previousWasNarrowVisible = false
+      return 2  // a lone modifier renders as a color swatch
+    }
+    if value == 0xFE0F {  // emoji presentation: upgrades a narrow base to 2
+      if previousWasNarrowVisible {
+        previousWasNarrowVisible = false
+        previousWasWide = true
+        return 1
+      }
+      return 0
+    }
+    if value == 0xFE0E { return 0 }  // text presentation selector
+    let width = UnicodeScalar(value)?.terminalWidth ?? 1
+    if width == 0 { return 0 }  // combining mark: keep cluster state
+    previousWasWide = width == 2
+    previousWasNarrowVisible = width == 1
+    return width
   }
 }
 
@@ -85,11 +137,26 @@ extension Character {
 }
 
 extension String {
-  /// Total terminal column width of this string.
+  /// Total terminal column width of this string, grapheme-cluster aware.
   var terminalWidth: Int {
     // Byte-count fast path: if every byte is ASCII (high bit clear), width == count.
     let allASCII = utf8.allSatisfy { $0 < 0x80 }
     if allASCII { return utf8.count }
-    return unicodeScalars.reduce(0) { $0 + $1.terminalWidth }
+    var walker = WidthWalker()
+    var total = 0
+    var previousWasASCII = false
+    for scalar in unicodeScalars {
+      if scalar.value < 0x80 {
+        total += 1
+        previousWasASCII = true
+        continue
+      }
+      if previousWasASCII {
+        walker.noteASCIIRun()
+        previousWasASCII = false
+      }
+      total += walker.consume(scalar.value)
+    }
+    return total
   }
 }

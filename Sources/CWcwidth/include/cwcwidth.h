@@ -3,7 +3,9 @@
 
 #include <wchar.h>
 
-/// Expose wcwidth to Swift on Linux where Glibc doesn't export it.
+/// Locale-aware wcwidth for Swift on both platforms: measures against a
+/// UTF-8 locale so combining marks report 0 and CJK reports 2 (the default
+/// C locale reports -1 for all non-ASCII).
 int dog_wcwidth(wchar_t wc);
 
 #endif

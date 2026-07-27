@@ -388,18 +388,25 @@ struct PrintCommand {
   ) -> Int {
     var byteIndex = start
     var column = 0
+    var walker = WidthWalker()
+    var previousWasASCII = false
     while byteIndex < end {
       let byte = sourceBytes[byteIndex]
       if byte < 0x80 {
         if column + 1 > maxColumns { return byteIndex }
         column += 1
         byteIndex += 1
+        previousWasASCII = true
       } else {
+        if previousWasASCII {
+          walker.noteASCIIRun()
+          previousWasASCII = false
+        }
         let characterStart = byteIndex
         byteIndex += 1
         while byteIndex < end, sourceBytes[byteIndex] & 0xC0 == 0x80 { byteIndex += 1 }
         let character = String(decoding: sourceBytes[characterStart..<byteIndex], as: UTF8.self)
-        let characterWidth = character.unicodeScalars.reduce(0) { $0 + $1.terminalWidth }
+        let characterWidth = character.unicodeScalars.reduce(0) { $0 + walker.consume($1.value) }
         if column + characterWidth > maxColumns { return characterStart }
         column += characterWidth
       }
@@ -421,6 +428,9 @@ struct PrintCommand {
     var position = lineStart
     var column = 0
     var lastStyle: Style?
+    // One walker per line: cluster state (ZWJ, combining marks) must survive
+    // token-boundary slice splits.
+    var walker = WidthWalker()
 
     while tokenIndex < tokens.count, tokens[tokenIndex].endByte <= lineStart {
       tokenIndex += 1
@@ -444,7 +454,7 @@ struct PrintCommand {
         }
         emitSlice(
           sourceBytes: sourceBytes, from: position, to: tokenStart,
-          lineIsASCII: lineIsASCII, column: &column, into: &output
+          lineIsASCII: lineIsASCII, column: &column, walker: &walker, into: &output
         )
       }
 
@@ -455,7 +465,7 @@ struct PrintCommand {
       }
       emitSlice(
         sourceBytes: sourceBytes, from: tokenStart, to: tokenEnd,
-        lineIsASCII: lineIsASCII, column: &column, into: &output
+        lineIsASCII: lineIsASCII, column: &column, walker: &walker, into: &output
       )
       position = tokenEnd
 
@@ -468,7 +478,7 @@ struct PrintCommand {
       }
       emitSlice(
         sourceBytes: sourceBytes, from: position, to: lineEnd,
-        lineIsASCII: lineIsASCII, column: &column, into: &output
+        lineIsASCII: lineIsASCII, column: &column, walker: &walker, into: &output
       )
     }
 
@@ -485,6 +495,7 @@ struct PrintCommand {
     from start: Int, to end: Int,
     lineIsASCII: Bool,
     column: inout Int,
+    walker: inout WidthWalker,
     into output: inout ANSIOutput
   ) {
     if lineIsASCII {
@@ -495,7 +506,7 @@ struct PrintCommand {
     } else {
       emitBulkSliceMeasured(
         sourceBytes: sourceBytes, from: start, to: end,
-        column: &column, into: &output
+        column: &column, walker: &walker, into: &output
       )
     }
   }
@@ -551,14 +562,16 @@ struct PrintCommand {
   }
 
   /// Measured twin of `emitBulkSlice` for lines containing non-ASCII bytes:
-  /// decodes UTF-8 scalars and advances `column` by display width so tab
-  /// stops land on the right column after wide characters (CJK, emoji).
+  /// decodes UTF-8 scalars and advances `column` by display width — via the
+  /// cluster-aware `WidthWalker` — so tab stops land on the right column
+  /// after wide characters, ZWJ emoji, skin tones, and combining marks.
   /// `@inline(never)` keeps this body out of the ASCII hot path.
   @inline(never)
   private func emitBulkSliceMeasured(
     sourceBytes: [UInt8],
     from start: Int, to end: Int,
     column: inout Int,
+    walker: inout WidthWalker,
     into output: inout ANSIOutput
   ) {
     var index = start
@@ -577,6 +590,7 @@ struct PrintCommand {
         }
         output.text(sourceBytes[runStart..<index])
         column += index - runStart
+        walker.noteASCIIRun()
       } else {
         // Decode one UTF-8 scalar and advance by its display width.
         let scalarStart = index
@@ -606,7 +620,7 @@ struct PrintCommand {
         }
         index = min(scalarStart + length, end)
         output.text(sourceBytes[scalarStart..<index])
-        column += Unicode.Scalar(value)?.terminalWidth ?? 1
+        column += walker.consume(value)
       }
     }
   }
