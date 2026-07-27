@@ -283,27 +283,15 @@ struct PrintCommand {
             )
           }
         }
-        // Fast path: bulk emit, no per-byte wrap check
-        emitLineBulk(
+        // Fast path: bulk emit, no per-byte wrap check. The returned column
+        // already has tab stops expanded and (on non-ASCII lines) scalar
+        // widths measured — no separate recompute.
+        colUsed = emitLineBulk(
           sourceBytes: sourceBytes,
-          lineStart: lineStart, lineEnd: emitEnd,
+          lineStart: lineStart, lineEnd: emitEnd, lineIsASCII: lineIsASCII,
           tokens: tokens, tokenIndex: &tokenIndex,
           into: &output
         )
-        if lineIsASCII {
-          colUsed = 0
-          for byteIdx in lineStart..<emitEnd {
-            if sourceBytes[byteIdx] == 0x09 {
-              colUsed += tabStopWidth - (colUsed % tabStopWidth)
-            } else {
-              colUsed += 1
-            }
-          }
-        } else {
-          // Non-ASCII bulk path (wrap disabled): measure display columns
-          let str = String(decoding: sourceBytes[lineStart..<emitEnd], as: UTF8.self)
-          colUsed = str.unicodeScalars.reduce(0) { $0 + $1.terminalWidth }
-        }
         // If truncated, advance tokenIndex past any tokens we skipped on this line
         if emitEnd < contentEnd {
           while tokenIndex < tokens.count, tokens[tokenIndex].startByte < lineEnd {
@@ -419,15 +407,17 @@ struct PrintCommand {
     return end
   }
 
-  /// Fast path: emit a line that fits entirely within contentCols. Bulk slices, no column tracking.
+  /// Fast path: emit a line that fits entirely within contentCols. Bulk slices, no wrap checks.
   /// Tabs are expanded to spaces against a content-relative column so the terminal's
   /// absolute tab stops (offset by gutter width) don't desync the trailing bg fill.
+  /// Returns the final display column (tab stops expanded; scalar widths measured
+  /// on non-ASCII lines) so the caller can pad the trailing background fill.
   private func emitLineBulk(
     sourceBytes: [UInt8],
-    lineStart: Int, lineEnd: Int,
+    lineStart: Int, lineEnd: Int, lineIsASCII: Bool,
     tokens: [SyntaxToken], tokenIndex: inout Int,
     into output: inout ANSIOutput
-  ) {
+  ) -> Int {
     var position = lineStart
     var column = 0
     var lastStyle: Style?
@@ -452,9 +442,9 @@ struct PrintCommand {
           output.colorDelta(from: lastStyle, to: baseColor)
           lastStyle = baseColor
         }
-        emitBulkSlice(
+        emitSlice(
           sourceBytes: sourceBytes, from: position, to: tokenStart,
-          column: &column, into: &output
+          lineIsASCII: lineIsASCII, column: &column, into: &output
         )
       }
 
@@ -463,9 +453,9 @@ struct PrintCommand {
         output.colorDelta(from: lastStyle, to: style)
         lastStyle = style
       }
-      emitBulkSlice(
+      emitSlice(
         sourceBytes: sourceBytes, from: tokenStart, to: tokenEnd,
-        column: &column, into: &output
+        lineIsASCII: lineIsASCII, column: &column, into: &output
       )
       position = tokenEnd
 
@@ -476,13 +466,38 @@ struct PrintCommand {
       if lastStyle != baseColor {
         output.colorDelta(from: lastStyle, to: baseColor)
       }
-      emitBulkSlice(
+      emitSlice(
         sourceBytes: sourceBytes, from: position, to: lineEnd,
-        column: &column, into: &output
+        lineIsASCII: lineIsASCII, column: &column, into: &output
       )
     }
 
     output.reset()
+    return column
+  }
+
+  /// Dispatch a slice to the ASCII fast path or the measured twin. ASCII lines
+  /// keep the untouched byte==column body; non-ASCII lines pay for real
+  /// display-width measurement so tab stops land correctly after wide chars.
+  @inline(__always)
+  private func emitSlice(
+    sourceBytes: [UInt8],
+    from start: Int, to end: Int,
+    lineIsASCII: Bool,
+    column: inout Int,
+    into output: inout ANSIOutput
+  ) {
+    if lineIsASCII {
+      emitBulkSlice(
+        sourceBytes: sourceBytes, from: start, to: end,
+        column: &column, into: &output
+      )
+    } else {
+      emitBulkSliceMeasured(
+        sourceBytes: sourceBytes, from: start, to: end,
+        column: &column, into: &output
+      )
+    }
   }
 
   /// Emit a byte range, expanding 0x09 tabs into spaces aligned to
@@ -532,6 +547,67 @@ struct PrintCommand {
     if runStart < end {
       output.text(sourceBytes[runStart..<end])
       column += end - runStart
+    }
+  }
+
+  /// Measured twin of `emitBulkSlice` for lines containing non-ASCII bytes:
+  /// decodes UTF-8 scalars and advances `column` by display width so tab
+  /// stops land on the right column after wide characters (CJK, emoji).
+  /// `@inline(never)` keeps this body out of the ASCII hot path.
+  @inline(never)
+  private func emitBulkSliceMeasured(
+    sourceBytes: [UInt8],
+    from start: Int, to end: Int,
+    column: inout Int,
+    into output: inout ANSIOutput
+  ) {
+    var index = start
+    while index < end {
+      let byte = sourceBytes[index]
+      if byte == 0x09 {
+        let width = tabStopWidth - (column % tabStopWidth)
+        for _ in 0..<width { output.byte(0x20) }
+        column += width
+        index += 1
+      } else if byte < 0x80 {
+        // Bulk run of ASCII non-tab bytes: byte count == column count.
+        let runStart = index
+        while index < end, sourceBytes[index] < 0x80, sourceBytes[index] != 0x09 {
+          index += 1
+        }
+        output.text(sourceBytes[runStart..<index])
+        column += index - runStart
+      } else {
+        // Decode one UTF-8 scalar and advance by its display width.
+        let scalarStart = index
+        var value: UInt32
+        var length: Int
+        if byte & 0xE0 == 0xC0 {
+          value = UInt32(byte & 0x1F)
+          length = 2
+        } else if byte & 0xF0 == 0xE0 {
+          value = UInt32(byte & 0x0F)
+          length = 3
+        } else if byte & 0xF8 == 0xF0 {
+          value = UInt32(byte & 0x07)
+          length = 4
+        } else {
+          // Stray continuation byte (e.g. a token boundary split a scalar) —
+          // emit it and count one column.
+          value = 0xFFFD
+          length = 1
+        }
+        if length > 1 {
+          var offset = 1
+          while offset < length, scalarStart + offset < end {
+            value = (value << 6) | UInt32(sourceBytes[scalarStart + offset] & 0x3F)
+            offset += 1
+          }
+        }
+        index = min(scalarStart + length, end)
+        output.text(sourceBytes[scalarStart..<index])
+        column += Unicode.Scalar(value)?.terminalWidth ?? 1
+      }
     }
   }
 
