@@ -282,9 +282,7 @@ struct Dog: AsyncParsableCommand {
         let didFzf =
           TTY.isTerminal
           && Self.launchWoofFzf(
-            theme: effectiveTheme, themeDir: themeDir,
-            color: color, plain: plain, noPager: noPager,
-            wrap: wrap, terminalWidth: terminalWidth
+            theme: effectiveTheme, themeDir: themeDir, plain: plain
           )
         if !didFzf {
           try await Self.renderSnippet(
@@ -562,24 +560,43 @@ struct Dog: AsyncParsableCommand {
     }
   }
 
+  /// Single-quote a value for embedding in a shell command line.
+  ///
+  /// UTF-8 byte walk, stdlib only — Foundation's replacingOccurrences breaks
+  /// the bare-Linux release build. Byte 39 (') never appears inside a
+  /// multi-byte UTF-8 sequence, so byte comparison is safe.
+  private static func shellQuoted(_ value: String) -> String {
+    var bytes: [UInt8] = []
+    bytes.reserveCapacity(value.utf8.count + 2)
+    bytes.append(39)  // '
+    for byte in value.utf8 {
+      if byte == 39 {
+        // Close the quote, emit an escaped quote, reopen: ' → '\''
+        bytes.append(contentsOf: [39, 92, 39, 39])
+      } else {
+        bytes.append(byte)
+      }
+    }
+    bytes.append(39)
+    return String(decoding: bytes, as: UTF8.self)
+  }
+
   /// Launch fzf with the list of available woof languages.
   /// Preview pane calls `dog --woof-preview <lang>` with the current theme.
   /// Uses `posix_spawnp` + pipe — same pattern as `Pager.swift`.
   /// Returns false if fzf isn't available or fails to spawn.
   @discardableResult
   private static func launchWoofFzf(
-    theme: String, themeDir: String?,
-    color: ColorOption, plain: Int, noPager: Bool,
-    wrap: WrapOption, terminalWidth: Int?
+    theme: String, themeDir: String?, plain: Int
   ) -> Bool {
     // Build the preview command string for fzf's --preview flag.
     // {} is replaced by fzf with the selected language name.
     var preview = "dog --woof-preview {} --color=always"
     if theme != "UtilityDark" {
-      preview += " --theme '\(theme)'"
+      preview += " --theme \(shellQuoted(theme))"
     }
     if let dir = themeDir {
-      preview += " --theme-dir '\(dir)'"
+      preview += " --theme-dir \(shellQuoted(dir))"
     }
     if plain >= 1 { preview += " -p" }
 
