@@ -25,11 +25,18 @@ enum ErrorHandler {
 
   /// Write an error message to stderr with ANSI color if the terminal supports it.
   static func writeError(_ message: String) {
-    let isTerminal = isatty(STDERR_FILENO) != 0
+    let isTerminal = TTY.stderrIsTerminal
     let formatted: String
 
     if isTerminal {
-      formatted = "\u{1B}[1;31m[error]\u{1B}[0m \u{1B}[31m\(message)\u{1B}[0m\n"
+      // First line red with the [error] tag; continuation lines
+      // (e.g. an "Available:" list) dim.
+      let lines = message.split(separator: "\n", omittingEmptySubsequences: false)
+      var text = "\u{1B}[1;31m[error]\u{1B}[0m \u{1B}[31m\(lines.first ?? "")\u{1B}[0m\n"
+      for line in lines.dropFirst() {
+        text += "\u{1B}[2m\(line)\u{1B}[0m\n"
+      }
+      formatted = text
     } else {
       formatted = "[error] \(message)\n"
     }

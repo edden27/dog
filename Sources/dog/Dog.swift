@@ -54,6 +54,11 @@ struct Dog: AsyncParsableCommand {
         try command.run()
       }
     } catch {
+      // DogError gets dog's own formatting + exit code; everything else
+      // (ValidationError, parse errors) keeps ArgumentParser's usage output.
+      if let dogError = error as? DogError {
+        ErrorHandler.handle(dogError)
+      }
       exit(withError: error)
     }
   }
@@ -134,7 +139,7 @@ struct Dog: AsyncParsableCommand {
   @Flag(name: [.customShort("P"), .long], help: "Disable the pager.")
   var noPager = false
 
-  @Option(name: .shortAndLong, help: "Line range to display.")
+  @Option(name: .shortAndLong, help: "Line range to display (not yet implemented).")
   var range: String?
 
   @Option(name: [.customShort("w"), .long], help: "Line wrap mode (auto, never).")
@@ -148,10 +153,10 @@ struct Dog: AsyncParsableCommand {
   @Flag(name: .shortAndLong, help: "No decorations. Use twice (-pp) to also disable pager.")
   var plain: Int
 
-  @Flag(inversion: .prefixedNo, help: "Show line numbers.")
+  @Flag(inversion: .prefixedNo, help: "Show line numbers (not yet implemented).")
   var lineNumbers = true
 
-  @Flag(inversion: .prefixedNo, help: "Show filename header.")
+  @Flag(inversion: .prefixedNo, help: "Show filename header (not yet implemented).")
   var header = true
 
   @Flag(name: [.customShort("L"), .long], help: "List supported languages.")

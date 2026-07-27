@@ -15,7 +15,7 @@ struct DogErrorTests {
   func fileNotFoundDescription() {
     let error = DogError.fileNotFound(path: "/tmp/nope.swift")
     #expect(error.description.contains("/tmp/nope.swift"))
-    #expect(error.description.contains("file not found"))
+    #expect(error.description.contains("not found"))
   }
 
   @Test("binaryFile has exit code 1")
@@ -45,9 +45,15 @@ struct DogErrorTests {
 
   @Test("readError includes path and detail")
   func readErrorDescription() {
-    let error = DogError.readError(path: "<stdin>", detail: "not valid UTF-8")
-    #expect(error.description.contains("<stdin>"))
-    #expect(error.description.contains("not valid UTF-8"))
+    let error = DogError.readError(path: "/tmp/dir", detail: "it is a directory")
+    #expect(error.description.contains("/tmp/dir"))
+    #expect(error.description.contains("it is a directory"))
+  }
+
+  @Test("readError from stdin reads as a stdin message")
+  func readErrorStdinDescription() {
+    let error = DogError.readError(path: "<stdin>", detail: "input is not valid UTF-8")
+    #expect(error.description == "stdin input is not valid UTF-8")
   }
 
   @Test("parseError has exit code 1")

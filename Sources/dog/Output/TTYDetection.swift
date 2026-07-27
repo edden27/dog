@@ -16,6 +16,12 @@ enum TTY {
     return String(cString: term).lowercased() != "dumb"
   }()
 
+  /// Whether stderr is connected to an interactive terminal.
+  ///
+  /// Plain isatty, no TERM check — stderr diagnostics stay colored on
+  /// dumb terminals; only stdout rendering degrades.
+  static let stderrIsTerminal: Bool = isatty(STDERR_FILENO) != 0
+
   /// Resolve whether color output should be enabled.
   /// - Parameter colorFlag: The `--color` flag value from CLI args.
   /// - Returns: `true` if ANSI color codes should be emitted.

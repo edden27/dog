@@ -12,16 +12,17 @@ enum DogError: Error, CustomStringConvertible {
   var description: String {
     switch self {
     case .fileNotFound(let path):
-      return "file not found: \(path)"
+      return "'\(path)' not found - check path and try again"
     case .readError(let path, let detail):
-      return "cannot read \(path): \(detail)"
+      if path == "<stdin>" { return "stdin \(detail)" }
+      return "cannot read '\(path)' - \(detail)"
     case .binaryFile(let path):
       return "\(path): is a binary file"
     case .unknownLanguage(let name, let suggestion):
       if let suggestion {
-        return "unknown language '\(name)'. Did you mean '\(suggestion)'?"
+        return "unknown language '\(name)'\nDid you mean '\(suggestion)'?"
       }
-      return "unknown language '\(name)'. Use --list-languages to see supported languages."
+      return "unknown language '\(name)'\nRun 'dog --list-languages' for supported languages."
     case .parseError(let language, let detail):
       return "parse error (\(language)): \(detail)"
     case .invalidConfig(let path, let detail):
@@ -31,13 +32,13 @@ enum DogError: Error, CustomStringConvertible {
     case .themeNotFound(let name, let searchedDir, let available):
       var message = "theme '\(name)' not found in \(searchedDir)"
       if let suggestion = closestMatch(for: name, in: available) {
-        message += ". Did you mean '\(suggestion)'?"
+        message += "\nDid you mean '\(suggestion)'?"
       } else if !available.isEmpty {
         let preview = available.prefix(10).joined(separator: ", ")
-        message += ". Available: \(preview)"
+        message += "\nAvailable: \(preview)"
         if available.count > 10 { message += " …" }
       } else {
-        message += ". Use --list-themes to see available themes."
+        message += "\nUse --list-themes to see available themes."
       }
       return message
     }
@@ -57,7 +58,8 @@ enum DogError: Error, CustomStringConvertible {
 
 /// Find the closest available string within edit distance 2. Returns nil if
 /// nothing is close enough. O(N * |name| * |candidate|).
-private func closestMatch(for name: String, in candidates: [String]) -> String? {
+/// Shared by theme and language "Did you mean" suggestions.
+func closestMatch(for name: String, in candidates: [String]) -> String? {
   var best: (name: String, distance: Int)?
   for candidate in candidates {
     let distance = editDistance(name.lowercased(), candidate.lowercased())

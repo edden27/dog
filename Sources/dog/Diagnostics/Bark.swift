@@ -33,7 +33,7 @@ enum Bark {
       }
     }()
 
-    private static let isTerminal = isatty(STDERR_FILENO) != 0
+    private static let isTerminal = TTY.stderrIsTerminal
 
     private static func prefix(for level: Level) -> String {
       guard isTerminal else {

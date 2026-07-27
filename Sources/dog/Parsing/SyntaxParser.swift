@@ -29,11 +29,9 @@ enum SyntaxParser {
     // first — O(n) — and only sort if needed.
     if tokens.count <= 1 { return tokens }
     var needsSort = false
-    for i in 1..<tokens.count {
-      if tokens[i].startByte < tokens[i - 1].startByte {
-        needsSort = true
-        break
-      }
+    for index in 1..<tokens.count where tokens[index].startByte < tokens[index - 1].startByte {
+      needsSort = true
+      break
     }
     return needsSort ? tokens.sorted { $0.startByte < $1.startByte } : tokens
   }
@@ -55,6 +53,7 @@ enum SyntaxParser {
       return match
     }
 
-    return nil
+    // Edit-distance match ("pyton" → "python")
+    return closestMatch(for: lowered, in: names)
   }
 }

@@ -148,13 +148,13 @@ struct PrintCommand {
     }
     // Count lines without allocating — single pass
     var lineCount = 1
-    for b in sourceBytes where b == 0x0A { lineCount += 1 }
+    for byte in sourceBytes where byte == 0x0A { lineCount += 1 }
     // Digit width without String allocation
     var digitWidth = 1
-    var n = lineCount
-    while n >= 10 {
+    var remaining = lineCount
+    while remaining >= 10 {
       digitWidth += 1
-      n /= 10
+      remaining /= 10
     }
     // No gutter in plain mode; also dropped when it can't fit alongside at
     // least one content column (a 3-col fzf preview pane, --terminal-width
@@ -173,13 +173,13 @@ struct PrintCommand {
     // Pre-build editor bg escape for the code area. Skip in plain mode so
     // --color=never doesn't leak ANSI bg codes into pipe-friendly output.
     var editorBg = ContiguousArray<UInt8>()
-    if colorEnabled, let bg = editorBgStyle {
+    if colorEnabled, let background = editorBgStyle {
       editorBg.append(contentsOf: [0x1B, 0x5B, 0x34, 0x38, 0x3B, 0x32, 0x3B])
-      ANSICodes.appendDecimal(bg.r, into: &editorBg)
+      ANSICodes.appendDecimal(background.r, into: &editorBg)
       editorBg.append(0x3B)
-      ANSICodes.appendDecimal(bg.g, into: &editorBg)
+      ANSICodes.appendDecimal(background.g, into: &editorBg)
       editorBg.append(0x3B)
-      ANSICodes.appendDecimal(bg.b, into: &editorBg)
+      ANSICodes.appendDecimal(background.b, into: &editorBg)
       editorBg.append(0x6D)
     }
 
@@ -254,14 +254,14 @@ struct PrintCommand {
       // measure display width (not byte length) because tabs expand.
       var lineDisplayWidth = 0
       if lineIsASCII {
-        var ci = lineStart
-        while ci < contentEnd {
-          if sourceBytes[ci] == 0x09 {
+        var byteIndex = lineStart
+        while byteIndex < contentEnd {
+          if sourceBytes[byteIndex] == 0x09 {
             lineDisplayWidth += tabStopWidth - (lineDisplayWidth % tabStopWidth)
           } else {
             lineDisplayWidth += 1
           }
-          ci += 1
+          byteIndex += 1
         }
       }
       let canBulk = !wrapEnabled || (lineIsASCII && lineDisplayWidth <= contentCols)
@@ -279,7 +279,7 @@ struct PrintCommand {
             // Non-ASCII: walk characters and stop at the column limit
             emitEnd = truncateByteEnd(
               sourceBytes: sourceBytes,
-              from: lineStart, to: contentEnd, maxCols: contentCols
+              from: lineStart, to: contentEnd, maxColumns: contentCols
             )
           }
         }
@@ -393,27 +393,27 @@ struct PrintCommand {
   }
 
   /// Walk a UTF-8 byte range and return the byte index where cumulative
-  /// display width would exceed `maxCols`. Used to truncate non-ASCII lines
+  /// display width would exceed `maxColumns`. Used to truncate non-ASCII lines
   /// when wrap is disabled.
   private func truncateByteEnd(
-    sourceBytes: [UInt8], from start: Int, to end: Int, maxCols: Int
+    sourceBytes: [UInt8], from start: Int, to end: Int, maxColumns: Int
   ) -> Int {
-    var i = start
-    var col = 0
-    while i < end {
-      let byte = sourceBytes[i]
+    var byteIndex = start
+    var column = 0
+    while byteIndex < end {
+      let byte = sourceBytes[byteIndex]
       if byte < 0x80 {
-        if col + 1 > maxCols { return i }
-        col += 1
-        i += 1
+        if column + 1 > maxColumns { return byteIndex }
+        column += 1
+        byteIndex += 1
       } else {
-        let charStart = i
-        i += 1
-        while i < end, sourceBytes[i] & 0xC0 == 0x80 { i += 1 }
-        let str = String(decoding: sourceBytes[charStart..<i], as: UTF8.self)
-        let charWidth = str.unicodeScalars.reduce(0) { $0 + $1.terminalWidth }
-        if col + charWidth > maxCols { return charStart }
-        col += charWidth
+        let characterStart = byteIndex
+        byteIndex += 1
+        while byteIndex < end, sourceBytes[byteIndex] & 0xC0 == 0x80 { byteIndex += 1 }
+        let character = String(decoding: sourceBytes[characterStart..<byteIndex], as: UTF8.self)
+        let characterWidth = character.unicodeScalars.reduce(0) { $0 + $1.terminalWidth }
+        if column + characterWidth > maxColumns { return characterStart }
+        column += characterWidth
       }
     }
     return end
@@ -537,7 +537,6 @@ struct PrintCommand {
 
   /// Pre-built gutter bytes: reset + padding + color + digits + reset + separator.
   /// Built once per render, indexed by line number. Avoids per-line String allocation.
-  // swiftlint:disable:next function_parameter_count
   private static func buildGutterTable(
     lineCount: Int, digitWidth: Int,
     lineNumberStyle: Style, gutterBgStyle: Style?,
@@ -655,24 +654,27 @@ struct PrintCommand {
 
   private func readSourceBytes() throws -> [UInt8] {
     if let file {
-      let fd = open(file, O_RDONLY)
-      guard fd >= 0 else {
+      let descriptor = open(file, O_RDONLY)
+      guard descriptor >= 0 else {
         throw DogError.fileNotFound(path: file)
       }
-      defer { close(fd) }
+      defer { close(descriptor) }
 
       // Get file size for single-shot read
-      var st = stat()
-      guard fstat(fd, &st) == 0 else {
-        throw DogError.readError(path: file, detail: "fstat failed")
+      var fileInfo = stat()
+      guard fstat(descriptor, &fileInfo) == 0 else {
+        throw DogError.readError(path: file, detail: "could not access file info")
       }
-      let size = Int(st.st_size)
+      guard (fileInfo.st_mode & S_IFMT) != S_IFDIR else {
+        throw DogError.readError(path: file, detail: "it is a directory")
+      }
+      let size = Int(fileInfo.st_size)
       var bytes = [UInt8](repeating: 0, count: size)
       let bytesRead = bytes.withUnsafeMutableBufferPointer { buf in
-        read(fd, buf.baseAddress, size)
+        read(descriptor, buf.baseAddress, size)
       }
       guard bytesRead == size else {
-        throw DogError.readError(path: file, detail: "short read")
+        throw DogError.readError(path: file, detail: "file changed while reading")
       }
       guard bytes.isValidUTF8 else {
         throw DogError.binaryFile(path: file)
@@ -685,11 +687,11 @@ struct PrintCommand {
     let chunkSize = 64 * 1024
     var chunk = [UInt8](repeating: 0, count: chunkSize)
     while true {
-      let n = chunk.withUnsafeMutableBufferPointer { buf in
+      let bytesRead = chunk.withUnsafeMutableBufferPointer { buf in
         read(STDIN_FILENO, buf.baseAddress, chunkSize)
       }
-      if n <= 0 { break }
-      bytes.append(contentsOf: chunk[..<n])
+      if bytesRead <= 0 { break }
+      bytes.append(contentsOf: chunk[..<bytesRead])
     }
     guard bytes.isValidUTF8 else {
       throw DogError.readError(
