@@ -18,6 +18,14 @@ int dog_wcwidth(wchar_t wc) {
     if (!utf8_locale) utf8_locale = newlocale(LC_CTYPE_MASK, "en_US.UTF-8", (locale_t)0);
     initialized = 1;
   }
-  if (utf8_locale) return wcwidth_l(wc, utf8_locale);
-  return wcwidth(wc);
+  if (!utf8_locale) return wcwidth(wc);
+#if defined(__APPLE__)
+  return wcwidth_l(wc, utf8_locale);
+#else
+  // glibc has no wcwidth_l (BSD extension); swap the thread locale instead.
+  locale_t saved = uselocale(utf8_locale);
+  int width = wcwidth(wc);
+  uselocale(saved);
+  return width;
+#endif
 }
