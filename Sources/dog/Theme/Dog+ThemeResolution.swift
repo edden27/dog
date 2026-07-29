@@ -60,10 +60,13 @@ extension Dog {
   }
 
   /// Resolve `themeName` into rendering styles. Built-in `UtilityDark` is
-  /// zero-cost (pre-baked). A value containing `/` (after `~`/`${VAR}`
-  /// expansion) loads as a direct path to a theme JSON file. Any other
-  /// name goes through `ZedThemeLoader`'s progressive-prefix cascade
-  /// against `directory`.
+  /// zero-cost (pre-baked). A `file:variant` value (split at the LAST
+  /// colon, and only when the file part names a real theme file — bundle
+  /// filename in `directory`, `.json` optional, or a full path) addresses
+  /// one variant directly with no directory search. A value containing
+  /// `/` (after `~`/`${VAR}` expansion) loads as a direct path to a theme
+  /// JSON file. Any other name goes through `ZedThemeLoader`'s
+  /// progressive-prefix cascade against `directory`.
   private static func resolveThemeStyles(
     themeName: String, directory: String
   ) throws -> ResolvedThemeStyles {
@@ -87,7 +90,11 @@ extension Dog {
     }
     let loaded: ZedThemeLoader.LoadedTheme
     let expandedPath = ConfigPaths.expand(themeName)
-    if expandedPath.contains("/") {
+    if let fileVariant = fileVariantSplit(themeName, directory: directory) {
+      loaded = try loadFileVariant(
+        path: fileVariant.path, variantName: fileVariant.variantName
+      )
+    } else if expandedPath.contains("/") {
       // A path always means the file's FIRST variant — scoping to its byte
       // range keeps a multi-variant bundle from bleeding later variants'
       // rules into the result. No range found (not a bundle) falls back to
@@ -106,6 +113,64 @@ extension Dog {
       lineNumberStyle: loaded.lineNumberStyle,
       gutterBgStyle: loaded.gutterBgStyle,
       editorBgStyle: loaded.editorBgStyle
+    )
+  }
+
+  /// Split a `file:variant` theme value at its LAST colon. Returns the
+  /// resolved file path and variant name only when the file part names an
+  /// existing theme file — bundle filename in `directory` (`.json`
+  /// optional) or a full path. Returns nil otherwise, so a plain theme
+  /// name that happens to contain a colon keeps resolving as a name.
+  private static func fileVariantSplit(
+    _ themeName: String, directory: String
+  ) -> (path: String, variantName: String)? {
+    guard let colonIndex = themeName.lastIndex(of: ":") else { return nil }
+    let filePart = String(themeName[..<colonIndex])
+    let variantName = String(themeName[themeName.index(after: colonIndex)...])
+    guard !filePart.isEmpty else { return nil }
+
+    let expanded = ConfigPaths.expand(filePart)
+    let candidatePath: String
+    if expanded.contains("/") {
+      candidatePath = expanded
+    } else if expanded.hasSuffix(".json") {
+      candidatePath = "\(directory)/\(expanded)"
+    } else {
+      candidatePath = "\(directory)/\(expanded).json"
+    }
+    guard ZedThemeDirectoryScanner.fileExists(candidatePath) else { return nil }
+    return (candidatePath, variantName)
+  }
+
+  /// Load one variant addressed as `file:variant` — a direct read with no
+  /// directory search. An empty variant name means the file's first
+  /// variant, same as the bare path form. A variant name the file doesn't
+  /// contain throws with the file's actual variant names as suggestions.
+  private static func loadFileVariant(
+    path: String, variantName: String
+  ) throws -> ZedThemeLoader.LoadedTheme {
+    let bytes = try ZedThemeLoader.readFileBytes(path: path)
+    if variantName.isEmpty {
+      let firstVariantRange = ZedThemeVariantWalker.findVariantRange(
+        bytes, target: nil
+      )
+      return try ZedThemeLoader.load(
+        bytes: bytes, path: path, variantRange: firstVariantRange
+      )
+    }
+    guard
+      let variantRange = ZedThemeVariantWalker.findVariantRange(
+        bytes, target: Array(variantName.utf8)
+      )
+    else {
+      throw DogError.themeNotFound(
+        name: variantName,
+        searchedDir: path,
+        available: ZedThemeVariantWalker.listVariantNames(bytes)
+      )
+    }
+    return try ZedThemeLoader.load(
+      bytes: bytes, path: path, variantRange: variantRange
     )
   }
 }
