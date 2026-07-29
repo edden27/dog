@@ -106,8 +106,8 @@ struct Dog: AsyncParsableCommand {
 
         Built-in names: 'UtilityDark', 'UtilityBright'. Built-ins \
         are zero-cost (compiled in, no file I/O). An explicit --theme overrides \
-        --light and --dark. When no theme flag is given, the DOG_THEME \
-        environment variable (name or path) picks the theme.
+        --light and --dark. When no theme flag is given, the saved \
+        --set-default-theme choice picks the theme.
         """
     ),
     completion: .custom(completeThemes)
@@ -135,6 +135,23 @@ struct Dog: AsyncParsableCommand {
     completion: .directory
   )
   var themeDir: String?
+
+  @Option(
+    name: .long,
+    help: ArgumentHelp(
+      "Save a theme as the default, precomputed for instant startup.",
+      discussion: """
+        Resolves <set-default-theme> exactly like --theme (name or path, \
+        honors --theme-dir), then saves the finished style table to \
+        ~/.config/dog/default-theme. Later runs load it in microseconds - \
+        no theme file parsing. It applies when no --theme or --light/--dark \
+        picks a theme. Set 'UtilityDark' or an empty value to clear the \
+        saved default.
+        """
+    ),
+    completion: .custom(completeThemes)
+  )
+  var setDefaultTheme: String?
 
   @Option(name: .long, help: "When to use the pager (auto, always, never).")
   var paging: PagingOption = .auto
@@ -222,6 +239,11 @@ struct Dog: AsyncParsableCommand {
 
     if listThemes {
       Self.printThemes(directory: resolvedThemesDir, colorEnabled: colorEnabled)
+      return
+    }
+
+    if let setDefaultTheme {
+      try Self.saveDefaultTheme(setDefaultTheme, themesDirectory: resolvedThemesDir)
       return
     }
 

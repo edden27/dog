@@ -1,6 +1,6 @@
 /// Theme selection and resolution for the `dog` entry point: which theme
-/// is in effect (flags, then DOG_THEME, then the built-in default) and
-/// how its name or file path becomes rendering styles.
+/// is in effect (flags, then the saved default, then the built-in default)
+/// and how its name or file path becomes rendering styles.
 extension Dog {
 
   /// Resolved styles for rendering — bundles the subset of `LoadedTheme`
@@ -17,46 +17,65 @@ extension Dog {
   ///
   /// Explicit --theme always wins, including `--theme UtilityDark` over
   /// --light. The option carries no parser default so a typed value is
-  /// distinguishable from an absent flag (nil). DOG_THEME fills in only
-  /// when no theme flag was typed at all — --dark is the escape hatch
-  /// back to the built-in when the environment sets a theme.
+  /// distinguishable from an absent flag (nil). When no theme flag was
+  /// typed at all, a saved `--set-default-theme` artifact fills in before
+  /// the built-in default — --dark is the escape hatch back to the
+  /// built-in when a saved default is set.
   ///
-  /// A broken DOG_THEME degrades to the default theme with a warning —
-  /// a bad --theme still errors. The environment should never make dog
+  /// A bad --theme errors. An unreadable artifact degrades to the default
+  /// theme with a warning — a stale saved file should never make dog
   /// unable to render.
   static func resolveActiveTheme(
     explicitTheme: String?, light: Bool, dark: Bool, themesDirectory: String
   ) throws -> (name: String, styles: ResolvedThemeStyles) {
-    let environmentTheme: String? = {
-      guard let value = ConfigPaths.envString("DOG_THEME"), !value.isEmpty else {
-        return nil
-      }
-      return value
-    }()
-    let effectiveTheme: String = {
+    let pickedTheme: String? = {
       if let explicitTheme { return explicitTheme }
       if light { return "UtilityBright" }
       if dark { return "UtilityDark" }
-      if let environmentTheme { return environmentTheme }
-      return "UtilityDark"
+      return nil
     }()
-    let themeCameFromEnvironment =
-      explicitTheme == nil && !light && !dark && environmentTheme != nil
-
-    do {
-      let styles = try resolveThemeStyles(
-        themeName: effectiveTheme, directory: themesDirectory
-      )
-      return (effectiveTheme, styles)
-    } catch  where themeCameFromEnvironment {
-      Bark.releaseWarning(
-        "DOG_THEME '\(effectiveTheme)' could not be loaded - using the default theme"
-      )
+    guard let effectiveTheme = pickedTheme else {
+      switch DefaultThemeArtifact.load() {
+      case .loaded(let name, let styles):
+        return (name, styles)
+      case .unreadable:
+        Bark.releaseWarning(
+          "the saved default theme could not be loaded - run --set-default-theme "
+            + "again - using the default theme"
+        )
+      case .none:
+        break
+      }
       let styles = try resolveThemeStyles(
         themeName: "UtilityDark", directory: themesDirectory
       )
       return ("UtilityDark", styles)
     }
+    let styles = try resolveThemeStyles(
+      themeName: effectiveTheme, directory: themesDirectory
+    )
+    return (effectiveTheme, styles)
+  }
+
+  /// Handle `--set-default-theme <value>`: resolve the value exactly like
+  /// --theme (a bad value errors the same way), save the finished style
+  /// table as the default-theme artifact, and confirm on stdout.
+  ///
+  /// An empty value clears the saved default. So does `UtilityDark` — it
+  /// IS the built-in default, and clearing keeps its zero-cost compiled-in
+  /// path instead of writing an artifact that would only slow it down.
+  static func saveDefaultTheme(_ value: String, themesDirectory: String) throws {
+    if value.isEmpty || value == "UtilityDark" {
+      try DefaultThemeArtifact.remove()
+      print(value.isEmpty ? "default theme cleared" : "default theme set to 'UtilityDark'")
+      return
+    }
+    let (resolvedName, resolvedStyles) = try resolveActiveTheme(
+      explicitTheme: value, light: false, dark: false,
+      themesDirectory: themesDirectory
+    )
+    try DefaultThemeArtifact.save(styles: resolvedStyles, themeName: resolvedName)
+    print("default theme set to '\(resolvedName)'")
   }
 
   /// Resolve `themeName` into rendering styles. Built-in `UtilityDark` is

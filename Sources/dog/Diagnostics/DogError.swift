@@ -2,6 +2,7 @@
 enum DogError: Error, CustomStringConvertible {
   case fileNotFound(path: String)
   case readError(path: String, detail: String)
+  case writeError(path: String, detail: String)
   case binaryFile(path: String)
   case unknownLanguage(name: String, suggestion: String?)
   case parseError(language: String, detail: String)
@@ -16,6 +17,8 @@ enum DogError: Error, CustomStringConvertible {
     case .readError(let path, let detail):
       if path == "<stdin>" { return "stdin \(detail)" }
       return "cannot read '\(path)' - \(detail)"
+    case .writeError(let path, let detail):
+      return "cannot write '\(path)' - \(detail)"
     case .binaryFile(let path):
       return "\(path): is a binary file"
     case .unknownLanguage(let name, let suggestion):
@@ -47,7 +50,7 @@ enum DogError: Error, CustomStringConvertible {
   /// POSIX exit code for this error.
   var exitCode: Int32 {
     switch self {
-    case .fileNotFound, .readError, .binaryFile,
+    case .fileNotFound, .readError, .writeError, .binaryFile,
       .parseError, .invalidConfig, .invalidTheme, .themeNotFound:
       return 1
     case .unknownLanguage:
