@@ -81,7 +81,7 @@ enum ConfigPaths {
   // MARK: - Helpers
 
   /// Read an environment variable into a Swift String without Foundation.
-  private static func envString(_ name: String) -> String? {
+  static func envString(_ name: String) -> String? {
     guard let cStringPointer = getenv(name) else { return nil }
     return String(cString: cStringPointer)
   }

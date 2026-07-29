@@ -50,8 +50,14 @@ extension ZedThemeLoader {
       return hit
     }
 
-    // Phase 2: directory scan, short-circuit on first variant match
-    let files = ZedThemeDirectoryScanner.listJSONFiles(in: directory)
+    // Phase 1.5 + 2: directory scan, short-circuit on first variant match.
+    // Files whose lowercased filename contains the name's lowercased first
+    // word are read FIRST ("Vim Dark" → vim-light.json before the blind
+    // alphabetical walk) — keeps resolution in the tens-of-µs class in big
+    // theme dirs where the variant name doesn't predict the filename.
+    let files = orderedByFirstWordMatch(
+      ZedThemeDirectoryScanner.listJSONFiles(in: directory), name: name
+    )
     for filename in files {
       let path = "\(directory)/\(filename)"
       guard let bytes = try? readFileBytes(path: path) else { continue }
@@ -87,6 +93,28 @@ extension ZedThemeLoader {
   }
 
   // MARK: - Resolution helpers
+
+  /// Order Phase 2's file list so filenames containing the requested name's
+  /// first word (case-insensitive) come first, original order otherwise.
+  /// With unique variant names the pick is identical either way — order only
+  /// decides how soon the scan hits the right file.
+  private static func orderedByFirstWordMatch(
+    _ files: [String], name: String
+  ) -> [String] {
+    guard let firstWord = name.split(separator: " ").first?.lowercased() else {
+      return files
+    }
+    var matched = [String]()
+    var rest = [String]()
+    for filename in files {
+      if filename.lowercased().contains(firstWord) {
+        matched.append(filename)
+      } else {
+        rest.append(filename)
+      }
+    }
+    return matched + rest
+  }
 
   /// Phase 1: walk space-separated prefixes longest → shortest, statting each.
   /// On hit, try to find the exact variant; if absent and the user typed the

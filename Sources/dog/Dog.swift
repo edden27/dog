@@ -94,17 +94,20 @@ struct Dog: AsyncParsableCommand {
   @Option(
     name: [.customShort("t"), .long],
     help: ArgumentHelp(
-      "Theme name.",
+      "Theme name or path to a theme file.",
       discussion: """
         Matches a themes[].name entry inside any *.json bundle in \
-        ~/.config/dog/themes/ (or $XDG_CONFIG_HOME/dog/themes/). Zed-style JSON. \
+        ~/.config/dog/themes/ (or $XDG_CONFIG_HOME/dog/themes/). A value \
+        containing / loads that file directly instead (~/ and ${VAR} expand; \
+        a file with multiple variants uses its first variant). Zed-style JSON. \
         Colors accept #rrggbb or #rrggbbaa — if alpha is present and \
         editor.background is defined, it composites against it; otherwise the \
         raw RGB is used as a solid color.
 
         Built-in names: 'UtilityDark', 'UtilityBright'. Built-ins \
         are zero-cost (compiled in, no file I/O). An explicit --theme overrides \
-        --light and --dark.
+        --light and --dark. When no theme flag is given, the DOG_THEME \
+        environment variable (name or path) picks the theme.
         """
     ),
     completion: .custom(completeThemes)
@@ -230,17 +233,9 @@ struct Dog: AsyncParsableCommand {
     if light && dark {
       throw ValidationError("--light and --dark are mutually exclusive")
     }
-    // Explicit --theme always wins, including `--theme UtilityDark` over
-    // --light. The option carries no parser default so a typed value is
-    // distinguishable from an absent flag (nil).
-    let effectiveTheme: String = {
-      if let theme { return theme }
-      if light { return "UtilityBright" }
-      return "UtilityDark"
-    }()
-
-    let resolved = try Self.resolveThemeStyles(
-      themeName: effectiveTheme, directory: resolvedThemesDir
+    let (activeTheme, resolved) = try Self.resolveActiveTheme(
+      explicitTheme: theme, light: light, dark: dark,
+      themesDirectory: resolvedThemesDir
     )
     let colorTable = resolved.colorTable
     let baseColor = resolved.baseColor
@@ -287,7 +282,7 @@ struct Dog: AsyncParsableCommand {
         let didFzf =
           TTY.isTerminal
           && Self.launchWoofFzf(
-            theme: effectiveTheme, themeDir: themeDir, plain: plain
+            theme: activeTheme, themeDir: themeDir, plain: plain
           )
         if !didFzf {
           try await Self.renderSnippet(
@@ -362,50 +357,6 @@ struct Dog: AsyncParsableCommand {
   }
 
   // MARK: - Listing helpers
-
-  /// Resolved styles for rendering — bundles the subset of `LoadedTheme`
-  /// fields that `PrintCommand` actually consumes.
-  private struct ResolvedThemeStyles {
-    let colorTable: [Style]
-    let baseColor: Style
-    let lineNumberStyle: Style?
-    let gutterBgStyle: Style?
-    let editorBgStyle: Style?
-  }
-
-  /// Resolve `themeName` into rendering styles. Built-in `UtilityDark` is
-  /// zero-cost (pre-baked). Any other name goes through `ZedThemeLoader`'s
-  /// progressive-prefix cascade against `directory`.
-  private static func resolveThemeStyles(
-    themeName: String, directory: String
-  ) throws -> ResolvedThemeStyles {
-    if themeName == "UtilityDark" {
-      return ResolvedThemeStyles(
-        colorTable: TokenType.allCases.map { UtilityDarkTheme.color(for: $0) },
-        baseColor: UtilityDarkTheme.baseColor,
-        lineNumberStyle: UtilityDarkTheme.lineNumberStyle,
-        gutterBgStyle: UtilityDarkTheme.gutterBgStyle,
-        editorBgStyle: UtilityDarkTheme.editorBgStyle
-      )
-    }
-    if themeName == "UtilityBright" {
-      return ResolvedThemeStyles(
-        colorTable: TokenType.allCases.map { UtilityBrightTheme.color(for: $0) },
-        baseColor: UtilityBrightTheme.baseColor,
-        lineNumberStyle: UtilityBrightTheme.lineNumberStyle,
-        gutterBgStyle: UtilityBrightTheme.gutterBgStyle,
-        editorBgStyle: UtilityBrightTheme.editorBgStyle
-      )
-    }
-    let loaded = try ZedThemeLoader.load(name: themeName, directory: directory)
-    return ResolvedThemeStyles(
-      colorTable: Array(loaded.colorTable),
-      baseColor: loaded.baseColor,
-      lineNumberStyle: loaded.lineNumberStyle,
-      gutterBgStyle: loaded.gutterBgStyle,
-      editorBgStyle: loaded.editorBgStyle
-    )
-  }
 
   /// Print supported languages from `LanguageRegistry` — not hardcoded.
   /// Mirrors the layout of `--list-themes`: heading, discussion, then
