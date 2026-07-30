@@ -94,20 +94,23 @@ struct Dog: AsyncParsableCommand {
   @Option(
     name: [.customShort("t"), .long],
     help: ArgumentHelp(
-      "Theme name or path to a theme file.",
+      "Theme name or path, or both with ':' - example: 'file-name:theme name'.",
       discussion: """
-        Matches a themes[].name entry inside any *.json bundle in \
-        ~/.config/dog/themes/ (or $XDG_CONFIG_HOME/dog/themes/). A value \
-        containing / loads that file directly instead (~/ and ${VAR} expand; \
-        a file with multiple variants uses its first variant). Zed-style JSON. \
-        Colors accept #rrggbb or #rrggbbaa — if alpha is present and \
-        editor.background is defined, it composites against it; otherwise the \
-        raw RGB is used as a solid color.
+        A plain name searches ~/.config/dog/themes/. Helps to specify the \
+        theme when a single JSON file contains multiple variants. Examples:
+          --theme 'Nord Dark'
+          --theme Catppuccin.json
+          --theme 'Catppuccin:Catppuccin Mocha'
+          --theme '~/.config/zed/themes/Catppuccin.json:Catppuccin Mocha'
 
-        Built-in names: 'UtilityDark', 'UtilityBright'. Built-ins \
-        are zero-cost (compiled in, no file I/O). An explicit --theme overrides \
-        --light and --dark. When no theme flag is given, the saved \
-        --set-default-theme choice picks the theme.
+        Zed-theme style JSON. Colors accept #rrggbb or #rrggbbaa — if alpha \
+        is present and editor.background is defined, it composites against \
+        it; otherwise the raw RGB is used as a solid color.
+
+        Built-ins: 'UtilityDark', 'UtilityBright'. Built-ins are zero-cost \
+        (compiled in, no file I/O). An explicit --theme overrides --light \
+        and --dark. See --set-default-theme to set a custom default theme \
+        choice.
         """
     ),
     completion: .custom(completeThemes)
@@ -139,14 +142,13 @@ struct Dog: AsyncParsableCommand {
   @Option(
     name: .long,
     help: ArgumentHelp(
-      "Save a theme as the default, precomputed for instant startup.",
+      "Save a theme as the default for instant startup.",
       discussion: """
-        Resolves <set-default-theme> exactly like --theme (name or path, \
-        honors --theme-dir), then saves the finished style table to \
-        ~/.config/dog/default-theme. Later runs load it in microseconds - \
-        no theme file parsing. It applies when no --theme or --light/--dark \
-        picks a theme. Set 'UtilityDark' or an empty value to clear the \
-        saved default.
+        Removes the need to pass --theme (name or path, honors --theme-dir). \
+        Saves the theme table to ~/.config/dog/default-theme. Loads in \
+        microseconds - no theme file parsing. It applies when no --theme or \
+        --light/--dark is given. Set 'UtilityDark' or empty '' to clear and \
+        restore the built-in 'UtilityDark' default.
         """
     ),
     completion: .custom(completeThemes)
