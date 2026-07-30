@@ -106,14 +106,14 @@ struct DogErrorTests {
     #expect(error.description.contains("Catppuccin"))
   }
 
-  @Test("themeNotFound lists available themes when no close match")
+  @Test("themeNotFound lists names as a Did-you-mean when no close match")
   func themeNotFoundAvailableList() {
     let error = DogError.themeNotFound(
       name: "Dracula Pro Van Helsing",
       searchedDir: "/themes",
       available: ["Catppuccin Latte", "Nord Dark"]
     )
-    #expect(error.description.contains("Available:"))
+    #expect(error.description.contains("Did you mean: "))
     #expect(error.description.contains("Catppuccin Latte"))
     #expect(error.description.contains("Nord Dark"))
   }

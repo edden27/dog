@@ -67,15 +67,68 @@ extension Dog {
   static func saveDefaultTheme(_ value: String, themesDirectory: String) throws {
     if value.isEmpty || value == "UtilityDark" {
       try DefaultThemeArtifact.remove()
-      print(value.isEmpty ? "default theme cleared" : "default theme set to 'UtilityDark'")
+      print("default theme reset to built-in 'UtilityDark'")
       return
     }
     let (resolvedName, resolvedStyles) = try resolveActiveTheme(
       explicitTheme: value, light: false, dark: false,
       themesDirectory: themesDirectory
     )
-    try DefaultThemeArtifact.save(styles: resolvedStyles, themeName: resolvedName)
-    print("default theme set to '\(resolvedName)'")
+    let displayName = normalizedDisplayName(
+      for: resolvedName, directory: themesDirectory
+    )
+    try DefaultThemeArtifact.save(styles: resolvedStyles, themeName: displayName)
+    print("default theme set to '\(displayName)'")
+  }
+
+  /// Canonical `file:variant` display form of a theme value, shown by the
+  /// --set-default-theme confirmation and stored in the artifact (--woof
+  /// reads it back as the active theme name): the bundle filename (no
+  /// directory, no .json) plus the variant name that was picked. Built-in
+  /// names have no file and stay bare. Only runs on the set command —
+  /// renders never pay for the directory listing.
+  private static func normalizedDisplayName(
+    for value: String, directory: String
+  ) -> String {
+    if value == "UtilityBright" { return value }
+    if let fileVariant = fileVariantSplit(value, directory: directory) {
+      return normalizedFileVariant(
+        path: fileVariant.path, variantName: fileVariant.variantName
+      )
+    }
+    let expandedPath = ConfigPaths.expand(value)
+    if expandedPath.contains("/") {
+      return normalizedFileVariant(path: expandedPath, variantName: "")
+    }
+    // Plain name — mirror the resolver's preference: the value as a bundle
+    // filename first (exact variant inside it, else its first variant),
+    // then the first bundle containing the value as a variant name.
+    let listing = ZedThemeLoader.listVariantNames(in: directory)
+    for (bundle, variants) in listing where bundle == value {
+      if variants.contains(value) { return "\(bundle):\(value)" }
+      if let firstVariant = variants.first { return "\(bundle):\(firstVariant)" }
+    }
+    for (bundle, variants) in listing where variants.contains(value) {
+      return "\(bundle):\(value)"
+    }
+    return value
+  }
+
+  /// `bundle:variant` for a resolved theme file path. An empty variant name
+  /// means the file's first variant — the same rule the loader applies.
+  private static func normalizedFileVariant(
+    path: String, variantName: String
+  ) -> String {
+    let filename = path.split(separator: "/").last.map(String.init) ?? path
+    let bundle =
+      filename.hasSuffix(".json") ? String(filename.dropLast(5)) : filename
+    if !variantName.isEmpty { return "\(bundle):\(variantName)" }
+    if let bytes = try? ZedThemeLoader.readFileBytes(path: path),
+      let firstVariant = ZedThemeVariantWalker.listVariantNames(bytes).first
+    {
+      return "\(bundle):\(firstVariant)"
+    }
+    return bundle
   }
 
   /// Resolve `themeName` into rendering styles. Built-in `UtilityDark` is

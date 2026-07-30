@@ -38,8 +38,9 @@ enum DogError: Error, CustomStringConvertible {
         message += "\nDid you mean '\(suggestion)'?"
       } else if !available.isEmpty {
         let preview = available.prefix(10).joined(separator: ", ")
-        message += "\nAvailable: \(preview)"
-        if available.count > 10 { message += " …" }
+        message += "\nDid you mean: \(preview)"
+        if available.count > 10 { message += ", …" }
+        message += "?"
       } else {
         message += "\nUse --list-themes to see available themes."
       }
