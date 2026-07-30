@@ -100,6 +100,9 @@ extension Dog {
     if expandedPath.contains("/") {
       return normalizedFileVariant(path: expandedPath, variantName: "")
     }
+    if let bundlePath = bundleFilePath(expandedPath, directory: directory) {
+      return normalizedFileVariant(path: bundlePath, variantName: "")
+    }
     // Plain name — mirror the resolver's preference: the value as a bundle
     // filename first (exact variant inside it, else its first variant),
     // then the first bundle containing the value as a variant name.
@@ -137,8 +140,9 @@ extension Dog {
   /// filename in `directory`, `.json` optional, or a full path) addresses
   /// one variant directly with no directory search. A value containing
   /// `/` (after `~`/`${VAR}` expansion) loads as a direct path to a theme
-  /// JSON file. Any other name goes through `ZedThemeLoader`'s
-  /// progressive-prefix cascade against `directory`.
+  /// JSON file, and a bare `<filename>.json` that exists in `directory`
+  /// loads that file the same way. Any other name goes through
+  /// `ZedThemeLoader`'s progressive-prefix cascade against `directory`.
   private static func resolveThemeStyles(
     themeName: String, directory: String
   ) throws -> ResolvedThemeStyles {
@@ -162,19 +166,23 @@ extension Dog {
     }
     let loaded: ZedThemeLoader.LoadedTheme
     let expandedPath = ConfigPaths.expand(themeName)
+    let directFilePath: String? =
+      expandedPath.contains("/")
+      ? expandedPath
+      : bundleFilePath(expandedPath, directory: directory)
     if let fileVariant = fileVariantSplit(themeName, directory: directory) {
       loaded = try loadFileVariant(
         path: fileVariant.path, variantName: fileVariant.variantName
       )
-    } else if expandedPath.contains("/") {
-      // A path always means the file's FIRST variant — scoping to its byte
-      // range keeps a multi-variant bundle from bleeding later variants'
-      // rules into the result. No range found (not a bundle) falls back to
-      // scanning the whole file.
-      let bytes = try ZedThemeLoader.readFileBytes(path: expandedPath)
+    } else if let directFilePath {
+      // A path or bare `<filename>.json` always means the file's FIRST
+      // variant — scoping to its byte range keeps a multi-variant bundle
+      // from bleeding later variants' rules into the result. No range found
+      // (not a bundle) falls back to scanning the whole file.
+      let bytes = try ZedThemeLoader.readFileBytes(path: directFilePath)
       let firstVariantRange = ZedThemeVariantWalker.findVariantRange(bytes, target: nil)
       loaded = try ZedThemeLoader.load(
-        bytes: bytes, path: expandedPath, variantRange: firstVariantRange
+        bytes: bytes, path: directFilePath, variantRange: firstVariantRange
       )
     } else {
       loaded = try ZedThemeLoader.load(name: themeName, directory: directory)
@@ -186,6 +194,19 @@ extension Dog {
       gutterBgStyle: loaded.gutterBgStyle,
       editorBgStyle: loaded.editorBgStyle
     )
+  }
+
+  /// Resolve a bare `<filename>.json` value to a path inside `directory`
+  /// when that file exists — the no-colon sibling of `fileVariantSplit`'s
+  /// file-part rule. Nil otherwise, so any other value keeps resolving as
+  /// a theme name.
+  private static func bundleFilePath(
+    _ value: String, directory: String
+  ) -> String? {
+    guard value.hasSuffix(".json") else { return nil }
+    let candidatePath = "\(directory)/\(value)"
+    guard ZedThemeDirectoryScanner.fileExists(candidatePath) else { return nil }
+    return candidatePath
   }
 
   /// Split a `file:variant` theme value at its LAST colon. Returns the
