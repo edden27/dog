@@ -1,6 +1,6 @@
 # 🐶 dog
 
-> Like bat, but faster, with deeper theming. (written in swift, powered by tree-sitter, btw)
+> Faster than bat cli, with better theming. (written in swift, powered by tree-sitter, btw)
 
 ![Animated terminal demo of dog highlighting a Swift file, cycling through themes — default UtilityDark, Catppuccin Frappé, Nord Dark, Tokyo Night, then --light](assets/hero.gif)
 
@@ -18,6 +18,9 @@ dog --light src/lib.rs
 # You can pass dog a bone
 echo 'struct Point { let x, y: Int }' | dog -l swift
 
+# dog remembers your favorite theme
+dog --set-default-theme 'Nord Dark'
+
 # dog plays well with other pets
 fzf --preview 'dog --color=always --theme "Catppuccin Mocha" {}'
 ```
@@ -27,7 +30,7 @@ A [yazi plugin](https://github.com/edden27/dog.yazi) wraps `dog` as a previewer 
 
 ## Why dog
 
-- **[800+ Zed themes](https://sh.dog/how-to-use-themes#finding-editing-or-creating-themes)** — drop a JSON file in, or point `--theme-dir` at your existing `~/.config/zed/themes` and use what you already have. Backgrounds, line numbers, and gutter are all theme-controlled, opacity included. Two zero-cost built-ins ship too — dark is the default, `--light` flips to the bright one.
+- **[800+ Zed themes](https://sh.dog/how-to-use-themes#finding-editing-or-creating-themes)** — drop a JSON file in, or point `--theme-dir` at your existing `~/.config/zed/themes` and use what you already have. Backgrounds, line numbers, and gutter are all theme-controlled, opacity included. Two zero-cost built-ins ship too — dark is the default, `--light` flips to the bright one. Any theme can be [saved as your default](https://sh.dog/how-to-use-themes#set-a-default-theme) — stored precomputed, so it loads as fast as the built-ins.
 - **Up to 14.6× faster than bat on large files** — 54k lines of TypeScript in 0.4s vs 5.8s. 100% syntax coverage across all [17 supported languages](#supported-languages).
 - **~5ms startup, every language** — precompiled highlight queries mean there's no per-language warmup. In fzf or yazi, that's the latency on every keystroke.
 - **Single binary, no runtime deps** — [17 grammars](#supported-languages) statically compiled in. Copy it anywhere, it runs.
@@ -128,7 +131,7 @@ Full benchmarks and methodology in the [docs](https://sh.dog/benchmarks).
 - **[Installation](https://sh.dog/installation)** — every install method, plus [no-sudo installs](https://sh.dog/installation#install-location) and [custom language builds](https://sh.dog/installation#custom-language-builds)
 - **[Configuration](https://sh.dog/configuration)** — every flag, env var, exit code
 - **[How to integrate dog](https://sh.dog/how-to-integrate-dog)** — recipes for [fzf](https://sh.dog/how-to-integrate-dog#fzf), [tv](https://sh.dog/how-to-integrate-dog#tv), and [yazi](https://sh.dog/how-to-integrate-dog#yazi) previews, [tab completions](https://sh.dog/how-to-integrate-dog#shell-completions), and advanced commands for pagers, pipes, and stdin
-- **[Theming](https://sh.dog/how-to-use-themes)** — [using existing Zed themes](https://sh.dog/how-to-use-themes#using-existing-zed-themes), [finding themes](https://sh.dog/how-to-use-themes#finding-editing-or-creating-themes), [creating your own themes](https://sh.dog/how-to-use-themes#writing-a-custom-theme), [full token list](https://sh.dog/how-to-use-themes#supported-tokens)
+- **[Theming](https://sh.dog/how-to-use-themes)** — [setting a default theme](https://sh.dog/how-to-use-themes#set-a-default-theme), [using existing Zed themes](https://sh.dog/how-to-use-themes#using-existing-zed-themes), [finding themes](https://sh.dog/how-to-use-themes#finding-editing-or-creating-themes), [creating your own themes](https://sh.dog/how-to-use-themes#writing-a-custom-theme), [full token list](https://sh.dog/how-to-use-themes#supported-tokens)
 - **[Benchmarks](https://sh.dog/benchmarks)** — full [speed](https://sh.dog/benchmarks#speed) and [coverage](https://sh.dog/benchmarks#coverage) matrix, the [methods](https://sh.dog/benchmarks#conditions) behind the numbers, and [how to run them yourself](https://sh.dog/benchmarks#reproduce)
 - **[How is dog different?](https://sh.dog/how-is-dog-different)** — how dog is built, what that changes for themes, coverage, and speed, and when to use which
 
@@ -143,7 +146,7 @@ Full benchmarks and methodology in the [docs](https://sh.dog/benchmarks).
 - `--range`, `--header`, and `--no-line-numbers` are stubs
 - `$PAGER` not honored (pager is hardcoded to `less -R`)
 
-Test suite: 197 Swift unit tests across 29 suites + 51 integration assertions across 9 suites + 13 bat-compatibility scenarios.
+Test suite: 222 Swift unit tests across 31 suites + 51 integration assertions across 9 suites + 13 bat-compatibility scenarios.
 
 
 ## Acknowledgements
