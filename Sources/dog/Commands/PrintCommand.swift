@@ -300,24 +300,9 @@ struct PrintCommand {
         }
       } else {
         // Slow path: line may wrap — per-byte column tracking.
-        // Measure leading whitespace in display columns so wrap continuations
-        // align under the first non-whitespace char. Cap at half contentCols
-        // to keep continuations usable on deeply indented lines.
-        var wrapIndent = 0
-        let indentCap = contentCols / 2
-        var scanIdx = lineStart
-        while scanIdx < contentEnd, wrapIndent < indentCap {
-          let byte = sourceBytes[scanIdx]
-          if byte == 0x20 {
-            wrapIndent += 1
-          } else if byte == 0x09 {
-            wrapIndent += tabStopWidth - (wrapIndent % tabStopWidth)
-          } else {
-            break
-          }
-          scanIdx += 1
-        }
-        if wrapIndent > indentCap { wrapIndent = indentCap }
+        let wrapIndent = Self.measureWrapIndent(
+          sourceBytes: sourceBytes, lineStart: lineStart,
+          contentEnd: contentEnd, contentCols: contentCols)
         let lineWriter = WrappedLineWriter(
           contentCols: contentCols, wrapGutterBytes: wrapGutterBytes,
           spacePad: spacePad, editorBg: editorBg, wrapIndent: wrapIndent,
@@ -351,6 +336,35 @@ struct PrintCommand {
     // marker in a TTY, and downstream pipes see a properly terminated stream.
     output.newline()
     return (output, lineCount)
+  }
+
+  /// Leading whitespace of the line in display columns, for wrap-continuation
+  /// alignment under the first non-whitespace character. Alignment only
+  /// happens when the full indent fits within half of `contentCols` — a
+  /// deeper indent can't truly align and would starve narrow rows of room
+  /// for words, so those lines wrap flush (0) instead.
+  private static func measureWrapIndent(
+    sourceBytes: [UInt8], lineStart: Int, contentEnd: Int, contentCols: Int
+  ) -> Int {
+    var wrapIndent = 0
+    let indentCap = contentCols / 2
+    var scanIndex = lineStart
+    while scanIndex < contentEnd, wrapIndent < indentCap {
+      let byte = sourceBytes[scanIndex]
+      if byte == 0x20 {
+        wrapIndent += 1
+      } else if byte == 0x09 {
+        wrapIndent += tabStopWidth - (wrapIndent % tabStopWidth)
+      } else {
+        break
+      }
+      scanIndex += 1
+    }
+    let stoppedMidWhitespace =
+      scanIndex < contentEnd
+      && (sourceBytes[scanIndex] == 0x20 || sourceBytes[scanIndex] == 0x09)
+    if wrapIndent > indentCap || stoppedMidWhitespace { return 0 }
+    return wrapIndent
   }
 
   /// Plain-mode gutter entries: just reset + editor bg, repeated per line.

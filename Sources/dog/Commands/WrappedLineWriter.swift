@@ -109,7 +109,7 @@ struct WrappedLineWriter {
       let byte = sourceBytes[index]
       if byte < 0x80 {
         index = emitASCIIByte(
-          sourceBytes: sourceBytes, index: index, end: end, byte: byte,
+          sourceBytes: sourceBytes, index: index, byte: byte,
           column: &column, currentStyle: currentStyle, into: &output)
         previousWasASCII = true
       } else {
@@ -127,7 +127,7 @@ struct WrappedLineWriter {
 
   /// Emit one ASCII byte with wrap + tab handling. Returns next source index.
   private func emitASCIIByte(
-    sourceBytes: [UInt8], index: Int, end: Int, byte: UInt8,
+    sourceBytes: [UInt8], index: Int, byte: UInt8,
     column: inout Int, currentStyle: Style?,
     into output: inout ANSIOutput
   ) -> Int {
@@ -137,7 +137,7 @@ struct WrappedLineWriter {
     }
     if byte != 0x20, byte != 0x09,
       atWordBoundary(sourceBytes: sourceBytes, index: index),
-      shouldSoftWrap(sourceBytes: sourceBytes, wordStart: index, end: end, column: column)
+      shouldSoftWrap(sourceBytes: sourceBytes, wordStart: index, column: column)
     {
       column = performWrap(column: column, currentStyle: currentStyle, into: &output)
     }
@@ -191,13 +191,16 @@ struct WrappedLineWriter {
   }
 
   /// Emit the wrap-gutter prefix for a continuation row and re-apply the
-  /// active style. In plain mode, emits a bare newline instead of ANSI.
+  /// active style. The gutter bytes end in a reset, so the style must be
+  /// re-applied with bold/italic forced back on — `Style.bytes` alone
+  /// carries only the colors. In plain mode, emits a bare newline instead
+  /// of ANSI.
   private func emitWrapGutter(
     currentStyle: Style?, into output: inout ANSIOutput
   ) {
     if colorEnabled {
       output.text(wrapGutterBytes)
-      if let style = currentStyle { output.color(style) }
+      if let style = currentStyle { output.colorDelta(from: nil, to: style) }
     } else {
       output.newline()
     }
@@ -227,25 +230,46 @@ struct WrappedLineWriter {
     }
   }
 
-  /// True when `index` sits at the start of a word (source start, or preceded
-  /// by whitespace / newline).
+  /// True when a soft wrap may happen before `index`: the byte starts a
+  /// word (preceded by whitespace / newline) or follows a break-after
+  /// character — code breaks after separators and opening brackets the way
+  /// a formatter would, so a chain like `BorkError.tooSleepy` splits at
+  /// the dot instead of mid-identifier when it has to split at all.
   private func atWordBoundary(sourceBytes: [UInt8], index: Int) -> Bool {
     guard index > 0 else { return true }
     let previous = sourceBytes[index - 1]
     return previous == 0x20 || previous == 0x09 || previous == 0x0A
+      || allowsBreakAfter(previous)
   }
 
-  /// True when the word beginning at `wordStart` should trigger a soft wrap:
-  /// won't fit on the current row but will fit on a fresh indented row.
+  /// Characters a wrap may break after, mirroring where code formatters
+  /// split long expressions: `.` `,` `:` `;` and opening brackets.
+  private func allowsBreakAfter(_ byte: UInt8) -> Bool {
+    switch byte {
+    case 0x2E, 0x2C, 0x3A, 0x3B, 0x28, 0x5B, 0x7B:  // . , : ; ( [ {
+      return true
+    default:
+      return false
+    }
+  }
+
+  /// True when the segment beginning at `wordStart` should trigger a soft
+  /// wrap: won't fit on the current row but will fit on a fresh indented
+  /// row. A segment runs to the next whitespace, line end, or break-after
+  /// character, crossing token-slice boundaries — a word split across
+  /// tokens (`BorkError.tooSleepy`) must be measured whole or the wrap
+  /// decision is wrong.
   private func shouldSoftWrap(
-    sourceBytes: [UInt8], wordStart: Int, end: Int, column: Int
+    sourceBytes: [UInt8], wordStart: Int, column: Int
   ) -> Bool {
     let remaining = contentCols - column
     var wordEnd = wordStart
-    while wordEnd < end, sourceBytes[wordEnd] < 0x80,
-      sourceBytes[wordEnd] != 0x20, sourceBytes[wordEnd] != 0x09
+    while wordEnd < sourceBytes.count, sourceBytes[wordEnd] < 0x80,
+      sourceBytes[wordEnd] != 0x20, sourceBytes[wordEnd] != 0x09,
+      sourceBytes[wordEnd] != 0x0A, sourceBytes[wordEnd] != 0x0D
     {
       wordEnd += 1
+      if allowsBreakAfter(sourceBytes[wordEnd - 1]) { break }
     }
     let wordLength = wordEnd - wordStart
     let nextRowCapacity = contentCols - wrapIndent
