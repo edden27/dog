@@ -1,10 +1,10 @@
-# 🐶 dog
+# <picture><source media="(prefers-color-scheme: dark)" srcset="assets/dog-dark.svg"><img src="assets/dog-light.svg" alt="" height="32"></picture> dog
 
 > Faster than bat cli, with better theming. (written in swift, powered by tree-sitter, btw)
 
-![Animated terminal demo of dog highlighting a Swift file, cycling through themes — default UtilityDark, Catppuccin Frappé, Nord Dark, Tokyo Night, then --light](assets/hero.gif)
+![Animated terminal demo of dog highlighting a Swift file, cycling through themes — default UtilityDark, Catppuccin Frappé, Vim Adwaita Dark, Tokyo Night, then --light](assets/hero.gif)
 
-*Themes: UtilityDark (default), [Catppuccin Frappé](https://zed-themes.com/themes/catppuccin?name=Catppuccin%20Frapp%C3%A9), [Nord Dark](https://zed-themes.com/themes/nord?name=Nord%20Dark), [Tokyo Night](https://zed-themes.com/themes/tokyo-night?name=Tokyo%20Night), built-in [`--light`](https://sh.dog/configuration#light).*
+*Themes: UtilityDark (default), [Catppuccin Frappé](https://zed-themes.com/themes/catppuccin?name=Catppuccin%20Frapp%C3%A9), [Vim Adwaita Dark](https://zed-themes.com/themes/vim-theme?name=Vim%20Adwaita%20Dark), [Tokyo Night](https://zed-themes.com/themes/tokyo-night?name=Tokyo%20Night), built-in [`--light`](https://sh.dog/configuration#light).*
 
 A `cat` alternative for macOS and Linux that prints files to your terminal with syntax highlighting — backgrounds, line numbers, and gutter included. Auto-pages with `less`. Starts up in ~5ms, so it's great piped into previewers like `fzf`, `tv`, and `yazi`.
 
