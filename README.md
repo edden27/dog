@@ -1,4 +1,4 @@
-# <picture><source media="(prefers-color-scheme: dark)" srcset="assets/dog-dark.svg"><img src="assets/dog-light.svg" alt="" height="32" align="middle"></picture> dog
+# <sub><picture><source media="(prefers-color-scheme: dark)" srcset="assets/dog-dark.svg"><img src="assets/dog-light.svg" alt="" height="32"></picture></sub> dog
 
 > Faster than bat cli, with better theming. (written in swift, powered by tree-sitter, btw)
 
