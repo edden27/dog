@@ -30,6 +30,9 @@ dog-linux-x86_64
 dog-linux-arm64
 dog-linux-*
 
+# Local documentation cache — not part of the project
+DerivedDocumentation/
+
 # Profiling / traces
 *.trace
 Launch_*.trace
