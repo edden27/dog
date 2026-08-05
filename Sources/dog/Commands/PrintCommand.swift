@@ -4,6 +4,10 @@
   import Glibc
 #endif
 
+// Emit functions take flat parameters by design on the render hot path — a
+// context struct would add per-call packing for no clarity gain.
+// swiftlint:disable function_parameter_count
+
 /// Number of display columns a tab character advances to the next tab stop.
 /// Defaults to 4 — tighter than the 8-column terminal default, which wastes
 /// horizontal space for code that uses tabs for indentation (Go, Makefiles).
@@ -823,3 +827,5 @@ extension Array where Element == UInt8 {
     }
   }
 }
+
+// swiftlint:enable function_parameter_count

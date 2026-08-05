@@ -1,3 +1,6 @@
+// One cohesive byte-scanner state machine — splitting it would scatter shared parsing state.
+// swiftlint:disable type_body_length
+
 /// Zero-copy JSON byte scanner for Zed theme files.
 ///
 /// Extracts syntax scope entries from the `"syntax"` block without allocating
@@ -340,3 +343,5 @@ struct ZedSyntaxEntry {
   let fontWeight: Int
   let fontStyle: String?
 }
+
+// swiftlint:enable type_body_length

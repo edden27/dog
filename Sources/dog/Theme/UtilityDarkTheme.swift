@@ -65,6 +65,7 @@ enum UtilityDarkTheme {
 
   // Returns the Style for a token type.
   // Switch compiles to a jump table — O(1), zero allocation.
+  // swiftlint:disable:next function_body_length
   static func color(for token: TokenType) -> Style {
     switch token {
     case .keyword, .keywordFunction, .keywordImport, .keywordType, .keywordDirective,

@@ -1,3 +1,7 @@
+// Emit functions take flat parameters by design on the render hot path — a
+// context struct would add per-call packing for no clarity gain.
+// swiftlint:disable function_parameter_count
+
 /// Emits a single logical source line to an `ANSIOutput`, honoring soft/hard
 /// wrapping, tab expansion, editor-background fill, and wrap-indent alignment.
 ///
@@ -276,3 +280,5 @@ struct WrappedLineWriter {
     return wordLength > remaining && column > 0 && wordLength <= nextRowCapacity
   }
 }
+
+// swiftlint:enable function_parameter_count

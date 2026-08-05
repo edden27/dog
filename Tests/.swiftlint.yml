@@ -1,0 +1,11 @@
+# Nested config for test code. Test suites are naturally long flat lists of
+# cases — length limits add churn without value here. Repeats the root
+# disabled_rules because nested configs replace, not extend, that list.
+disabled_rules:
+  - trailing_comma
+  - opening_brace
+  - optional_data_string_conversion
+  - todo
+  - file_length
+  - type_body_length
+  - function_body_length

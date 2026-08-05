@@ -115,6 +115,7 @@ final class LanguageRegistry: Sendable {
 
   // Complexity/length warnings are inflated by #if trait guards — not real complexity.
   // If warnings fire for reasons other than #if guards, investigate.
+  // swiftlint:disable:next cyclomatic_complexity function_body_length
   private init() {
     var entries: [String: LanguageEntry] = [:]
     var names: Set<String> = []
