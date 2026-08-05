@@ -5,6 +5,7 @@
 #
 # Usage:
 #   scripts/release/publish.sh 0.1.0
+#   scripts/release/publish.sh 0.1.0 --skip-build   # reuse existing dist/ tarballs
 #
 # One-time prerequisites:
 #   - gh CLI installed and logged in            (gh auth status)
@@ -16,7 +17,9 @@
 
 set -euo pipefail
 
-VERSION="${1:?usage: $0 <version, e.g. 0.1.0>}"
+VERSION="${1:?usage: $0 <version, e.g. 0.1.0> [--skip-build]}"
+SKIP_BUILD=0
+[ "${2:-}" = "--skip-build" ] && SKIP_BUILD=1
 TAG="v$VERSION"
 REPO="edden27/dog"
 TAP_REPO="edden27/homebrew-dog"
@@ -31,7 +34,7 @@ step() { echo ""; echo "━━━ $1"; }
 step "sanity checks"
 command -v gh >/dev/null || { echo "gh not installed (brew install gh)"; exit 1; }
 gh auth status >/dev/null || { echo "not logged in — run: gh auth login"; exit 1; }
-docker info >/dev/null 2>&1 || { echo "Docker/OrbStack not running"; exit 1; }
+[ "$SKIP_BUILD" = 1 ] || docker info >/dev/null 2>&1 || { echo "Docker/OrbStack not running"; exit 1; }
 [ -z "$(git status --porcelain)" ] || { echo "working tree not clean — commit first"; exit 1; }
 
 # --version output comes from Dog.swift, tarball names from the Makefile.
@@ -47,8 +50,16 @@ git push origin "$TAG"
 
 # ── build + package all four platforms ───────────────────────────────────────
 step "build (make package)"
-rm -rf dist
-make package
+if [ "$SKIP_BUILD" = 1 ]; then
+    for platform in macos-arm64 macos-x86_64 linux-x86_64 linux-arm64; do
+        [ -f "dist/dog-$platform.tar.gz" ] \
+            || { echo "--skip-build: dist/dog-$platform.tar.gz missing — run make package first"; exit 1; }
+    done
+    echo "skipped — using existing dist/ tarballs"
+else
+    rm -rf dist
+    make package
+fi
 
 # ── GitHub Release: create as draft, attach tarballs, then publish ───────────
 step "GitHub release"
