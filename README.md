@@ -146,7 +146,7 @@ Full benchmarks and methodology in the [docs](https://sh.dog/benchmarks).
 - `--range`, `--header`, and `--no-line-numbers` are stubs
 - `$PAGER` not honored (pager is hardcoded to `less -R`)
 
-Most likely next — no promises, no order: line ranges, headers/footers, TOML config, more languages, alternative pagers, git integration, `man` + `--help` highlighting. See [What's next](https://sh.dog/how-is-dog-different#whats-next).
+Most likely next — no promises, no order: line ranges, line highlighting, headers/footers, TOML config, more languages, alternative pagers, git integration, `man` + `--help` highlighting. See [What's next](https://sh.dog/how-is-dog-different#whats-next).
 
 Test suite: 222 Swift unit tests across 31 suites + 51 integration assertions across 9 suites + 13 bat-compatibility scenarios.
 
