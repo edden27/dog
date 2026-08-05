@@ -85,14 +85,14 @@ brew install dog
 **Binary** — four builds: `dog-macos-arm64`, `dog-macos-x86_64`, `dog-linux-x86_64`, `dog-linux-arm64`. Grab yours:
 
 ```sh
-curl -L <REPO_URL>/releases/latest/download/dog-macos-arm64.tar.gz | tar xz
+curl -L https://github.com/edden27/dog/releases/latest/download/dog-macos-arm64.tar.gz | tar xz
 sudo mv dog /usr/local/bin/
 ```
 
 **From source** — needs Swift 6.3 or newer (Xcode 26 on macOS):
 
 ```sh
-git clone <REPO_URL>
+git clone https://github.com/edden27/dog
 cd dog
 make build && make install
 ```
@@ -146,7 +146,7 @@ Full benchmarks and methodology in the [docs](https://sh.dog/benchmarks).
 - `--range`, `--header`, and `--no-line-numbers` are stubs
 - `$PAGER` not honored (pager is hardcoded to `less -R`)
 
-Most likely next — no promises, no order: line ranges, line highlighting, headers/footers, TOML config, more languages, alternative pagers, git integration, `man` + `--help` highlighting. See [What's next](https://sh.dog/how-is-dog-different#whats-next).
+Most likely next — no promises, no order: line ranges, line highlighting, headers/footers, TOML config, more languages, alternative pagers, git integration, `man` + `--help` highlighting. See [What's next](https://sh.dog/how-is-dog-different#what-s-next).
 
 Test suite: 222 Swift unit tests across 31 suites + 51 integration assertions across 9 suites + 13 bat-compatibility scenarios.
 
