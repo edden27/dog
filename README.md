@@ -138,13 +138,15 @@ Full benchmarks and methodology in the [docs](https://sh.dog/benchmarks).
 
 ## Status
 
-`0.1.0` — first public release. Known limitations:
+`0.1.0` — first public release. `dog` is stable at 0.1 but still a puppy: we don't anticipate breaking changes, but it is in active development. Known limitations:
 
 - Single file at a time (multi-file planned)
 - No git-diff gutter
 - No Windows
 - `--range`, `--header`, and `--no-line-numbers` are stubs
 - `$PAGER` not honored (pager is hardcoded to `less -R`)
+
+Most likely next — no promises, no order: line ranges, headers/footers, TOML config, more languages, alternative pagers, git integration, `man` + `--help` highlighting. See [What's next](https://sh.dog/how-is-dog-different#whats-next).
 
 Test suite: 222 Swift unit tests across 31 suites + 51 integration assertions across 9 suites + 13 bat-compatibility scenarios.
 
