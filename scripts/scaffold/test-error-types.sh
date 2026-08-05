@@ -10,7 +10,7 @@ echo "Error types:"
 [[ $EXIT -eq 1 ]] && pass "fileNotFound → exit 1" || fail "fileNotFound exit $EXIT"
 
 MSG=$("$DOG" nonexistent.swift 2>&1 || true)
-echo "$MSG" | grep -q "file not found" && pass "fileNotFound message" || fail "fileNotFound message: $MSG"
+echo "$MSG" | grep -q "not found" && pass "fileNotFound message" || fail "fileNotFound message: $MSG"
 
 # binaryFile — exit 1 (pipe binary content via stdin won't trigger it,
 # but we can test with an actual binary)

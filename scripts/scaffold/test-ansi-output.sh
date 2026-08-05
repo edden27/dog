@@ -16,8 +16,11 @@ echo "$WOOF" | grep -q '\^\[' && pass "color() emits ANSI escape" || fail "color
 # Check for reset sequence: ^[[0m
 echo "$WOOF" | grep -q '\^\[\[0m' && pass "reset() emits ESC[0m" || fail "reset() ESC[0m"
 
-# Check text content is present
-echo "$WOOF" | grep -q "woof!" && pass "text() emits content" || fail "text() content"
+# Check text content is present — pipe known source through so the expected
+# text is controlled by the test, not by the embedded snippet. -p drops the
+# gutter: its │ renders as bytes BSD grep refuses to match past.
+CONTENT=$(echo 'let woofTest = 1' | "$DOG" -l swift --color=always -p 2>/dev/null | cat -v)
+echo "$CONTENT" | grep -q "woofTest" && pass "text() emits content" || fail "text() content"
 
 # --color=never: verify zero ESC bytes in output
 NEVER=$("$DOG" --color=never --woof 2>/dev/null | cat -v)

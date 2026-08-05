@@ -6,10 +6,10 @@ echo "Bark logger:"
 
 # Release build should have NO debug log output
 # Build release if not already built
-RELEASE_DOG="$PROJECT_ROOT/cli/.build/release/dog"
+RELEASE_DOG="$PROJECT_ROOT/.build/release/dog"
 if [[ ! -x "$RELEASE_DOG" ]]; then
   echo "  building release..."
-  (cd "$PROJECT_ROOT/cli" && swift build -c release 2>&1 | tail -1)
+  (cd "$PROJECT_ROOT" && swift build -c release 2>&1 | tail -1)
 fi
 
 if [[ -x "$RELEASE_DOG" ]]; then

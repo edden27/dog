@@ -4,7 +4,7 @@
 # 13 scenarios that must all pass for dog to be a drop-in bat replacement.
 #
 # Usage:
-#   ./tests/scripts/compat.sh
+#   bash scripts/test/compat.sh
 
 set -uo pipefail
 
@@ -49,7 +49,7 @@ fail() {
 }
 
 if [[ ! -x "$DOG" ]]; then
-    echo "dog binary not found at $DOG — run 'swift build' in cli/ first"
+    echo "dog binary not found at $DOG — run 'swift build' first"
     exit 1
 fi
 

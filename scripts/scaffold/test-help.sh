@@ -21,6 +21,6 @@ echo "$HELP" | grep -q "\--list-languages" && pass "--list-languages" || fail "-
 echo "$HELP" | grep -q "\--list-themes" && pass "--list-themes" || fail "--list-themes"
 echo "$HELP" | grep -q "woof" && pass "--woof" || fail "--woof"
 echo "$HELP" | grep -q "dog <FILE>" && pass "usage shows 'dog <FILE>'" || fail "usage shows 'dog <FILE>'"
-echo "$HELP" | grep -q "cat <FILE>" && pass "usage shows pipe example" || fail "usage shows pipe example"
+echo "$HELP" | grep -q "| dog" && pass "usage shows pipe example" || fail "usage shows pipe example"
 
 summary

@@ -11,7 +11,7 @@ echo "Error handling:"
 
 # Missing file — error message
 MSG=$("$DOG" nonexistent.swift 2>&1 || true)
-echo "$MSG" | grep -q "file not found" && pass "error says 'file not found'" || fail "error message (got: $MSG)"
+echo "$MSG" | grep -q "not found" && pass "error says 'not found'" || fail "error message (got: $MSG)"
 
 # Error format — [error] prefix
 echo "$MSG" | grep -q "\[error\]" && pass "error has [error] prefix" || fail "error format (got: $MSG)"

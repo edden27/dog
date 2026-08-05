@@ -2,17 +2,17 @@
 # Shared test helpers — sourced by each test file
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
-FIXTURE="$PROJECT_ROOT/tests/fixtures/jquery.js"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+FIXTURE="$PROJECT_ROOT/scripts/fixtures/jquery.js"
 
 # Find the dog binary — check DOG_BIN env var first (set by linux-test.sh),
 # then the standard macOS debug path
 if [[ -n "${DOG_BIN:-}" ]] && [[ -x "$DOG_BIN" ]]; then
     DOG="$DOG_BIN"
-elif [[ -x "$PROJECT_ROOT/cli/.build/debug/dog" ]]; then
-    DOG="$PROJECT_ROOT/cli/.build/debug/dog"
+elif [[ -x "$PROJECT_ROOT/.build/debug/dog" ]]; then
+    DOG="$PROJECT_ROOT/.build/debug/dog"
 else
-    echo "dog binary not found — set DOG_BIN or run 'swift build' in cli/"
+    echo "dog binary not found — set DOG_BIN or run 'swift build' first"
     exit 1
 fi
 
@@ -48,7 +48,7 @@ summary() {
 
 check_dog() {
     if [[ ! -x "$DOG" ]]; then
-        echo "dog binary not found at $DOG — run 'swift build' in cli/ first"
+        echo "dog binary not found at $DOG — run 'swift build' first"
         exit 1
     fi
 }
