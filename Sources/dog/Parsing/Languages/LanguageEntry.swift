@@ -267,12 +267,14 @@ actor LanguageEntry {
     // ts_query_capture_count returns the number of unique capture names in the query.
     let captureCount = Int(ts_query_capture_count(query))
     var table = [TokenType?](repeating: nil, count: captureCount)
-    for i in 0..<captureCount {
+    for captureIndex in 0..<captureCount {
       var nameLen: UInt32 = 0
-      guard let namePtr = ts_query_capture_name_for_id(query, UInt32(i), &nameLen) else { continue }
+      guard let namePtr = ts_query_capture_name_for_id(query, UInt32(captureIndex), &nameLen) else {
+        continue
+      }
       if namePtr[0] == UInt8(ascii: "_") { continue }
       // nil in table = skip (underscore captures). TokenType.none = recognised but unstyled.
-      table[i] = TokenType.from(captureName: String(cString: namePtr)) ?? TokenType.none
+      table[captureIndex] = TokenType.from(captureName: String(cString: namePtr)) ?? TokenType.none
     }
 
     return CompiledQuery(

@@ -230,14 +230,14 @@ enum DefaultThemeArtifact {
     let italic = packed & (1 << 7) != 0
     if packed & (1 << 5) != 0 {
       return Style(
-        r: red, g: green, b: blue,
-        bgR: UInt8((packed >> 40) & 0xFF),
-        bgG: UInt8((packed >> 48) & 0xFF),
-        bgB: UInt8((packed >> 56) & 0xFF),
+        red: red, green: green, blue: blue,
+        backgroundRed: UInt8((packed >> 40) & 0xFF),
+        backgroundGreen: UInt8((packed >> 48) & 0xFF),
+        backgroundBlue: UInt8((packed >> 56) & 0xFF),
         bold: bold, italic: italic
       )
     }
-    return Style(r: red, g: green, b: blue, bold: bold, italic: italic)
+    return Style(red: red, green: green, blue: blue, bold: bold, italic: italic)
   }
 
   // MARK: - Directory creation

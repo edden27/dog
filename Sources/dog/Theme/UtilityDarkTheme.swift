@@ -3,24 +3,25 @@ enum UtilityDarkTheme {
 
   // MARK: - Named styles
 
-  private static let kwBoldItalic = Style(r: 238, g: 110, b: 57, bold: true, italic: true)
-  private static let kwBold = Style(r: 238, g: 110, b: 57, bold: true)
-  private static let kwItalic = Style(r: 238, g: 110, b: 57, italic: true)
-  private static let kwPlain = Style(r: 238, g: 110, b: 57)
-  private static let pink = Style(r: 227, g: 132, b: 167)
-  private static let fnColor = Style(r: 129, g: 159, b: 132)
-  private static let fnBuiltin = Style(r: 129, g: 159, b: 132, italic: true)
-  private static let typeBuiltin = Style(r: 129, g: 159, b: 132, bold: true)
-  private static let yellow = Style(r: 232, g: 166, b: 85)
-  private static let str = Style(r: 205, g: 190, b: 171, italic: true)
-  private static let blueItalic = Style(r: 158, g: 178, b: 201, italic: true)
-  private static let blue = Style(r: 158, g: 178, b: 201)
-  private static let purple = Style(r: 207, g: 149, b: 249)
-  private static let red = Style(r: 204, g: 67, b: 61)
-  private static let comment = Style(r: 129, g: 116, b: 100)
-  private static let punct = Style(r: 217, g: 217, b: 217)
-  private static let link = Style(r: 39, g: 112, b: 189)
-  private static let base = Style(r: 205, g: 190, b: 171)
+  private static let keywordBoldItalic = Style(
+    red: 238, green: 110, blue: 57, bold: true, italic: true)
+  private static let keywordBold = Style(red: 238, green: 110, blue: 57, bold: true)
+  private static let keywordItalic = Style(red: 238, green: 110, blue: 57, italic: true)
+  private static let keywordPlain = Style(red: 238, green: 110, blue: 57)
+  private static let pink = Style(red: 227, green: 132, blue: 167)
+  private static let functionColor = Style(red: 129, green: 159, blue: 132)
+  private static let functionBuiltin = Style(red: 129, green: 159, blue: 132, italic: true)
+  private static let typeBuiltin = Style(red: 129, green: 159, blue: 132, bold: true)
+  private static let yellow = Style(red: 232, green: 166, blue: 85)
+  private static let string = Style(red: 205, green: 190, blue: 171, italic: true)
+  private static let blueItalic = Style(red: 158, green: 178, blue: 201, italic: true)
+  private static let blue = Style(red: 158, green: 178, blue: 201)
+  private static let purple = Style(red: 207, green: 149, blue: 249)
+  private static let red = Style(red: 204, green: 67, blue: 61)
+  private static let comment = Style(red: 129, green: 116, blue: 100)
+  private static let punctuation = Style(red: 217, green: 217, blue: 217)
+  private static let link = Style(red: 39, green: 112, blue: 189)
+  private static let base = Style(red: 205, green: 190, blue: 171)
 
   /// Base text style for unhighlighted content.
   static let baseColor: Style = base
@@ -31,28 +32,28 @@ enum UtilityDarkTheme {
   static let editorFgStyle: Style? = base
 
   /// editor.line_number — SubtitleFG (817464)
-  static let lineNumberStyle: Style? = Style(r: 129, g: 116, b: 100)
+  static let lineNumberStyle: Style? = Style(red: 129, green: 116, blue: 100)
 
   /// editor.active_line_number — Foreground (CDBEAB)
   static let activeLineNumberStyle: Style? = base
 
   /// editor.gutter.background — BlackMainBG (1D1D1D)
-  static let gutterBgStyle: Style? = Style(r: 29, g: 29, b: 29)
+  static let gutterBgStyle: Style? = Style(red: 29, green: 29, blue: 29)
 
   /// editor.background — ElementBackground (2B2B2B)
-  static let editorBgStyle: Style? = Style(r: 43, g: 43, b: 43)
+  static let editorBgStyle: Style? = Style(red: 43, green: 43, blue: 43)
 
   // MARK: - Help styling
 
   /// Style for a `--help` output role. Drives `HelpFormatter`.
   static func helpStyle(for role: HelpRole) -> Style {
     switch role {
-    case .heading: return kwBold
+    case .heading: return keywordBold
     case .command: return typeBuiltin
     case .flag: return blue
-    case .metavar: return Style(r: 232, g: 166, b: 85, italic: true)
+    case .metavar: return Style(red: 232, green: 166, blue: 85, italic: true)
     case .defaultValue: return comment
-    case .punctuation: return punct
+    case .punctuation: return punctuation
     case .discussion: return base
     case .dim: return comment
     case .listPrimary: return yellow
@@ -64,26 +65,25 @@ enum UtilityDarkTheme {
 
   // Returns the Style for a token type.
   // Switch compiles to a jump table — O(1), zero allocation.
-  // swiftlint:disable:next cyclomatic_complexity
   static func color(for token: TokenType) -> Style {
     switch token {
     case .keyword, .keywordFunction, .keywordImport, .keywordType, .keywordDirective,
       .keywordDirectiveDefine, .keywordModifier, .include:
-      return kwBoldItalic
+      return keywordBoldItalic
     case .keywordConditional, .keywordConditionalTernary, .keywordCoroutine, .keywordException,
       .keywordOperator, .keywordRepeat, .keywordReturn, .conditional, .repeat:
-      return kwItalic
+      return keywordItalic
     case .stringSpecial, .stringSpecialSymbol, .constantBuiltin:
-      return kwPlain
+      return keywordPlain
     case .stringEscape, .boolean:
       return pink
     case .function, .functionCall, .functionMethod, .functionMethodCall, .functionSpecial, .method,
       .constructor:
-      return fnColor
+      return functionColor
     case .functionCommand:
-      return kwBold
+      return keywordBold
     case .functionBuiltin, .functionMethodBuiltin:
-      return fnBuiltin
+      return functionBuiltin
     case .typeBuiltin, .moduleBuiltin:
       return typeBuiltin
     case .type, .typeDefinition, .constant, .module, .variableParameter, .parameter, .label,
@@ -92,7 +92,7 @@ enum UtilityDarkTheme {
     case .variable:
       return yellow
     case .string, .stringDocumentation, .stringSpecialPath:
-      return str
+      return string
     case .character, .variableBuiltin, .markupQuote:
       return blueItalic
     case .attribute, .tagAttribute, .attributeBuiltin, .variableMember, .field, .property:
@@ -106,16 +106,16 @@ enum UtilityDarkTheme {
       return comment
     case .punctuationBracket, .punctuationDelimiter, .punctuationSpecial, .delimiter, .operator,
       .embedded, .tagDelimiter:
-      return punct
+      return punctuation
     case .markupLinkLabel, .textReference, .textUri, .stringSpecialUrl:
       return link
     case .markupHeading, .markupHeading1, .markupHeading2, .markupHeading3, .markupHeading4,
       .markupHeading5, .textTitle:
-      return kwBoldItalic
+      return keywordBoldItalic
     case .markupList:
       return pink
     case .textLiteral:
-      return str
+      return string
     case .markupRawBlock:
       return comment
     case .spell, .nospell, .none, .conceal:

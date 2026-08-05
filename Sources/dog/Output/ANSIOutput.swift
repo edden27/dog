@@ -156,7 +156,8 @@ enum ANSICodes {
   /// ESC[22m — clears both bold and dim (neither-bold-nor-faint).
   @usableFromInline static let notBold: ContiguousArray<UInt8> = ContiguousArray("\u{1B}[22m".utf8)
   /// ESC[23m — clears italic.
-  @usableFromInline static let notItalic: ContiguousArray<UInt8> = ContiguousArray("\u{1B}[23m".utf8)
+  @usableFromInline static let notItalic: ContiguousArray<UInt8> =
+    ContiguousArray("\u{1B}[23m".utf8)
 
   /// RGB color components.
   struct RGB {

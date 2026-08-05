@@ -213,8 +213,8 @@ struct ZedThemeTests {
 
   @Test("parseHex 8-char hex with full alpha + bg is passthrough")
   func parseHexEightCharOpaqueWithBackground() {
-    let bg = ANSICodes.RGB(red: 0x1E, green: 0x1E, blue: 0x2E)
-    let rgb = ANSICodes.parseHex("#d07277ff", background: bg)
+    let background = ANSICodes.RGB(red: 0x1E, green: 0x1E, blue: 0x2E)
+    let rgb = ANSICodes.parseHex("#d07277ff", background: background)
     #expect(rgb?.red == 0xD0)
     #expect(rgb?.green == 0x72)
     #expect(rgb?.blue == 0x77)
@@ -223,8 +223,8 @@ struct ZedThemeTests {
   @Test("parseHex 8-char hex with 50% alpha composites over bg")
   func parseHexFiftyPercentComposite() {
     // #ffffff80 (50% white) over #1e1e2e should blend to midpoint
-    let bg = ANSICodes.RGB(red: 0x1E, green: 0x1E, blue: 0x2E)
-    let rgb = ANSICodes.parseHex("#ffffff80", background: bg)
+    let background = ANSICodes.RGB(red: 0x1E, green: 0x1E, blue: 0x2E)
+    let rgb = ANSICodes.parseHex("#ffffff80", background: background)
     // Allow ±1 for rounding
     #expect(rgb != nil)
     if let rgb {
@@ -236,8 +236,8 @@ struct ZedThemeTests {
 
   @Test("parseHex 8-char hex with zero alpha yields pure bg")
   func parseHexZeroAlphaYieldsBackground() {
-    let bg = ANSICodes.RGB(red: 0x1E, green: 0x1E, blue: 0x2E)
-    let rgb = ANSICodes.parseHex("#ff000000", background: bg)
+    let background = ANSICodes.RGB(red: 0x1E, green: 0x1E, blue: 0x2E)
+    let rgb = ANSICodes.parseHex("#ff000000", background: background)
     #expect(rgb?.red == 0x1E)
     #expect(rgb?.green == 0x1E)
     #expect(rgb?.blue == 0x2E)
@@ -254,9 +254,9 @@ struct ZedThemeTests {
 
   @Test("parseHexComposite returns nil on wrong length")
   func parseHexCompositeRejectsWrongLength() {
-    let bg = ANSICodes.RGB(red: 0, green: 0, blue: 0)
-    #expect(ANSICodes.parseHexComposite("#d07277", over: bg) == nil)
-    #expect(ANSICodes.parseHexComposite("#bad", over: bg) == nil)
+    let background = ANSICodes.RGB(red: 0, green: 0, blue: 0)
+    #expect(ANSICodes.parseHexComposite("#d07277", over: background) == nil)
+    #expect(ANSICodes.parseHexComposite("#bad", over: background) == nil)
   }
 
   // MARK: - Variant walker
@@ -340,7 +340,7 @@ struct ZedThemeTests {
     )
     // Mocha's editor.background is #1e1e2e per Catppuccin.json
     #expect(theme.editorBgStyle != nil)
-    // We can't read Style.r directly (internal), but we can verify the
+    // We can't read Style.red directly (internal), but we can verify the
     // theme loaded without throwing and the style is non-nil.
   }
 

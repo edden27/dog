@@ -135,22 +135,22 @@ enum ZedThemeLoader {
     let tokenSentinel = Int.max
     var bestDepth = [Int](repeating: tokenSentinel, count: tokenCount)
     for entry in entries {
-      guard let r = resolveTokenType(from: entry.scope) else {
+      guard let resolution = resolveTokenType(from: entry.scope) else {
         Bark.debug("skipping unknown Zed scope: \(entry.scope)")
         continue
       }
-      let raw = r.tokenType.rawValue
-      if r.depth > bestDepth[raw] { continue }
+      let raw = resolution.tokenType.rawValue
+      if resolution.depth > bestDepth[raw] { continue }
       guard let style = buildStyle(from: entry, background: editorBgRGB) else {
         Bark.warning("invalid color '\(entry.color)' for scope '\(entry.scope)'")
         continue
       }
-      bestDepth[raw] = r.depth
+      bestDepth[raw] = resolution.depth
       colorTable[raw] = style
       // Children inherit only if they have not been claimed by an exact match
       // (depth 0). Pass bestDepth so applyToChildren can check per-token.
       applyToChildren(
-        of: r.tokenType, style: style, colorTable: &colorTable, bestDepth: bestDepth
+        of: resolution.tokenType, style: style, colorTable: &colorTable, bestDepth: bestDepth
       )
     }
 
@@ -203,7 +203,7 @@ enum ZedThemeLoader {
         range: range, background: background
       ),
       editorBg: Style(
-        r: background.red, g: background.green, b: background.blue
+        red: background.red, green: background.green, blue: background.blue
       )
     )
   }
@@ -218,7 +218,7 @@ enum ZedThemeLoader {
       return nil
     }
     return Style(
-      r: rgb.red, g: rgb.green, b: rgb.blue,
+      red: rgb.red, green: rgb.green, blue: rgb.blue,
       bold: entry.fontWeight >= 700,
       italic: entry.fontStyle == "italic"
     )
@@ -249,9 +249,9 @@ enum ZedThemeLoader {
     if let hexString = ZedThemeScanner.scanTextColor(bytes, range: range),
       let rgb = ANSICodes.parseHex(hexString, background: background)
     {
-      return Style(r: rgb.red, g: rgb.green, b: rgb.blue)
+      return Style(red: rgb.red, green: rgb.green, blue: rgb.blue)
     }
-    return Style(r: 255, g: 255, b: 255)
+    return Style(red: 255, green: 255, blue: 255)
   }
 
   /// Extract a style color from a flat key in the theme's style block.
@@ -265,7 +265,7 @@ enum ZedThemeLoader {
     guard let hexString = ZedThemeScanner.scanStyleValue(bytes, key: key, range: range),
       let rgb = ANSICodes.parseHex(hexString, background: background)
     else { return nil }
-    return Style(r: rgb.red, g: rgb.green, b: rgb.blue)
+    return Style(red: rgb.red, green: rgb.green, blue: rgb.blue)
   }
 
   // MARK: - Scope Resolution

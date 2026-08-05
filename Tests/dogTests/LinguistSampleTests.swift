@@ -483,14 +483,20 @@ struct LinguistSampleTests {
     .init(expected: "ruby", filename: "/opt/app/lib/rexpl", source: "#!/usr/bin/env ruby\nrequire 'irb'\n"),
 
     // JavaScript (extensionless)
-    .init(expected: "javascript", filename: "/Users/dev/webapp/src/js", source: "#!/usr/bin/env node\nconsole.log('hi')\n"),
-    .init(expected: "javascript", filename: "/Users/dev/webapp/src/run", source: "#!/usr/bin/env node\nprocess.exit(0)\n"),
+    .init(
+      expected: "javascript", filename: "/Users/dev/webapp/src/js",
+      source: "#!/usr/bin/env node\nconsole.log('hi')\n"),
+    .init(
+      expected: "javascript", filename: "/Users/dev/webapp/src/run",
+      source: "#!/usr/bin/env node\nprocess.exit(0)\n"),
 
     // Lua (extensionless)
     .init(expected: "lua", filename: "/usr/local/bin/luascript", source: "#!/usr/bin/env lua\nprint('hi')\n"),
 
     // Rust (extensionless)
-    .init(expected: "rust", filename: "/Users/dev/crate/src/base64url", source: "#!/usr/bin/env rust-script\nfn main() {}\n"),
+    .init(
+      expected: "rust", filename: "/Users/dev/crate/src/base64url",
+      source: "#!/usr/bin/env rust-script\nfn main() {}\n"),
 
     // C (extensionless via tcc)
     .init(expected: "c", filename: "/usr/local/bin/cscript", source: "#!/usr/bin/env tcc\nint main() { return 0; }\n"),
@@ -500,7 +506,9 @@ struct LinguistSampleTests {
 
     // Shebang with env flags on extensionless file
     .init(expected: "python", filename: "/usr/local/bin/worker", source: "#!/usr/bin/env -S python3\nimport os\n"),
-    .init(expected: "ruby", filename: "/usr/local/bin/task", source: "#!/usr/bin/env -u BUNDLE_GEMFILE ruby\nGem.clear_paths\n"),
+    .init(
+      expected: "ruby", filename: "/usr/local/bin/task",
+      source: "#!/usr/bin/env -u BUNDLE_GEMFILE ruby\nGem.clear_paths\n"),
 
     // Shebang with version on extensionless file
     .init(expected: "python", filename: "/usr/local/bin/legacy", source: "#!/usr/bin/env python2.7\nimport sys\n")
@@ -528,7 +536,8 @@ struct LinguistSampleTests {
 
   @Test("Shebang detection on extensionless files", arguments: shebangCases)
   func shebangDetection(_ sample: ShebangSample) {
-    let result = LanguageDetector.detect(filename: sample.filename, sourceBytes: Array(sample.source.utf8), explicit: nil)
+    let result = LanguageDetector.detect(
+      filename: sample.filename, sourceBytes: Array(sample.source.utf8), explicit: nil)
     #expect(result == sample.expected)
   }
 }

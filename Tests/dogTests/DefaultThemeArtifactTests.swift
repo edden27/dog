@@ -26,20 +26,21 @@ struct DefaultThemeArtifactTests {
       let blue = UInt8(truncatingIfNeeded: 140 &+ index &* 29)
       if index % 6 == 0 {
         return Style(
-          r: red, g: green, b: blue, bgR: 29, bgG: 29, bgB: 29,
+          red: red, green: green, blue: blue,
+          backgroundRed: 29, backgroundGreen: 29, backgroundBlue: 29,
           bold: index % 5 == 0, italic: index % 7 == 0
         )
       }
       return Style(
-        r: red, g: green, b: blue, bold: index % 5 == 0, italic: index % 7 == 0
+        red: red, green: green, blue: blue, bold: index % 5 == 0, italic: index % 7 == 0
       )
     }
     return Dog.ResolvedThemeStyles(
       colorTable: colorTable,
-      baseColor: Style(r: 205, g: 190, b: 171),
-      lineNumberStyle: withOptionals ? Style(r: 129, g: 116, b: 100) : nil,
-      gutterBgStyle: withOptionals ? Style(r: 29, g: 29, b: 29) : nil,
-      editorBgStyle: withOptionals ? Style(r: 43, g: 43, b: 43) : nil
+      baseColor: Style(red: 205, green: 190, blue: 171),
+      lineNumberStyle: withOptionals ? Style(red: 129, green: 116, blue: 100) : nil,
+      gutterBgStyle: withOptionals ? Style(red: 29, green: 29, blue: 29) : nil,
+      editorBgStyle: withOptionals ? Style(red: 43, green: 43, blue: 43) : nil
     )
   }
 

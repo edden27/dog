@@ -175,11 +175,11 @@ struct PrintCommand {
     var editorBg = ContiguousArray<UInt8>()
     if colorEnabled, let background = editorBgStyle {
       editorBg.append(contentsOf: [0x1B, 0x5B, 0x34, 0x38, 0x3B, 0x32, 0x3B])
-      ANSICodes.appendDecimal(background.r, into: &editorBg)
+      ANSICodes.appendDecimal(background.red, into: &editorBg)
       editorBg.append(0x3B)
-      ANSICodes.appendDecimal(background.g, into: &editorBg)
+      ANSICodes.appendDecimal(background.green, into: &editorBg)
       editorBg.append(0x3B)
-      ANSICodes.appendDecimal(background.b, into: &editorBg)
+      ANSICodes.appendDecimal(background.blue, into: &editorBg)
       editorBg.append(0x6D)
     }
 
@@ -653,22 +653,22 @@ struct PrintCommand {
     var bgBytes = ContiguousArray<UInt8>()
     if let gutterBg = gutterBgStyle {
       bgBytes.append(contentsOf: [0x1B, 0x5B, 0x34, 0x38, 0x3B, 0x32, 0x3B])
-      ANSICodes.appendDecimal(gutterBg.r, into: &bgBytes)
+      ANSICodes.appendDecimal(gutterBg.red, into: &bgBytes)
       bgBytes.append(0x3B)
-      ANSICodes.appendDecimal(gutterBg.g, into: &bgBytes)
+      ANSICodes.appendDecimal(gutterBg.green, into: &bgBytes)
       bgBytes.append(0x3B)
-      ANSICodes.appendDecimal(gutterBg.b, into: &bgBytes)
+      ANSICodes.appendDecimal(gutterBg.blue, into: &bgBytes)
       bgBytes.append(0x6D)
     }
 
     // Pre-build the line number fg escape (just the foreground, no reset)
     var fgBytes = ContiguousArray<UInt8>()
     fgBytes.append(contentsOf: [0x1B, 0x5B, 0x33, 0x38, 0x3B, 0x32, 0x3B])
-    ANSICodes.appendDecimal(lineNumberStyle.r, into: &fgBytes)
+    ANSICodes.appendDecimal(lineNumberStyle.red, into: &fgBytes)
     fgBytes.append(0x3B)
-    ANSICodes.appendDecimal(lineNumberStyle.g, into: &fgBytes)
+    ANSICodes.appendDecimal(lineNumberStyle.green, into: &fgBytes)
     fgBytes.append(0x3B)
-    ANSICodes.appendDecimal(lineNumberStyle.b, into: &fgBytes)
+    ANSICodes.appendDecimal(lineNumberStyle.blue, into: &fgBytes)
     fgBytes.append(0x6D)
 
     for lineNum in 1...lineCount {
@@ -728,22 +728,22 @@ struct PrintCommand {
     buf.append(0x0A)
     if let gutterBg = gutterBgStyle {
       buf.append(contentsOf: [0x1B, 0x5B, 0x34, 0x38, 0x3B, 0x32, 0x3B])
-      ANSICodes.appendDecimal(gutterBg.r, into: &buf)
+      ANSICodes.appendDecimal(gutterBg.red, into: &buf)
       buf.append(0x3B)
-      ANSICodes.appendDecimal(gutterBg.g, into: &buf)
+      ANSICodes.appendDecimal(gutterBg.green, into: &buf)
       buf.append(0x3B)
-      ANSICodes.appendDecimal(gutterBg.b, into: &buf)
+      ANSICodes.appendDecimal(gutterBg.blue, into: &buf)
       buf.append(0x6D)
     }
     // Blank padding where number would be
     for _ in 0..<digitWidth { buf.append(0x20) }
     // Line number fg for │
     buf.append(contentsOf: [0x1B, 0x5B, 0x33, 0x38, 0x3B, 0x32, 0x3B])
-    ANSICodes.appendDecimal(lineNumberStyle.r, into: &buf)
+    ANSICodes.appendDecimal(lineNumberStyle.red, into: &buf)
     buf.append(0x3B)
-    ANSICodes.appendDecimal(lineNumberStyle.g, into: &buf)
+    ANSICodes.appendDecimal(lineNumberStyle.green, into: &buf)
     buf.append(0x3B)
-    ANSICodes.appendDecimal(lineNumberStyle.b, into: &buf)
+    ANSICodes.appendDecimal(lineNumberStyle.blue, into: &buf)
     buf.append(0x6D)
     // " │" + reset + editor bg for trailing space
     buf.append(contentsOf: [0x20, 0xE2, 0x94, 0x82])
