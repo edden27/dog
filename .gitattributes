@@ -1,0 +1,3 @@
+# Keep vendored tree-sitter sources and test fixtures out of GitHub's language stats
+LocalPackages/** linguist-vendored
+scripts/fixtures/** linguist-vendored
