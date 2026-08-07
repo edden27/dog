@@ -79,6 +79,7 @@ curl -fsSL https://sh.dog/install | sh
 
 ```sh
 brew tap edden27/dog
+brew trust edden27/dog
 brew install dog
 ```
 
