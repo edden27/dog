@@ -9,9 +9,7 @@ let package = Package(
     products: [
         .library(name: "TreeSitterLua", targets: ["TreeSitterLua"])
     ],
-    dependencies: [
-        .package(name: "SwiftTreeSitter", url: "https://github.com/tree-sitter/swift-tree-sitter", from: "0.9.0")
-    ],
+    dependencies: [],
     targets: [
         .target(
             name: "TreeSitterLua",
