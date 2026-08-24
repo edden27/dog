@@ -30,7 +30,7 @@ A [yazi plugin](https://github.com/edden27/dog.yazi) wraps `dog` as a previewer 
 
 ## Why dog
 
-- **[800+ Zed themes](https://sh.dog/how-to-use-themes#finding-editing-or-creating-themes)** — drop a JSON file in, or point `--theme-dir` at your existing `~/.config/zed/themes` and use what you already have. Backgrounds, line numbers, and gutter are all theme-controlled, opacity included. Two zero-cost built-ins ship too — dark is the default, `--light` flips to the bright one. Any theme can be [saved as your default](https://sh.dog/how-to-use-themes#set-a-default-theme) — stored precomputed, so it loads as fast as the built-ins.
+- **[700+ Zed themes](https://sh.dog/how-to-use-themes#finding-editing-or-creating-themes)** — drop a JSON file in, or point `--theme-dir` at your existing `~/.config/zed/themes` and use what you already have. Backgrounds, line numbers, and gutter are all theme-controlled, opacity included. Two zero-cost built-ins ship too — dark is the default, `--light` flips to the bright one. Any theme can be [saved as your default](https://sh.dog/how-to-use-themes#set-a-default-theme) — stored precomputed, so it loads as fast as the built-ins.
 - **Up to 14.6× faster than bat on large files** — 54k lines of TypeScript in 0.4s vs 5.8s. 100% syntax coverage across all [17 supported languages](#supported-languages).
 - **~5ms startup, every language** — precompiled highlight queries mean there's no per-language warmup. In fzf or yazi, that's the latency on every keystroke.
 - **Single binary, no runtime deps** — [17 grammars](#supported-languages) statically compiled in. Copy it anywhere, it runs.
@@ -114,7 +114,7 @@ Requires macOS 14+ or Linux with the Swift runtime (bundled in the Linux binary)
 |                                             | dog                      | bat            |
 | ------------------------------------------- | ------------------------ | -------------- |
 | Engine                                      | tree-sitter, full AST    | regex per line |
-| Themes                                      | Zed JSON, 800+ available | TextMate XML   |
+| Themes                                      | Zed JSON, 700+ available | TextMate XML   |
 | Bold & italic fonts (all 4 styles)          | Theme-controlled         | Partial — italics opt-in, never combined |
 | Line background, gutter, line-number colors | Theme-controlled         | Fixed          |
 | Languages                                   | [17](#supported-languages) | 200+           |
