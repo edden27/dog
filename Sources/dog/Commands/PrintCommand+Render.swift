@@ -148,9 +148,20 @@ extension PrintCommand {
     var lineStart = 0
 
     while lineStart < sourceBytes.count {
-      // Find end of this line
+      // One walk per line: find its end and, on the way, note whether it
+      // holds any non-ASCII byte or any tab. Both facts used to cost their
+      // own extra walk over the line.
       var lineEnd = lineStart
-      while lineEnd < sourceBytes.count, sourceBytes[lineEnd] != 0x0A {
+      var lineIsASCII = true
+      var lineHasTab = false
+      while lineEnd < sourceBytes.count {
+        let byte = sourceBytes[lineEnd]
+        if byte == 0x0A { break }
+        if byte >= 0x80 {
+          lineIsASCII = false
+        } else if byte == 0x09 {
+          lineHasTab = true
+        }
         lineEnd += 1
       }
       // CRLF: a trailing \r belongs to the line terminator, not the content.
@@ -165,21 +176,14 @@ extension PrintCommand {
       emitGutter(lineNumber: lineNumber, gutterTable: layout.gutterTable, into: &output)
 
       let lineLen = contentEnd - lineStart
-      // Scan for ASCII-ness — needed by both bulk width math and truncation.
-      var lineIsASCII = true
-      var scan = lineStart
-      while scan < contentEnd {
-        if sourceBytes[scan] >= 0x80 {
-          lineIsASCII = false
-          break
-        }
-        scan += 1
-      }
       // Bulk path is only safe when either wrap is disabled (we'll truncate)
       // or the whole line already fits in contentCols as pure ASCII. Must
-      // measure display width (not byte length) because tabs expand.
-      var lineDisplayWidth = 0
-      if lineIsASCII {
+      // measure display width (not byte length) because tabs expand. Without
+      // a tab the width is the byte count; only tab lines pay for the walk,
+      // and only when wrapping needs the answer.
+      var lineDisplayWidth = lineLen
+      if wrapEnabled, lineIsASCII, lineHasTab {
+        lineDisplayWidth = 0
         var byteIndex = lineStart
         while byteIndex < contentEnd {
           if sourceBytes[byteIndex] == 0x09 {
@@ -215,12 +219,16 @@ extension PrintCommand {
         colUsed = emitLineBulk(
           sourceBytes: sourceBytes,
           lineStart: lineStart, lineEnd: emitEnd, lineIsASCII: lineIsASCII,
+          lineHasTab: lineHasTab,
           tokens: tokens, tokenIndex: &tokenIndex,
           into: &output
         )
-        // If truncated, advance tokenIndex past any tokens we skipped on this line
+        // If truncated, advance tokenIndex past the tokens that ended on this
+        // line. A token that runs on past it stays current for the next line.
         if emitEnd < contentEnd {
-          while tokenIndex < tokens.count, tokens[tokenIndex].startByte < lineEnd {
+          while tokenIndex < tokens.count, tokens[tokenIndex].startByte < lineEnd,
+            tokens[tokenIndex].endByte <= lineEnd
+          {  // swiftlint:disable:this opening_brace
             tokenIndex += 1
           }
         }

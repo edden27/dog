@@ -12,7 +12,7 @@ extension PrintCommand {
   /// on non-ASCII lines) so the caller can pad the trailing background fill.
   func emitLineBulk(
     sourceBytes: [UInt8],
-    lineStart: Int, lineEnd: Int, lineIsASCII: Bool,
+    lineStart: Int, lineEnd: Int, lineIsASCII: Bool, lineHasTab: Bool,
     tokens: [SyntaxToken], tokenIndex: inout Int,
     into output: inout ANSIOutput
   ) -> Int {
@@ -27,6 +27,13 @@ extension PrintCommand {
       tokenIndex += 1
     }
 
+    // A blank line has nothing to draw. Leave the current token alone: a
+    // comment spanning the blank line must stay current for the next line.
+    guard lineStart < lineEnd else {
+      output.reset()
+      return 0
+    }
+
     while tokenIndex < tokens.count {
       let token = tokens[tokenIndex]
       guard token.startByte < lineEnd else { break }
@@ -39,42 +46,50 @@ extension PrintCommand {
       }
 
       if tokenStart > position {
-        if lastStyle != baseColor {
-          output.colorDelta(from: lastStyle, to: baseColor)
-          lastStyle = baseColor
-        }
+        applyStyle(baseColor, lastStyle: &lastStyle, into: &output)
         emitSlice(
           sourceBytes: sourceBytes, from: position, to: tokenStart,
-          lineIsASCII: lineIsASCII, column: &column, walker: &walker, into: &output
+          lineIsASCII: lineIsASCII, lineHasTab: lineHasTab,
+          column: &column, walker: &walker, into: &output
         )
       }
 
       let style = colorTable[(token.tokenType ?? .none).rawValue]
-      if style != lastStyle {
-        output.colorDelta(from: lastStyle, to: style)
-        lastStyle = style
-      }
+      applyStyle(style, lastStyle: &lastStyle, into: &output)
       emitSlice(
         sourceBytes: sourceBytes, from: tokenStart, to: tokenEnd,
-        lineIsASCII: lineIsASCII, column: &column, walker: &walker, into: &output
+        lineIsASCII: lineIsASCII, lineHasTab: lineHasTab,
+        column: &column, walker: &walker, into: &output
       )
       position = tokenEnd
 
-      if token.endByte <= lineEnd { tokenIndex += 1 } else { break }
+      // Once a token reaches the end of the line the line is done. A token
+      // that runs on past the line stays current for the next line; one that
+      // ends exactly here is skipped by the next line's leading skip loop.
+      if token.endByte < lineEnd { tokenIndex += 1 } else { break }
     }
 
     if position < lineEnd {
-      if lastStyle != baseColor {
-        output.colorDelta(from: lastStyle, to: baseColor)
-      }
+      applyStyle(baseColor, lastStyle: &lastStyle, into: &output)
       emitSlice(
         sourceBytes: sourceBytes, from: position, to: lineEnd,
-        lineIsASCII: lineIsASCII, column: &column, walker: &walker, into: &output
+        lineIsASCII: lineIsASCII, lineHasTab: lineHasTab,
+        column: &column, walker: &walker, into: &output
       )
     }
 
     output.reset()
     return column
+  }
+
+  /// Switch the terminal to `style` only when it differs from what is already
+  /// on, and remember it. Always inlined: this sits inside the per-token loop.
+  @inline(__always)
+  private func applyStyle(_ style: Style, lastStyle: inout Style?, into output: inout ANSIOutput) {
+    if style != lastStyle {
+      output.colorDelta(from: lastStyle, to: style)
+      lastStyle = style
+    }
   }
 
   /// Dispatch a slice to the ASCII fast path or the measured twin. ASCII lines
@@ -84,7 +99,7 @@ extension PrintCommand {
   private func emitSlice(
     sourceBytes: [UInt8],
     from start: Int, to end: Int,
-    lineIsASCII: Bool,
+    lineIsASCII: Bool, lineHasTab: Bool,
     column: inout Int,
     walker: inout WidthWalker,
     into output: inout ANSIOutput
@@ -92,7 +107,7 @@ extension PrintCommand {
     if lineIsASCII {
       emitBulkSlice(
         sourceBytes: sourceBytes, from: start, to: end,
-        column: &column, into: &output
+        lineHasTab: lineHasTab, column: &column, into: &output
       )
     } else {
       emitBulkSliceMeasured(
@@ -114,12 +129,15 @@ extension PrintCommand {
   private func emitBulkSlice(
     sourceBytes: [UInt8],
     from start: Int, to end: Int,
+    lineHasTab: Bool,
     column: inout Int,
     into output: inout ANSIOutput
   ) {
     guard start < end else { return }
     let slice = sourceBytes[start..<end]
-    guard let firstTab = slice.firstIndex(of: 0x09) else {
+    // The line walk already knows whether a tab exists anywhere on the line;
+    // only tab lines search each slice for it.
+    guard lineHasTab, let firstTab = slice.firstIndex(of: 0x09) else {
       output.text(slice)
       column += end - start
       return

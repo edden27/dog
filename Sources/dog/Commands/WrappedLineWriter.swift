@@ -51,6 +51,12 @@ struct WrappedLineWriter {
     while tokenIndex < tokens.count, tokens[tokenIndex].endByte <= lineStart {
       tokenIndex += 1
     }
+    // A blank line has nothing to draw. Leave the current token alone: a
+    // comment spanning the blank line must stay current for the next line.
+    guard lineStart < lineEnd else {
+      output.reset()
+      return 0
+    }
     while tokenIndex < tokens.count {
       let token = tokens[tokenIndex]
       guard token.startByte < lineEnd else { break }
@@ -74,7 +80,10 @@ struct WrappedLineWriter {
         column: &column, currentStyle: lastStyle,
         walker: &walker, previousWasASCII: &previousWasASCII, into: &output)
       pos = tokenEnd
-      if token.endByte <= lineEnd { tokenIndex += 1 } else { break }
+      // Once a token reaches the end of the line the line is done. A token
+      // that runs on past the line stays current for the next line; one that
+      // ends exactly here is skipped by the next line's leading skip loop.
+      if token.endByte < lineEnd { tokenIndex += 1 } else { break }
     }
     if pos < lineEnd {
       applyStyleIfNeeded(baseColor, lastStyle: &lastStyle, into: &output)
