@@ -1,129 +1,134 @@
-import { Component } from 'valdi_core/src/Component';
-import { NavigationPage } from 'valdi_navigation/src/NavigationPage';
-import { systemBoldFont } from 'valdi_core/src/SystemFont';
-import { ComponentConstructor, IComponent } from 'valdi_core/src/IComponent';
-import { createReusableCallback } from 'valdi_core/src/utils/Callback';
-import { NavigationRoot } from 'valdi_navigation/src/NavigationRoot';
-import { NavigationPageComponent } from 'valdi_navigation/src/NavigationPageComponent';
-import { $slot } from 'valdi_core/src/CompilerIntrinsics';
-import { NavigationController } from 'valdi_navigation/src/NavigationController';
-import { AnyRenderFunction } from 'valdi_core/src/AnyRenderFunction';
+/*
+ * Copyright 2020 Adobe. All rights reserved.
+ * This file is licensed to you under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License. You may obtain a copy
+ * of the License at http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTATIONS
+ * OF ANY KIND, either express or implied. See the License for the specific language
+ * governing permissions and limitations under the License.
+ */
 
-interface PageButtonViewModel {
-  title: string;
-  onTap: () => void;
+import {Checkbox, SpectrumCheckboxProps} from '../../src/checkbox/Checkbox';
+import {Meta, StoryFn} from '@storybook/react';
+import React, {JSX} from 'react';
+import {View} from '../../src/view/View';
+
+export default {
+  title: 'Checkbox',
+  excludeStories: ['Render', 'RenderCustomLabel', 'RenderNoLabel']
+} as Meta<typeof Checkbox>;
+
+export type CheckboxStory = StoryFn<typeof Checkbox>;
+
+export const Default: CheckboxStory = () => <Render />;
+export const ValidationStateInvalid: CheckboxStory = () => <Render isInvalid />;
+
+ValidationStateInvalid.story = {
+  name: 'validationState: "invalid"'
+};
+
+export const IsDisabledTrue: CheckboxStory = () => <Render isDisabled />;
+
+IsDisabledTrue.story = {
+  name: 'isDisabled: true'
+};
+
+export const IsEmphasizedTrue: CheckboxStory = () => <Render isEmphasized />;
+
+IsEmphasizedTrue.story = {
+  name: 'isEmphasized: true'
+};
+
+export const IsEmphasizedTrueValidationStateInvalid: CheckboxStory = () => (
+  <Render isEmphasized isInvalid />
+);
+
+IsEmphasizedTrueValidationStateInvalid.story = {
+  name: 'isEmphasized: true, validationState: "invalid"'
+};
+
+export const IsEmphasizedTrueIsDisabledTrue: CheckboxStory = () => (
+  <Render isEmphasized isDisabled />
+);
+
+IsEmphasizedTrueIsDisabledTrue.story = {
+  name: 'isEmphasized: true, isDisabled: true'
+};
+
+export const IsReadOnlyTrue: CheckboxStory = () => <Render isReadOnly />;
+
+IsReadOnlyTrue.story = {
+  name: 'isReadOnly: true'
+};
+
+export const CustomLabel: CheckboxStory = () => <RenderCustomLabel />;
+
+CustomLabel.story = {
+  name: 'custom label'
+};
+
+export const LongLabel: CheckboxStory = () => (
+  <View width="size-2000">
+    <Checkbox>
+      Super long checkbox label. Sample text. Arma virumque cano, Troiae qui primus ab oris.
+    </Checkbox>
+  </View>
+);
+
+LongLabel.story = {
+  name: 'long label'
+};
+
+export const NoLabel: CheckboxStory = () => (
+  <RenderNoLabel aria-label="This checkbox has no visible label" />
+);
+
+NoLabel.story = {
+  name: 'no label'
+};
+
+// need selected + indeterminate because there is a sibling selector `checked + ...` so being careful
+export function Render(props: SpectrumCheckboxProps): JSX.Element {
+  return (
+    <>
+      <Checkbox {...props}>Label</Checkbox>
+      <Checkbox isSelected {...props}>
+        Selected Label
+      </Checkbox>
+      <Checkbox isIndeterminate {...props}>
+        Indeterminate Label
+      </Checkbox>
+      <Checkbox isSelected isIndeterminate {...props}>
+        Selected Indeterminate Label
+      </Checkbox>
+    </>
+  );
 }
 
-class PageButton extends Component<PageButtonViewModel> {
-  onRender(): void {
-    <view
-      backgroundColor="lightgray"
-      padding={16}
-      alignSelf="stretch"
-      margin={8}
-      marginLeft={24}
-      marginRight={24}
-      borderRadius={'50%'}
-      boxShadow={'0 0 3 rgba(0, 0, 0, 0.15)'}
-      alignItems="center"
-      onTap={this.viewModel.onTap}
-    >
-      <label color="black" value={this.viewModel.title} font={systemBoldFont(17)} />
-    </view>;
-  }
+export function RenderCustomLabel(props: SpectrumCheckboxProps): JSX.Element {
+  return (
+    <>
+      <Checkbox {...props}>
+        <span>
+          <i>Italicized</i> Checkbox Label
+        </span>
+      </Checkbox>
+      <Checkbox isSelected {...props}>
+        <span>
+          <i>Italicized</i> and Selected Checkbox Label
+        </span>
+      </Checkbox>
+    </>
+  );
 }
 
-function PageBackground(viewModel: { children?: AnyRenderFunction | void }) {
-  <view backgroundColor="white" width="100%" height="100%" alignItems="center" justifyContent="center">
-    {viewModel.children?.()}
-  </view>;
-}
-
-@NavigationPage(module)
-export class Page1 extends NavigationPageComponent<{}> {
-  onRender(): void {
-    <PageBackground>
-      <PageButton
-        title={`Go To Page #2`}
-        onTap={createReusableCallback(() => {
-          this.navigationController.push(Page2, {}, {});
-        })}
-      />
-    </PageBackground>;
-  }
-}
-
-@NavigationPage(module)
-export class Page2 extends NavigationPageComponent<{}> {
-  onRender(): void {
-    <PageBackground>
-      <PageButton
-        title={`Go To Page #3`}
-        onTap={createReusableCallback(() => {
-          this.navigationController.push(Page3, {}, {});
-        })}
-      />
-    </PageBackground>;
-  }
-}
-
-@NavigationPage(module)
-export class Page3 extends NavigationPageComponent<{}> {
-  onRender(): void {
-    <PageBackground>{this.renderChildren()}</PageBackground>;
-  }
-
-  private renderChildren() {
-    <PageButton
-      title={`Present nested`}
-      onTap={createReusableCallback(() => {
-        this.navigationController.present(Page1, {}, {});
-      })}
-    />;
-    <PageButton
-      title={`Dismiss`}
-      onTap={createReusableCallback(() => {
-        this.navigationController.dismiss(true);
-      })}
-    />;
-  }
-}
-
-export class App extends Component {
-  onRender(): void {
-    <NavigationRoot>
-      {$slot(navigationController => {
-        <view backgroundColor="white" width="100%" height="100%" alignItems="center" justifyContent="center">
-          {this.renderButtons(navigationController)}
-        </view>;
-      })}
-    </NavigationRoot>;
-  }
-
-  private renderButtons(navigationController: NavigationController): void {
-    this.renderButton('Page #1', Page1, navigationController);
-    this.renderButton('Page #2', Page2, navigationController);
-    this.renderButton('Page #3', Page3, navigationController);
-  }
-
-  private presentPage(
-    title: string,
-    componentCtor: ComponentConstructor<IComponent>,
-    navigationController: NavigationController,
-  ): void {
-    navigationController.present(componentCtor, {}, {});
-  }
-
-  private renderButton(
-    name: string,
-    componentCtor: ComponentConstructor<IComponent>,
-    navigationController: NavigationController,
-  ): void {
-    <PageButton
-      title={`Present ${name}`}
-      onTap={createReusableCallback(() => {
-        this.presentPage(name, componentCtor, navigationController);
-      })}
-    />;
-  }
+export function RenderNoLabel(props: SpectrumCheckboxProps): JSX.Element {
+  return (
+    <>
+      <Checkbox {...props} />
+      <Checkbox isSelected {...props} />
+    </>
+  );
 }

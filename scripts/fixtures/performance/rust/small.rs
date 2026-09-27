@@ -1,105 +1,215 @@
-use std::io;
-use std::io::{BufReader,BufRead};
+extern crate napi_build;
 
-const MAX_STATIONS: usize = 100000;
-
-#[derive(Debug)]
-struct Connection {
-    departure_station: usize,
-    arrival_station: usize,
-    departure_timestamp: u32,
-    arrival_timestamp: u32
-}
-
-impl Connection {
-    fn parse(line: &str) -> Connection {
-        let mut splitted = line.split(" ").map(|crumb| { crumb.parse::<u32>().unwrap() });
-
-        Connection {
-            departure_station: splitted.next().unwrap() as usize,
-            arrival_station: splitted.next().unwrap() as usize,
-            departure_timestamp: splitted.next().unwrap(),
-            arrival_timestamp: splitted.next().unwrap(),
-        }
-    }
-}
-
-fn csa_main_loop(timetable: &[Connection], arrival_station: usize, earliest_arrival: &mut [u32], in_connection: &mut [usize]) {
-    let mut earliest = std::u32::MAX;
-
-    for (i, connection) in timetable.iter().enumerate() {
-        if connection.departure_timestamp >= earliest_arrival[connection.departure_station] &&
-                connection.arrival_timestamp < earliest_arrival[connection.arrival_station] {
-            earliest_arrival[connection.arrival_station] = connection.arrival_timestamp;
-            in_connection[connection.arrival_station] = i;
-
-            if connection.arrival_station == arrival_station && connection.arrival_timestamp < earliest {
-                earliest = connection.arrival_timestamp;
-            }
-        } else if connection.arrival_timestamp > earliest {
-            break;
-        }
-    }
-}
-
-fn csa_print_result(timetable: &Vec<Connection>, in_connection: &[usize], arrival_station: usize) {
-    if in_connection[arrival_station] == std::u32::MAX as usize {
-        println!("NO_SOLUTION");
-    } else {
-        let mut route = Vec::new();
-        let mut last_connection_index = in_connection[arrival_station];
-
-        while last_connection_index != std::u32::MAX as usize {
-            let ref connection = timetable[last_connection_index];
-            route.push(connection);
-            last_connection_index = in_connection[connection.departure_station];
-        }
-
-        for connection in route.iter().rev() {
-            println!("{} {} {} {}", connection.departure_station, connection.arrival_station, connection.departure_timestamp, connection.arrival_timestamp);
-        }
-    }
-    println!("");
-}
-
-fn csa_compute(timetable: &Vec<Connection>, departure_station: usize, arrival_station: usize, departure_time: u32)
-{
-    let mut in_connection = vec!(std::u32::MAX as usize; MAX_STATIONS);
-    let mut earliest_arrival = vec!(std::u32::MAX; MAX_STATIONS);
-
-    earliest_arrival[departure_station as usize] = departure_time;
-
-    if departure_station < MAX_STATIONS && arrival_station < MAX_STATIONS {
-        csa_main_loop(&timetable, arrival_station, &mut earliest_arrival, &mut in_connection);
-    }
-
-    csa_print_result(&timetable, &in_connection, arrival_station);
-}
+use std::env;
+use std::path;
 
 fn main() {
-    // Importing connections
-    let mut buffered_in = BufReader::new(io::stdin()).lines();
+  println!("cargo:rerun-if-env-changed=SKIA_DIR");
+  println!("cargo:rerun-if-env-changed=SKIA_LIB_DIR");
 
-    let timetable = buffered_in.map(|r| { r.ok().expect("failed to read connection line") })
-                               .take_while(|l| { !l.is_empty() })
-                               .map(|l| { Connection::parse(l.trim_right()) })
-                               .collect();
+  println!("cargo:rerun-if-changed=skia-c/skia_c.cpp");
+  println!("cargo:rerun-if-changed=skia-c/skia_c.hpp");
 
-    // Responding to requests from stdin
+  let compile_target = env::var("TARGET").expect("TARGET");
+  let compile_target_os = env::var("CARGO_CFG_TARGET_OS").expect("CARGO_CFG_TARGET_OS");
+  let compile_target_env = env::var("CARGO_CFG_TARGET_ENV").expect("CARGO_CFG_TARGET_ENV");
+  let compile_target_arch = env::var("CARGO_CFG_TARGET_ARCH").expect("CARGO_CFG_TARGET_ARCH");
 
-    buffered_in = BufReader::new(io::stdin()).lines();
+  match compile_target_os.as_str() {
+    "windows" => unsafe {
+      env::set_var("CC", "clang-cl");
+      env::set_var("CXX", "clang-cl");
+    },
+    _ => {
+      if env::var("CC").is_err() {
+        unsafe {
+          env::set_var("CC", "clang");
+        }
+      }
+      if env::var("CXX").is_err() {
+        unsafe {
+          env::set_var("CXX", "clang++");
+        }
+      }
+    }
+  }
 
-    buffered_in.map(|r| { r.ok().expect("failed to read connection line") })
-               .take_while(|l| { !l.is_empty() })
-               .map(|input_line| {
-                   let params = input_line.split(" ")
-                       .map(|crumb| { crumb.parse().ok().expect(&format!("failed to read {} as integer", crumb)) })
-                       .collect::<Vec<u32>>();
+  let skia_dir = env::var("SKIA_DIR").unwrap_or_else(|_| "./skia".to_owned());
+  let skia_path = path::Path::new(&skia_dir);
+  let skia_lib_dir = env::var("SKIA_LIB_DIR").unwrap_or_else(|_| "./skia/out/Static".to_owned());
 
-                   let departure_station = params[0] as usize;
-                   let arrival_station = params[1] as usize;
-                   let departure_time = params[2];
+  let mut build = cc::Build::new();
 
-                   csa_compute(&timetable, departure_station, arrival_station, departure_time);
-               }).collect::<Vec<_>>();
+  build.cpp(true).file("skia-c/skia_c.cpp");
+
+  if compile_target.as_str() == "aarch64-linux-android" {
+    let nkd_home = env::var("ANDROID_NDK_LATEST_HOME").unwrap();
+    let host = if cfg!(target_os = "windows") {
+      "windows"
+    } else if cfg!(target_os = "macos") {
+      "darwin"
+    } else if cfg!(target_os = "linux") {
+      "linux"
+    } else {
+      panic!("Unsupported host OS");
+    };
+    unsafe {
+      env::set_var(
+        "CC",
+        format!(
+          "{nkd_home}/toolchains/llvm/prebuilt/{host}-x86_64/bin/aarch64-linux-android24-clang"
+        )
+        .as_str(),
+      );
+      env::set_var(
+        "CXX",
+        format!(
+          "{nkd_home}/toolchains/llvm/prebuilt/{host}-x86_64/bin/aarch64-linux-android24-clang++"
+        )
+        .as_str(),
+      );
+    }
+    build
+      .include(
+        format!(
+          "{nkd_home}/toolchains/llvm/prebuilt/{host}-x86_64/sysroot/usr/include"
+        )
+        .as_str(),
+      )
+      .include(
+        format!(
+          "{nkd_home}/toolchains/llvm/prebuilt/{host}-x86_64/sysroot/usr/include/c++/v1"
+        )
+        .as_str(),
+      )
+      .include(
+        format!(
+          "{nkd_home}/toolchains/llvm/prebuilt/{host}-x86_64/sysroot/usr/include/aarch64-linux-android"
+        )
+        .as_str(),
+      )
+      .archiver(
+        format!(
+          "{nkd_home}/toolchains/llvm/prebuilt/{host}-x86_64/bin/llvm-ar"
+        )
+        .as_str(),
+      );
+  }
+
+  if compile_target_os != "windows" {
+    build
+      .flag("-std=c++20")
+      .flag("-fPIC")
+      .flag("-fno-exceptions")
+      .flag("-fno-rtti")
+      .flag("-fstrict-aliasing")
+      .flag("-fvisibility=hidden")
+      .flag("-fvisibility-inlines-hidden")
+      .flag("-fdata-sections")
+      .flag("-ffunction-sections")
+      .flag("-Wno-unused-function")
+      .flag("-Wno-unused-parameter");
+  }
+
+  match compile_target_os.as_str() {
+    "windows" => {
+      build
+        .flag("/std:c++20")
+        .flag("-Wno-unused-function")
+        .flag("-Wno-unused-parameter")
+        .static_crt(true);
+    }
+    "linux" => {
+      if compile_target_env != "musl" {
+        println!("cargo:rustc-cdylib-link-arg=-Wl,--allow-multiple-definition");
+      }
+      match compile_target_env.as_str() {
+        "gnu" => match compile_target_arch.as_str() {
+          "aarch64" => {
+            link_libcxx(&mut build);
+            build
+              .include(
+                "/usr/aarch64-unknown-linux-gnu/aarch64-unknown-linux-gnu/sysroot/usr/include",
+              )
+              .flag("--sysroot=/usr/aarch64-unknown-linux-gnu/aarch64-unknown-linux-gnu/sysroot");
+            println!("cargo:rustc-link-search=/usr/aarch64-unknown-linux-gnu/lib/llvm-19/lib");
+            println!("cargo:rustc-link-search=/usr/aarch64-unknown-linux-gnu/lib");
+            println!(
+              "cargo:rustc-link-search=/usr/aarch64-unknown-linux-gnu/aarch64-unknown-linux-gnu/sysroot/lib"
+            );
+            println!(
+              "cargo:rustc-link-search=/usr/aarch64-unknown-linux-gnu/lib/gcc/aarch64-unknown-linux-gnu/4.8.5"
+            );
+          }
+          "x86_64" => {
+            link_libcxx(&mut build);
+            build.include("/usr/lib/llvm-19/include/c++/v1");
+            println!("cargo:rustc-link-search=/usr/lib/llvm-19/lib");
+          }
+          "riscv64" => {
+            println!("cargo:rustc-link-search=/usr/lib/gcc-cross/riscv64-linux-gnu/11");
+            println!("cargo:rustc-link-lib=static=atomic");
+          }
+          "arm" => {
+            unsafe {
+              env::set_var("CC", "clang");
+              env::set_var("CXX", "clang++");
+              env::set_var("TARGET_CC", "clang");
+              env::set_var("TARGET_CXX", "clang++");
+            }
+            build
+              .cpp_set_stdlib("stdc++")
+              .flag("-static")
+              .include("/usr/arm-linux-gnueabihf/include")
+              .include("/usr/arm-linux-gnueabihf/include/c++/9");
+            println!("cargo:rustc-link-lib=static=stdc++");
+            println!("cargo:rustc-link-search=/usr/lib/gcc-cross/arm-linux-gnueabihf/9");
+          }
+          _ => {}
+        },
+        "musl" => {
+          build.flag_if_supported("-static");
+          println!("cargo:rustc-link-lib=static=c++");
+          println!("cargo:rustc-link-lib=static=c++abi");
+        }
+        _ => {}
+      }
+    }
+    "macos" => {
+      build.cpp_set_stdlib("c++");
+      if compile_target_arch == "aarch64" {
+        build.flag_if_supported("-mmacosx-version-min=11.0");
+      } else {
+        build.flag_if_supported("-mmacosx-version-min=10.13");
+      }
+      println!("cargo:rustc-link-lib=c++");
+      println!("cargo:rustc-link-lib=framework=ApplicationServices");
+    }
+    "android" => {
+      build.cpp_set_stdlib("c++").flag("-static");
+      println!("cargo:rustc-link-lib=static=c++");
+      println!("cargo:rustc-cdylib-link-arg=-Wl,--allow-multiple-definition");
+    }
+    _ => {}
+  }
+
+  let out_dir = env::var("OUT_DIR").unwrap();
+
+  build
+    .include("./skia-c")
+    .include(skia_path)
+    // https://github.com/rust-lang/rust/pull/93901#issuecomment-1119360260
+    .cargo_metadata(false)
+    .out_dir(&out_dir)
+    .compile("skiac");
+
+  println!("cargo:rustc-link-search={skia_lib_dir}");
+  println!("cargo:rustc-link-search={}", &out_dir);
+  println!("cargo:rustc-link-lib=static=skshaper");
+  napi_build::setup();
+}
+
+fn link_libcxx(build: &mut cc::Build) {
+  build.cpp_set_stdlib("c++").flag("-static");
+  println!("cargo:rustc-link-lib=static=c++");
 }

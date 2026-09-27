@@ -1,311 +1,409 @@
-package torrent
+package gosql
 
 import (
 	"context"
-	"strconv"
-	"strings"
+	"database/sql"
+	"log"
+	"reflect"
+	"time"
 
-	"github.com/anacrolix/chansync/events"
-	g "github.com/anacrolix/generics"
-	"github.com/anacrolix/missinggo/v2/pubsub"
-	"github.com/anacrolix/sync"
-
-	"github.com/anacrolix/torrent/metainfo"
+	"github.com/jmoiron/sqlx"
 )
 
-// The Torrent's infohash. This is fixed and cannot change. It uniquely
-// identifies a torrent. TODO: If this doesn't change, should we stick to
-// referring to a Torrent by the original infohash given to us?
-func (t *Torrent) InfoHash() metainfo.Hash {
-	return *t.canonicalShortInfohash()
+type ISqlx interface {
+	Queryx(query string, args ...interface{}) (*sqlx.Rows, error)
+	QueryRowx(query string, args ...interface{}) *sqlx.Row
+	Get(dest interface{}, query string, args ...interface{}) error
+	Select(dest interface{}, query string, args ...interface{}) error
+	Exec(query string, args ...interface{}) (sql.Result, error)
+	NamedExec(query string, arg interface{}) (sql.Result, error)
+	Preparex(query string) (*sqlx.Stmt, error)
+	Rebind(query string) string
+	DriverName() string
 }
 
-// Returns a channel that is closed when the info (.Info()) for the torrent has become available.
-func (t *Torrent) GotInfo() events.Done {
-	return t.gotMetainfoC
+type BuilderChainFunc func(b *Builder)
+
+type DB struct {
+	database    *sqlx.DB
+	tx          *sqlx.Tx
+	logging     bool
+	RelationMap map[string]BuilderChainFunc
 }
 
-// Returns the metainfo info dictionary, or nil if it's not yet available.
-func (t *Torrent) Info() (info *metainfo.Info) {
-	t.nameMu.RLock()
-	info = t.info
-	t.nameMu.RUnlock()
-	return
-}
-
-// Returns a Reader bound to the torrent's data. All read calls block until the data requested is
-// actually available. Note that you probably want to ensure the Torrent Info is available first.
-func (t *Torrent) NewReader() Reader {
-	return t.newReader(0, t.length())
-}
-
-func (t *Torrent) newReader(offset, length int64) Reader {
-	r := reader{
-		mu:     t.cl.locker(),
-		t:      t,
-		offset: offset,
-		length: length,
-		ctx:    context.Background(),
+// return database instance, if it is a transaction, the transaction priority is higher
+func (w *DB) db() ISqlx {
+	if w.tx != nil {
+		return w.tx.Unsafe()
 	}
-	r.readaheadFunc = defaultReadaheadFunc
-	t.addReader(&r)
-	return &r
+
+	return w.database.Unsafe()
 }
 
-type PieceStateRuns []PieceStateRun
+// ShowSql single show sql log
+func ShowSql() *DB {
+	w := Use(defaultLink)
+	w.logging = true
+	return w
+}
 
-func (me PieceStateRuns) String() (s string) {
-	if len(me) > 0 {
-		var sb strings.Builder
-		sb.WriteString(me[0].String())
-		for i := 1; i < len(me); i += 1 {
-			sb.WriteByte(' ')
-			sb.WriteString(me[i].String())
+func (w *DB) argsIn(query string, args []interface{}) (string, []interface{}, error) {
+	newArgs := make([]interface{}, 0)
+	newQuery, newArgs, err := sqlx.In(query, args...)
+
+	if err != nil {
+		return query, args, err
+	}
+
+	return newQuery, newArgs, nil
+}
+
+// DriverName wrapper sqlx.DriverName
+func (w *DB) DriverName() string {
+	if w.tx != nil {
+		return w.tx.DriverName()
+	}
+
+	return w.database.DriverName()
+}
+
+func (w *DB) ShowSql() *DB {
+	w.logging = true
+	return w
+}
+
+// Beginx begins a transaction and returns an *gosql.DB instead of an *sql.Tx.
+func (w *DB) Begin() (*DB, error) {
+	tx, err := w.database.Beginx()
+	if err != nil {
+		return nil, err
+	}
+	return &DB{tx: tx}, nil
+}
+
+// Commit commits the transaction.
+func (w *DB) Commit() error {
+	return w.tx.Commit()
+}
+
+// Rollback aborts the transaction.
+func (w *DB) Rollback() error {
+	return w.tx.Rollback()
+}
+
+// Rebind wrapper sqlx.Rebind
+func (w *DB) Rebind(query string) string {
+	return w.db().Rebind(query)
+}
+
+// Preparex wrapper sqlx.Preparex
+func (w *DB) Preparex(query string) (*sqlx.Stmt, error) {
+	return w.db().Preparex(query)
+}
+
+// Exec wrapper sqlx.Exec
+func (w *DB) Exec(query string, args ...interface{}) (result sql.Result, err error) {
+	defer func(start time.Time) {
+		logger.Log(&QueryStatus{
+			Query: query,
+			Args:  args,
+			Err:   err,
+			Start: start,
+			End:   time.Now(),
+		}, w.logging)
+
+	}(time.Now())
+
+	return w.db().Exec(query, args...)
+}
+
+// NamedExec wrapper sqlx.Exec
+func (w *DB) NamedExec(query string, args interface{}) (result sql.Result, err error) {
+	defer func(start time.Time) {
+		logger.Log(&QueryStatus{
+			Query: query,
+			Args:  args,
+			Err:   err,
+			Start: start,
+			End:   time.Now(),
+		}, w.logging)
+
+	}(time.Now())
+
+	return w.db().NamedExec(query, args)
+}
+
+// Queryx wrapper sqlx.Queryx
+func (w *DB) Queryx(query string, args ...interface{}) (rows *sqlx.Rows, err error) {
+	defer func(start time.Time) {
+		logger.Log(&QueryStatus{
+			Query: query,
+			Args:  args,
+			Err:   err,
+			Start: start,
+			End:   time.Now(),
+		}, w.logging)
+	}(time.Now())
+
+	query, newArgs, err := w.argsIn(query, args)
+	if err != nil {
+		return nil, err
+	}
+
+	return w.db().Queryx(query, newArgs...)
+}
+
+// QueryRowx wrapper sqlx.QueryRowx
+func (w *DB) QueryRowx(query string, args ...interface{}) (rows *sqlx.Row) {
+	defer func(start time.Time) {
+		logger.Log(&QueryStatus{
+			Query: query,
+			Args:  args,
+			Err:   rows.Err(),
+			Start: start,
+			End:   time.Now(),
+		}, w.logging)
+	}(time.Now())
+
+	query, newArgs, _ := w.argsIn(query, args)
+
+	return w.db().QueryRowx(query, newArgs...)
+}
+
+// Get wrapper sqlx.Get
+func (w *DB) Get(dest interface{}, query string, args ...interface{}) (err error) {
+	defer func(start time.Time) {
+		logger.Log(&QueryStatus{
+			Query: query,
+			Args:  args,
+			Err:   err,
+			Start: start,
+			End:   time.Now(),
+		}, w.logging)
+	}(time.Now())
+
+	wrapper, ok := dest.(*ModelWrapper)
+	if ok {
+		dest = wrapper.model
+	}
+
+	hook := NewHook(nil, w)
+	refVal := reflect.ValueOf(dest)
+	hook.callMethod("BeforeFind", refVal)
+
+	query, newArgs, err := w.argsIn(query, args)
+	if err != nil {
+		return err
+	}
+
+	err = w.db().Get(dest, query, newArgs...)
+	if err != nil {
+		return err
+	}
+
+	if reflect.Indirect(refVal).Kind() == reflect.Struct {
+		// relation data fill
+		err = RelationOne(wrapper, w, dest)
+	}
+
+	if err != nil {
+		return err
+	}
+
+	hook.callMethod("AfterFind", refVal)
+	if hook.HasError() {
+		return hook.Error()
+	}
+
+	return nil
+}
+
+func indirectType(v reflect.Type) reflect.Type {
+	if v.Kind() != reflect.Ptr {
+		return v
+	}
+	return v.Elem()
+}
+
+// Select wrapper sqlx.Select
+func (w *DB) Select(dest interface{}, query string, args ...interface{}) (err error) {
+	defer func(start time.Time) {
+		logger.Log(&QueryStatus{
+			Query: query,
+			Args:  args,
+			Err:   err,
+			Start: start,
+			End:   time.Now(),
+		}, w.logging)
+	}(time.Now())
+
+	query, newArgs, err := w.argsIn(query, args)
+	if err != nil {
+		return err
+	}
+
+	wrapper, ok := dest.(*ModelWrapper)
+	if ok {
+		dest = wrapper.model
+	}
+
+	err = w.db().Select(dest, query, newArgs...)
+	if err != nil {
+		return err
+	}
+
+	t := indirectType(reflect.TypeOf(dest))
+	if t.Kind() == reflect.Slice {
+		if indirectType(t.Elem()).Kind() == reflect.Struct {
+			// relation data fill
+			err = RelationAll(wrapper, w, dest)
 		}
-		return sb.String()
 	}
-	return
-}
 
-// Returns the state of pieces of the torrent. They are grouped into runs of same state. The sum of
-// the state run-lengths is the number of pieces in the torrent.
-func (t *Torrent) PieceStateRuns() (runs PieceStateRuns) {
-	t.cl.rLock()
-	runs = t.pieceStateRuns()
-	t.cl.rUnlock()
-	return
-}
-
-func (t *Torrent) PieceState(piece pieceIndex) (ps PieceState) {
-	t.cl.rLock()
-	ps = t.pieceState(piece)
-	t.cl.rUnlock()
-	return
-}
-
-// The number of pieces in the torrent. This requires that the info has been
-// obtained first.
-func (t *Torrent) NumPieces() pieceIndex {
-	return t.numPieces()
-}
-
-// Get missing bytes count for specific piece.
-func (t *Torrent) PieceBytesMissing(piece int) int64 {
-	t.cl.rLock()
-	defer t.cl.rUnlock()
-
-	return int64(t.pieces[piece].bytesLeft())
-}
-
-// Drop the torrent from the client, and close it. It's always safe to do this. No data corruption
-// can, or should occur to either the torrent's data, or connected peers.
-func (t *Torrent) Drop() {
-	if t.closed.IsSet() {
-		return
+	if err != nil {
+		return err
 	}
-	t.cl.lock()
-	defer t.cl.unlock()
-	if t.closed.IsSet() {
-		return
+
+	return nil
+}
+
+// Txx the transaction with context
+func (w *DB) Txx(ctx context.Context, fn func(ctx context.Context, tx *DB) error) (err error) {
+	tx, err := w.database.BeginTxx(ctx, nil)
+
+	if err != nil {
+		return err
 	}
-	var wg sync.WaitGroup
-	t.close(&wg)
-	wg.Wait()
-}
-
-// Number of bytes of the entire torrent we have completed. This is the sum of
-// completed pieces, and dirtied chunks of incomplete pieces. Do not use this
-// for download rate, as it can go down when pieces are lost or fail checks.
-// Sample Torrent.Stats.DataBytesRead for actual file data download rate.
-func (t *Torrent) BytesCompleted() int64 {
-	t.cl.rLock()
-	defer t.cl.rUnlock()
-	return t.bytesCompleted()
-}
-
-// The subscription emits as (int) the index of pieces as their state changes.
-// A state change is when the PieceState for a piece alters in value.
-func (t *Torrent) SubscribePieceStateChanges() *pubsub.Subscription[PieceStateChange] {
-	return t.pieceStateChanges.Subscribe()
-}
-
-// Returns true if the torrent is currently being seeded. This occurs when the
-// client is willing to upload without wanting anything in return.
-func (t *Torrent) Seeding() (ret bool) {
-	t.cl.rLock()
-	ret = t.seeding()
-	t.cl.rUnlock()
-	return
-}
-
-// Clobbers the torrent display name if metainfo is unavailable.
-// The display name is used as the torrent name while the metainfo is unavailable.
-func (t *Torrent) SetDisplayName(dn string) {
-	t.nameMu.Lock()
-	if !t.haveInfo() {
-		t.displayName = dn
-	}
-	t.nameMu.Unlock()
-}
-
-// The current working name for the torrent. Either the name in the info dict,
-// or a display name given such as by the dn value in a magnet link, or "".
-func (t *Torrent) Name() string {
-	return t.name()
-}
-
-// The completed length of all the torrent data, in all its files. This is
-// derived from the torrent info, when it is available.
-func (t *Torrent) Length() int64 {
-	return t._length.Value
-}
-
-// Returns a run-time generated metainfo for the torrent that includes the
-// info bytes and announce-list as currently known to the client.
-func (t *Torrent) Metainfo() metainfo.MetaInfo {
-	t.cl.rLock()
-	defer t.cl.rUnlock()
-	return t.newMetaInfo()
-}
-
-func (t *Torrent) addReader(r *reader) {
-	t.cl.lock()
-	defer t.cl.unlock()
-	if t.readers == nil {
-		t.readers = make(map[*reader]struct{})
-	}
-	t.readers[r] = struct{}{}
-	r.posChanged()
-}
-
-func (t *Torrent) deleteReader(r *reader) {
-	delete(t.readers, r)
-	t.readersChanged()
-}
-
-// Raise the priorities of pieces in the range [begin, end) to at least Normal
-// priority. Piece indexes are not the same as bytes. Requires that the info
-// has been obtained, see Torrent.Info and Torrent.GotInfo.
-func (t *Torrent) DownloadPieces(begin, end pieceIndex) {
-	t.cl.lock()
-	t.downloadPiecesLocked(begin, end)
-	t.cl.unlock()
-}
-
-func (t *Torrent) downloadPiecesLocked(begin, end pieceIndex) {
-	for i := begin; i < end; i++ {
-		if t.pieces[i].priority.Raise(PiecePriorityNormal) {
-			t.updatePiecePriority(i, "Torrent.DownloadPieces")
+	defer func() {
+		if err != nil {
+			err := tx.Rollback()
+			if err != nil {
+				log.Printf("gosql rollback error:%s", err)
+			}
 		}
+	}()
+
+	err = fn(ctx, &DB{tx: tx})
+	if err == nil {
+		err = tx.Commit()
 	}
-}
-
-func (t *Torrent) CancelPieces(begin, end pieceIndex) {
-	t.cl.lock()
-	t.cancelPiecesLocked(begin, end, "Torrent.CancelPieces")
-	t.cl.unlock()
-}
-
-func (t *Torrent) cancelPiecesLocked(begin, end pieceIndex, reason updateRequestReason) {
-	for i := begin; i < end; i++ {
-		p := t.piece(i)
-		// Intentionally cancelling only the piece-specific priority here.
-		if p.priority == PiecePriorityNone {
-			continue
-		}
-		p.priority = PiecePriorityNone
-		t.updatePiecePriority(i, reason)
-	}
-}
-
-func (t *Torrent) initFiles() {
-	info := t.info
-	var offset int64
-	t.files = new([]*File)
-	for _, fi := range t.info.UpvertedFiles() {
-		*t.files = append(*t.files, &File{
-			t,
-			strings.Join(append([]string{info.BestName()}, fi.BestPath()...), "/"),
-			offset,
-			fi.Length,
-			fi,
-			fi.DisplayPath(info),
-			PiecePriorityNone,
-			fi.PiecesRoot,
-		})
-		offset += fi.Length
-		if info.FilesArePieceAligned() {
-			offset = (offset + info.PieceLength - 1) / info.PieceLength * info.PieceLength
-		}
-	}
-}
-
-// Returns handles to the files in the torrent. This requires that the Info is
-// available first.
-func (t *Torrent) Files() []*File {
-	return *t.files
-}
-
-func (t *Torrent) AddPeers(pp []PeerInfo) (n int) {
-	t.cl.lock()
-	defer t.cl.unlock()
-	n = t.addPeers(pp)
 	return
 }
 
-// Marks the entire torrent for download. Requires the info first, see
-// GotInfo. Sets piece priorities for historical reasons.
-func (t *Torrent) DownloadAll() {
-	t.DownloadPieces(0, t.numPieces())
+// Tx the transaction
+func (w *DB) Tx(fn func(w *DB) error) (err error) {
+	tx, err := w.database.Beginx()
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			err := tx.Rollback()
+			if err != nil {
+				log.Printf("gosql rollback error:%s", err)
+			}
+		}
+	}()
+	err = fn(&DB{tx: tx})
+	if err == nil {
+		err = tx.Commit()
+	}
+	return
 }
 
-func (t *Torrent) String() string {
-	s := t.name()
-	if s == "" {
-		return t.canonicalShortInfohash().HexString()
+// Table database handler from to table name
+// for example:
+// gosql.Use("db2").Table("users")
+func (w *DB) Table(t string) *Mapper {
+	return &Mapper{db: w, SQLBuilder: SQLBuilder{table: t, dialect: newDialect(w.DriverName())}}
+}
+
+// Model database handler from to struct
+// for example:
+// gosql.Use("db2").Model(&users{})
+func (w *DB) Model(m interface{}) *Builder {
+	if v1, ok := m.(*ModelWrapper); ok {
+		return &Builder{modelWrapper: v1, model: v1.model, db: w, SQLBuilder: SQLBuilder{dialect: newDialect(w.DriverName())}}
 	} else {
-		return strconv.Quote(s)
+		return &Builder{model: m, db: w, SQLBuilder: SQLBuilder{dialect: newDialect(w.DriverName())}}
 	}
 }
 
-func (t *Torrent) AddTrackers(announceList [][]string) {
-	t.cl.lock()
-	defer t.cl.unlock()
-	t.addTrackers(announceList)
+// Model database handler from to struct with context
+// for example:
+// gosql.Use("db2").WithContext(ctx).Model(&users{})
+func (w *DB) WithContext(ctx context.Context) *Builder {
+	return &Builder{db: w, SQLBuilder: SQLBuilder{dialect: newDialect(w.DriverName())}, ctx: ctx}
 }
 
-func (t *Torrent) ModifyTrackers(announceList [][]string) {
-	t.cl.lock()
-	defer t.cl.unlock()
-	t.modifyTrackers(announceList)
-}
-
-func (t *Torrent) Piece(i pieceIndex) *Piece {
-	return t.piece(i)
-}
-
-func (t *Torrent) PeerConns() []*PeerConn {
-	t.cl.rLock()
-	defer t.cl.rUnlock()
-	ret := make([]*PeerConn, 0, len(t.conns))
-	for c := range t.conns {
-		ret = append(ret, c)
+// Relation association table builder handle
+func (w *DB) Relation(name string, fn BuilderChainFunc) *DB {
+	if w.RelationMap == nil {
+		w.RelationMap = make(map[string]BuilderChainFunc)
 	}
-	return ret
+	w.RelationMap[name] = fn
+	return w
 }
 
-// TODO: Misleading method name. Webseed peers are not PeerConns.
-func (t *Torrent) WebseedPeerConns() []*Peer {
-	t.cl.rLock()
-	defer t.cl.rUnlock()
-	ret := make([]*Peer, 0, len(t.conns))
-	for _, c := range t.webSeeds {
-		ret = append(ret, &c.peer)
-	}
-	return ret
+// Beginx begins a transaction for default database and returns an *gosql.DB instead of an *sql.Tx.
+func Begin() (*DB, error) {
+	return Use(defaultLink).Begin()
 }
 
-// Was dropped from the Client.
-func (t *Torrent) isDropped() bool {
-	return !g.MapContains(t.cl.torrents, t)
+// Use is change database
+func Use(db string) *DB {
+	return &DB{database: Sqlx(db)}
+}
+
+// Exec default database
+func Exec(query string, args ...interface{}) (sql.Result, error) {
+	return Use(defaultLink).Exec(query, args...)
+}
+
+// Exec default database
+func NamedExec(query string, args interface{}) (sql.Result, error) {
+	return Use(defaultLink).NamedExec(query, args)
+}
+
+// Queryx default database
+func Queryx(query string, args ...interface{}) (*sqlx.Rows, error) {
+	return Use(defaultLink).Queryx(query, args...)
+}
+
+// QueryRowx default database
+func QueryRowx(query string, args ...interface{}) *sqlx.Row {
+	return Use(defaultLink).QueryRowx(query, args...)
+}
+
+// Txx default database the transaction with context
+func Txx(ctx context.Context, fn func(ctx context.Context, tx *DB) error) error {
+	return Use(defaultLink).Txx(ctx, fn)
+}
+
+// Tx default database the transaction
+func Tx(fn func(tx *DB) error) error {
+	return Use(defaultLink).Tx(fn)
+}
+
+// Get default database
+func Get(dest interface{}, query string, args ...interface{}) error {
+	return Use(defaultLink).Get(dest, query, args...)
+}
+
+// Select default database
+func Select(dest interface{}, query string, args ...interface{}) error {
+	return Use(defaultLink).Select(dest, query, args...)
+}
+
+// Relation association table builder handle
+func Relation(name string, fn BuilderChainFunc) *DB {
+	w := Use(defaultLink)
+	w.RelationMap = make(map[string]BuilderChainFunc)
+	w.RelationMap[name] = fn
+	return w
+}
+
+// SetDefaultLink set default link name
+func SetDefaultLink(db string) {
+	defaultLink = db
 }

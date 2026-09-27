@@ -1,145 +1,107 @@
-enum DetectionMethod {
-  "ip-only" = "ip-only",
-  "timezone-then-ip" = "timezone-then-ip",
-}
+import { Language, ModelManager } from "./mod.ts";
 
-var redirectRussia = () => {
-  // How it works:
-  // (1) We detect your timezone to estimate if you're in Russia
-  // (2) If we think you may be, we make an IP address geolocation API request to confirm
-  // (3) If you are in indeed in Russia, we redirect you to a pro-Ukraine website
+const SECTION = (name: string) => console.log(`\n${name}\n`);
 
-  var currentScript = document.currentScript;
-  if (!currentScript) return;
+const manager = await ModelManager.create();
 
-  // Find the redirection URL
-  var REDIRECT_URL =
-    currentScript.getAttribute("data-redirect-url") ??
-    `https://redirectrussia.org/${
-      currentScript.getAttribute("data-hide-domain") === "hide"
-        ? "?from=unknown"
-        : `?from=${document.domain}`
-    }`;
+SECTION("SUMMARIZATION MODEL");
 
-  var redirect = () => {
-    try {
-      // Dispatch a custom event
-      // To listen to this event, you can add the following JavaScript:
-      // document.addEventListener("redirect-russia", (event) => { /* */ }, false);
-      var event = new Event("redirect-russia");
-      document.dispatchEvent(event);
+const summarizationModel = await manager.createSummarizationModel();
 
-      // Set in session storage so we don't have to compute again
-      window.sessionStorage.setItem("russia-redirect", "1");
-    } catch (error) {
-      // Ignore errors in storage or events
-    }
-    window.location.assign(REDIRECT_URL);
-  };
+const longInput = `In findings published Tuesday in Cornell University's arXiv by a team of scientists from the University of Montreal and a separate report published Wednesday in Nature Astronomy by a team from University College London (UCL), the presence of water vapour was confirmed in the atmosphere of K2-18b, a planet circling a star in the constellation Leo. This is the first such discovery in a planet in its star's habitable zone — not too hot and not too cold for liquid water to exist. The Montreal team, led by Björn Benneke, used data from the NASA's Hubble telescope to assess changes in the light coming from K2-18b's star as the planet passed between it and Earth. They found that certain wavelengths of light, which are usually absorbed by water, weakened when the planet was in the way, indicating not only does K2-18b have an atmosphere, but the atmosphere contains water in vapour form. The team from UCL then analyzed the Montreal team's data using their own software and confirmed their conclusion. This was not the first time scientists have found signs of water on an exoplanet, but previous discoveries were made on planets with high temperatures or other pronounced differences from Earth. "This is the first potentially habitable planet where the temperature is right and where we now know there is water," said UCL astronomer Angelos Tsiaras. "It's the best candidate for habitability right now." "It's a good sign", said Ryan Cloutier of the Harvard–Smithsonian Center for Astrophysics, who was not one of either study's authors. "Overall," he continued, "the presence of water in its atmosphere certainly improves the prospect of K2-18b being a potentially habitable planet, but further observations will be required to say for sure. K2-18b was first identified in 2015 by the Kepler space telescope. It is about 110 light-years from Earth and larger but less dense. Its star, a red dwarf, is cooler than the Sun, but the planet's orbit is much closer, such that a year on K2-18b lasts 33 Earth days. According to The Guardian, astronomers were optimistic that NASA's James Webb space telescope — scheduled for launch in 2021 — and the European Space Agency's 2028 ARIEL program, could reveal more about exoplanets like K2-18b.`;
 
-  // Cache redirection status in session storage to avoid expensive computation
-  try {
-    var shouldRedirect = window.sessionStorage.getItem("russia-redirect");
-    // If we already computed to redirect you, do it immediately
-    if (shouldRedirect === "1") return redirect();
-    // If we already skipped you, no need to redo the detection
-    else if (shouldRedirect === "0") return;
-  } catch (error) {
-    // Ignore storage access errors
-  }
+console.log(await summarizationModel.summarize([longInput]));
 
-  // Find the preferred method of location detection
-  var detectionMethod =
-    currentScript.getAttribute("data-detection") ??
-    DetectionMethod["timezone-then-ip"];
+SECTION("TEXT GENERATION MODEL");
 
-  // If we find an unsupported method, throw an error
-  if (
-    detectionMethod !== DetectionMethod["ip-only"] &&
-    detectionMethod !== DetectionMethod["timezone-then-ip"]
-  )
-    throw new Error("Redirect Russia: Unsupported location detection method");
+const textGenerationModel = await manager.createTextGenerationModel();
 
-  // By default, we assume that you're in Russia
-  var mayBeRussian = true;
+console.log(
+  await textGenerationModel.generate({
+    inputs: ["The black hole is a wonder of space."],
+  })
+);
 
-  // If the timezone-then-ip detection method is set
-  if (detectionMethod === DetectionMethod["timezone-then-ip"]) {
-    // Find the current timezone
-    var currentTimezone: string | undefined = undefined;
-    try {
-      currentTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    } catch (error) {
-      // Ignore errors if `Intl` is unavailable or we're unable to find the timezone
-    }
+SECTION("ZERO SHOT CLASSIFICATION MODEL");
 
-    var RUSSIAN_TIMEZONES = [
-      "Asia/Anadyr",
-      "Asia/Barnaul",
-      "Asia/Chita",
-      "Asia/Irkutsk",
-      "Asia/Kamchatka",
-      "Asia/Khandyga",
-      "Asia/Krasnoyarsk",
-      "Asia/Magadan",
-      "Asia/Novokuznetsk",
-      "Asia/Novosibirsk",
-      "Asia/Omsk",
-      "Asia/Sakhalin",
-      "Asia/Srednekolymsk",
-      "Asia/Tomsk",
-      "Asia/Ust",
-      "Asia/Vladivostok",
-      "Asia/Yakutsk",
-      "Asia/Yekaterinburg",
-      "Europe/Astrakhan",
-      "Europe/Kaliningrad",
-      "Europe/Kirov",
-      "Europe/Moscow",
-      "Europe/Samara",
-      "Europe/Saratov",
-      "Europe/Simferopol", // This timezone is also in Ukraine
-      "Europe/Ulyanovsk",
-      "Europe/Volgograd",
-    ];
+const zeroShotModel = await manager.createZeroShotClassificationModel();
 
-    if (
-      // If we're unable to find the timezone, you may be in Russia
-      currentTimezone &&
-      // If you're in a Russian timezone, you may be in Russia
-      !RUSSIAN_TIMEZONES.includes(currentTimezone)
-    )
-      mayBeRussian = false;
-  }
-
-  if (!mayBeRussian) return;
-
-  var geolocationEndpoint =
-    currentScript.getAttribute("data-geolocation-api") ??
-    "https://api.country.is";
-
-  var countryCode: string | undefined = undefined; // Uppercase country code, e.g., "UA" or "DE"
-  // Make IP geolocation request
-  fetch(geolocationEndpoint)
-    .then((response) => {
-      if (!response.ok) throw new Error("Response not OK");
-      return response.json();
-    })
-    .then((json) => {
-      countryCode = json.country.toLowerCase();
-    })
-    // Ignore errors if we're unable to fetch
-    .catch(() => undefined)
-    .then(() => {
-      if (countryCode === "ru") return redirect();
-
-      try {
-        // Set in session storage so we don't have to compute again
-        window.sessionStorage.setItem("russia-redirect", "0");
-      } catch (error) {
-        // Ignore storage access errors
-      }
-    });
+const zeroShotInput = {
+  inputs: [
+    "Who are you voting for in 2024?",
+    "10,000 people have died from covid-19.",
+  ],
+  labels: ["politics", "public health"],
 };
 
-void redirectRussia();
+console.log(await zeroShotModel.predict(zeroShotInput));
+console.log(await zeroShotModel.predictMultilabel(zeroShotInput));
+
+SECTION("POS TAGGING MODEL");
+
+const posModel = await manager.createPOSModel();
+
+console.log(await posModel.predict(["What are the parts in this?"]));
+
+const convoModel = await manager.createConversationModel();
+
+const convoManager = await convoModel.createConversationManager();
+
+const convo = await convoManager.createConversation();
+
+SECTION("CONVERSATION MODEL");
+
+const message1 = "Hello, what is your favorite color?";
+console.log(`> ${message1}`);
+console.log(`< ${await convo.sendMessage(message1)}`);
+
+console.log();
+
+const message2 = "Cool, why is that?"; // watch it actually continues the conversation
+console.log(`> ${message2}`);
+console.log(`< ${await convo.sendMessage(message2)}`);
+
+SECTION("NER MODEL");
+
+const nerModel = await manager.createNERModel();
+const [entity] = await nerModel.predict(["My name is Amy. I live in Paris."]);
+console.log(entity);
+
+SECTION("SENTIMENT MODEL");
+
+const sentimentModel = await manager.createSentimentModel();
+const sentiments = await sentimentModel.predict([
+  "I just love her blue hat.",
+  "They should burn in the depths of hell.",
+]);
+console.log(sentiments);
+
+SECTION("QA MODEL");
+
+const qaModel = await manager.createQAModel();
+
+const [answer] = await qaModel.query({
+  questionGroups: [
+    {
+      context: "My best friend's name is tejas and they are cool.",
+      question: "Who is your best friend?",
+    },
+  ],
+});
+
+console.log(answer);
+
+SECTION("TRANSLATION MODEL");
+
+const translationModel = await manager.createTranslationModel({
+  sourceLanguages: [Language.English],
+  targetLanguages: [Language.German],
+});
+
+const [translated] = await translationModel.translate({
+  inputs: ["Hello everyone! My name is Jon and I am 22 years old."],
+  sourceLanguage: Language.English,
+  targetLanguage: Language.German,
+});
+
+console.log(translated);

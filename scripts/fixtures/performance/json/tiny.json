@@ -1,19 +1,88 @@
 {
-    "Records": [
-        {
-            "kinesis": {
-                "partitionKey": "partitionKey-3",
-                "kinesisSchemaVersion": "1.0",
-                "data": "SGVsbG8sIHRoaXMgaXMgYSB0ZXN0IDEyMy4=",
-                "sequenceNumber": "49545115243490985018280067714973144582180062593244200961"
-            },
-            "eventSource": "aws:kinesis",
-            "eventID": "shardId-000000000000:49545115243490985018280067714973144582180062593244200961",
-            "invokeIdentityArn": "arn:aws:iam::059493405231:role/testLEBRole",
-            "eventVersion": "1.0",
-            "eventName": "aws:kinesis:record",
-            "eventSourceARN": "arn:aws:kinesis:us-west-2:35667example:stream/examplestream",
-            "awsRegion": "us-west-2"
-        }
-    ]
+  "domains": [
+    {
+      "id": "d1",
+      "value": [
+        0,
+        1
+      ]
+    }
+  ],
+  "constraints": [
+    {
+      "id": "c1",
+      "value": [
+        [
+          1,
+          2
+        ],
+        [
+          2,
+          0
+        ]
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "id": "x1",
+      "domain": "d1"
+    },
+    {
+      "id": "x2",
+      "domain": "d1"
+    },
+    {
+      "id": "x3",
+      "domain": "d1"
+    },
+    {
+      "id": "x4",
+      "domain": "d1"
+    },
+    {
+      "id": "x5",
+      "domain": "d1"
+    },
+    {
+      "id": "x6",
+      "domain": "d1"
+    },
+    {
+      "id": "x7",
+      "domain": "d1"
+    }
+  ],
+  "edges": [
+    {
+      "source": "x1",
+      "target": "x2",
+      "constraint": "c1"
+    },
+    {
+      "source": "x2",
+      "target": "x3",
+      "constraint": "c1"
+    },
+    {
+      "source": "x2",
+      "target": "x4",
+      "constraint": "c1"
+    },
+    {
+      "source": "x2",
+      "target": "x5",
+      "constraint": "c1"
+    },
+    {
+      "source": "x1",
+      "target": "x6",
+      "constraint": "c1"
+    },
+    {
+      "source": "x1",
+      "target": "x7",
+      "constraint": "c1"
+    }
+  ]
 }

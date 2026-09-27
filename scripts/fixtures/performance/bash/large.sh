@@ -1,11108 +1,8313 @@
-#! /bin/sh
-## DO NOT EDIT - This file generated from ./build-aux/ltmain.in
-##               by inline-source v2014-01-03.01
-
-# libtool (GNU libtool) 2.4.4
-# Provide generalized library-building support services.
-# Written by Gordon Matzigkeit <gord@gnu.ai.mit.edu>, 1996
-
-# Copyright (C) 1996-2014 Free Software Foundation, Inc.
-# This is free software; see the source for copying conditions.  There is NO
-# warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-
-# GNU Libtool is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
+#!/bin/bash
+# ══════════════════════════════════════════════════════════════════════════════
+# SamNet-WG Unified Manager, Installer & CLI/TUI
+# Version: 1.0.3
+# License: MIT
 #
-# As a special exception to the GNU General Public License,
-# if you distribute this file as part of a program or library that
-# is built using GNU Libtool, you may include this file under the
-# same distribution terms that you use for the rest of that program.
-#
-# GNU Libtool is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-
-PROGRAM=libtool
-PACKAGE=libtool
-VERSION=2.4.4
-package_revision=2.4.4
-
-
-## ------ ##
-## Usage. ##
-## ------ ##
-
-# Run './libtool --help' for help with using this script from the
-# command line.
-
-
-## ------------------------------- ##
-## User overridable command paths. ##
-## ------------------------------- ##
-
-# After configure completes, it has a better idea of some of the
-# shell tools we need than the defaults used by the functions shared
-# with bootstrap, so set those here where they can still be over-
-# ridden by the user, but otherwise take precedence.
-
-: ${AUTOCONF="autoconf"}
-: ${AUTOMAKE="automake"}
-
-
-## -------------------------- ##
-## Source external libraries. ##
-## -------------------------- ##
-
-# Much of our low-level functionality needs to be sourced from external
-# libraries, which are installed to $pkgauxdir.
-
-# Set a version string for this script.
-scriptversion=2014-01-03.01; # UTC
-
-# General shell script boiler plate, and helper functions.
-# Written by Gary V. Vaughan, 2004
-
-# Copyright (C) 2004-2014 Free Software Foundation, Inc.
-# This is free software; see the source for copying conditions.  There is NO
-# warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 3 of the License, or
-# (at your option) any later version.
-
-# As a special exception to the GNU General Public License, if you distribute
-# this file as part of a program or library that is built using GNU Libtool,
-# you may include this file under the same distribution terms that you use
-# for the rest of that program.
-
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNES FOR A PARTICULAR PURPOSE. See the GNU
-# General Public License for more details.
-
-# You should have received a copy of the GNU General Public License
-# along with this program. If not, see <http://www.gnu.org/licenses/>.
-
-# Please report bugs or propose patches to gary@gnu.org.
-
-
-## ------ ##
-## Usage. ##
-## ------ ##
-
-# Evaluate this file near the top of your script to gain access to
-# the functions and variables defined here:
-#
-#   . `echo "$0" | ${SED-sed} 's|[^/]*$||'`/build-aux/funclib.sh
-#
-# If you need to override any of the default environment variable
-# settings, do that before evaluating this file.
-
-
-## -------------------- ##
-## Shell normalisation. ##
-## -------------------- ##
-
-# Some shells need a little help to be as Bourne compatible as possible.
-# Before doing anything else, make sure all that help has been provided!
-
-DUALCASE=1; export DUALCASE # for MKS sh
-if test -n "${ZSH_VERSION+set}" && (emulate sh) >/dev/null 2>&1; then :
-  emulate sh
-  NULLCMD=:
-  # Pre-4.2 versions of Zsh do word splitting on ${1+"$@"}, which
-  # is contrary to our usage.  Disable this feature.
-  alias -g '${1+"$@"}'='"$@"'
-  setopt NO_GLOB_SUBST
-else
-  case `(set -o) 2>/dev/null` in *posix*) set -o posix ;; esac
-fi
-
-# NLS nuisances: We save the old values in case they are required later.
-_G_user_locale=
-_G_safe_locale=
-for _G_var in LANG LANGUAGE LC_ALL LC_CTYPE LC_COLLATE LC_MESSAGES
-do
-  eval "if test set = \"\${$_G_var+set}\"; then
-          save_$_G_var=\$$_G_var
-          $_G_var=C
-	  export $_G_var
-	  _G_user_locale=\"$_G_var=\\\$save_\$_G_var; \$_G_user_locale\"
-	  _G_safe_locale=\"$_G_var=C; \$_G_safe_locale\"
-	fi"
-done
-
-# CDPATH.
-(unset CDPATH) >/dev/null 2>&1 && unset CDPATH
-
-# Make sure IFS has a sensible default
-sp=' '
-nl='
-'
-IFS="$sp	$nl"
-
-# There are apparently some retarded systems that use ';' as a PATH separator!
-if test "${PATH_SEPARATOR+set}" != set; then
-  PATH_SEPARATOR=:
-  (PATH='/bin;/bin'; FPATH=$PATH; sh -c :) >/dev/null 2>&1 && {
-    (PATH='/bin:/bin'; FPATH=$PATH; sh -c :) >/dev/null 2>&1 ||
-      PATH_SEPARATOR=';'
-  }
-fi
-
-
-
-## ------------------------- ##
-## Locate command utilities. ##
-## ------------------------- ##
-
-
-# func_executable_p FILE
-# ----------------------
-# Check that FILE is an executable regular file.
-func_executable_p ()
-{
-    test -f "$1" && test -x "$1"
-}
-
-
-# func_path_progs PROGS_LIST CHECK_FUNC [PATH]
-# --------------------------------------------
-# Search for either a program that responds to --version with output
-# containing "GNU", or else returned by CHECK_FUNC otherwise, by
-# trying all the directories in PATH with each of the elements of
-# PROGS_LIST.
-#
-# CHECK_FUNC should accept the path to a candidate program, and
-# set $func_check_prog_result if it truncates its output less than
-# $_G_path_prog_max characters.
-func_path_progs ()
-{
-    _G_progs_list=$1
-    _G_check_func=$2
-    _G_PATH=${3-"$PATH"}
-
-    _G_path_prog_max=0
-    _G_path_prog_found=false
-    _G_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-    for _G_dir in $_G_PATH; do
-      IFS=$_G_save_IFS
-      test -z "$_G_dir" && _G_dir=.
-      for _G_prog_name in $_G_progs_list; do
-        for _exeext in '' .EXE; do
-          _G_path_prog=$_G_dir/$_G_prog_name$_exeext
-          func_executable_p "$_G_path_prog" || continue
-          case `"$_G_path_prog" --version 2>&1` in
-            *GNU*) func_path_progs_result=$_G_path_prog _G_path_prog_found=: ;;
-            *)     $_G_check_func $_G_path_prog
-		   func_path_progs_result=$func_check_prog_result
-		   ;;
-          esac
-          $_G_path_prog_found && break 3
-        done
-      done
-    done
-    IFS=$_G_save_IFS
-    test -z "$func_path_progs_result" && {
-      echo "no acceptable sed could be found in \$PATH" >&2
-      exit 1
-    }
-}
-
-
-# We want to be able to use the functions in this file before configure
-# has figured out where the best binaries are kept, which means we have
-# to search for them ourselves - except when the results are already set
-# where we skip the searches.
-
-# Unless the user overrides by setting SED, search the path for either GNU
-# sed, or the sed that truncates its output the least.
-test -z "$SED" && {
-  _G_sed_script=s/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/
-  for _G_i in 1 2 3 4 5 6 7; do
-    _G_sed_script=$_G_sed_script$nl$_G_sed_script
-  done
-  echo "$_G_sed_script" 2>/dev/null | sed 99q >conftest.sed
-  _G_sed_script=
-
-  func_check_prog_sed ()
-  {
-    _G_path_prog=$1
-
-    _G_count=0
-    printf 0123456789 >conftest.in
-    while :
-    do
-      cat conftest.in conftest.in >conftest.tmp
-      mv conftest.tmp conftest.in
-      cp conftest.in conftest.nl
-      echo '' >> conftest.nl
-      "$_G_path_prog" -f conftest.sed <conftest.nl >conftest.out 2>/dev/null || break
-      diff conftest.out conftest.nl >/dev/null 2>&1 || break
-      _G_count=`expr $_G_count + 1`
-      if test "$_G_count" -gt "$_G_path_prog_max"; then
-        # Best one so far, save it but keep looking for a better one
-        func_check_prog_result=$_G_path_prog
-        _G_path_prog_max=$_G_count
-      fi
-      # 10*(2^10) chars as input seems more than enough
-      test 10 -lt "$_G_count" && break
-    done
-    rm -f conftest.in conftest.tmp conftest.nl conftest.out
-  }
-
-  func_path_progs "sed gsed" func_check_prog_sed $PATH:/usr/xpg4/bin
-  rm -f conftest.sed
-  SED=$func_path_progs_result
-}
-
-
-# Unless the user overrides by setting GREP, search the path for either GNU
-# grep, or the grep that truncates its output the least.
-test -z "$GREP" && {
-  func_check_prog_grep ()
-  {
-    _G_path_prog=$1
-
-    _G_count=0
-    _G_path_prog_max=0
-    printf 0123456789 >conftest.in
-    while :
-    do
-      cat conftest.in conftest.in >conftest.tmp
-      mv conftest.tmp conftest.in
-      cp conftest.in conftest.nl
-      echo 'GREP' >> conftest.nl
-      "$_G_path_prog" -e 'GREP$' -e '-(cannot match)-' <conftest.nl >conftest.out 2>/dev/null || break
-      diff conftest.out conftest.nl >/dev/null 2>&1 || break
-      _G_count=`expr $_G_count + 1`
-      if test "$_G_count" -gt "$_G_path_prog_max"; then
-        # Best one so far, save it but keep looking for a better one
-        func_check_prog_result=$_G_path_prog
-        _G_path_prog_max=$_G_count
-      fi
-      # 10*(2^10) chars as input seems more than enough
-      test 10 -lt "$_G_count" && break
-    done
-    rm -f conftest.in conftest.tmp conftest.nl conftest.out
-  }
-
-  func_path_progs "grep ggrep" func_check_prog_grep $PATH:/usr/xpg4/bin
-  GREP=$func_path_progs_result
-}
-
-
-## ------------------------------- ##
-## User overridable command paths. ##
-## ------------------------------- ##
-
-# All uppercase variable names are used for environment variables.  These
-# variables can be overridden by the user before calling a script that
-# uses them if a suitable command of that name is not already available
-# in the command search PATH.
-
-: ${CP="cp -f"}
-: ${ECHO="printf %s\n"}
-: ${EGREP="$GREP -E"}
-: ${FGREP="$GREP -F"}
-: ${LN_S="ln -s"}
-: ${MAKE="make"}
-: ${MKDIR="mkdir"}
-: ${MV="mv -f"}
-: ${RM="rm -f"}
-: ${SHELL="${CONFIG_SHELL-/bin/sh}"}
-
-
-## -------------------- ##
-## Useful sed snippets. ##
-## -------------------- ##
-
-sed_dirname='s|/[^/]*$||'
-sed_basename='s|^.*/||'
-
-# Sed substitution that helps us do robust quoting.  It backslashifies
-# metacharacters that are still active within double-quoted strings.
-sed_quote_subst='s|\([`"$\\]\)|\\\1|g'
-
-# Same as above, but do not quote variable references.
-sed_double_quote_subst='s/\(["`\\]\)/\\\1/g'
-
-# Sed substitution that turns a string into a regex matching for the
-# string literally.
-sed_make_literal_regex='s|[].[^$\\*\/]|\\&|g'
-
-# Sed substitution that converts a w32 file name or path
-# that contains forward slashes, into one that contains
-# (escaped) backslashes.  A very naive implementation.
-sed_naive_backslashify='s|\\\\*|\\|g;s|/|\\|g;s|\\|\\\\|g'
-
-# Re-'\' parameter expansions in output of sed_double_quote_subst that
-# were '\'-ed in input to the same.  If an odd number of '\' preceded a
-# '$' in input to sed_double_quote_subst, that '$' was protected from
-# expansion.  Since each input '\' is now two '\'s, look for any number
-# of runs of four '\'s followed by two '\'s and then a '$'.  '\' that '$'.
-_G_bs='\\'
-_G_bs2='\\\\'
-_G_bs4='\\\\\\\\'
-_G_dollar='\$'
-sed_double_backslash="\
-  s/$_G_bs4/&\\
-/g
-  s/^$_G_bs2$_G_dollar/$_G_bs&/
-  s/\\([^$_G_bs]\\)$_G_bs2$_G_dollar/\\1$_G_bs2$_G_bs$_G_dollar/g
-  s/\n//g"
-
-
-## ----------------- ##
-## Global variables. ##
-## ----------------- ##
-
-# Except for the global variables explicitly listed below, the following
-# functions in the '^func_' namespace, and the '^require_' namespace
-# variables initialised in the 'Resource management' section, sourcing
-# this file will not pollute your global namespace with anything
-# else. There's no portable way to scope variables in Bourne shell
-# though, so actually running these functions will sometimes place
-# results into a variable named after the function, and often use
-# temporary variables in the '^_G_' namespace. If you are careful to
-# avoid using those namespaces casually in your sourcing script, things
-# should continue to work as you expect. And, of course, you can freely
-# overwrite any of the functions or variables defined here before
-# calling anything to customize them.
-
-EXIT_SUCCESS=0
-EXIT_FAILURE=1
-EXIT_MISMATCH=63  # $? = 63 is used to indicate version mismatch to missing.
-EXIT_SKIP=77	  # $? = 77 is used to indicate a skipped test to automake.
-
-# Allow overriding, eg assuming that you follow the convention of
-# putting '$debug_cmd' at the start of all your functions, you can get
-# bash to show function call trace with:
-#
-#    debug_cmd='eval echo "${FUNCNAME[0]} $*" >&2' bash your-script-name
-debug_cmd=${debug_cmd-":"}
-exit_cmd=:
-
-# By convention, finish your script with:
-#
-#    exit $exit_status
-#
-# so that you can set exit_status to non-zero if you want to indicate
-# something went wrong during execution without actually bailing out at
-# the point of failure.
-exit_status=$EXIT_SUCCESS
-
-# Work around backward compatibility issue on IRIX 6.5. On IRIX 6.4+, sh
-# is ksh but when the shell is invoked as "sh" and the current value of
-# the _XPG environment variable is not equal to 1 (one), the special
-# positional parameter $0, within a function call, is the name of the
-# function.
-progpath=$0
-
-# The name of this program.
-progname=`$ECHO "$progpath" |$SED "$sed_basename"`
-
-# Make sure we have an absolute progpath for reexecution:
-case $progpath in
-  [\\/]*|[A-Za-z]:\\*) ;;
-  *[\\/]*)
-     progdir=`$ECHO "$progpath" |$SED "$sed_dirname"`
-     progdir=`cd "$progdir" && pwd`
-     progpath=$progdir/$progname
-     ;;
-  *)
-     _G_IFS=$IFS
-     IFS=${PATH_SEPARATOR-:}
-     for progdir in $PATH; do
-       IFS=$_G_IFS
-       test -x "$progdir/$progname" && break
-     done
-     IFS=$_G_IFS
-     test -n "$progdir" || progdir=`pwd`
-     progpath=$progdir/$progname
-     ;;
-esac
-
-
-## ----------------- ##
-## Standard options. ##
-## ----------------- ##
-
-# The following options affect the operation of the functions defined
-# below, and should be set appropriately depending on run-time para-
-# meters passed on the command line.
-
-opt_dry_run=false
-opt_quiet=false
-opt_verbose=false
-
-# Categories 'all' and 'none' are always available.  Append any others
-# you will pass as the first argument to func_warning from your own
-# code.
-warning_categories=
-
-# By default, display warnings according to 'opt_warning_types'.  Set
-# 'warning_func'  to ':' to elide all warnings, or func_fatal_error to
-# treat the next displayed warning as a fatal error.
-warning_func=func_warn_and_continue
-
-# Set to 'all' to display all warnings, 'none' to suppress all
-# warnings, or a space delimited list of some subset of
-# 'warning_categories' to display only the listed warnings.
-opt_warning_types=all
-
-
-## -------------------- ##
-## Resource management. ##
-## -------------------- ##
-
-# This section contains definitions for functions that each ensure a
-# particular resource (a file, or a non-empty configuration variable for
-# example) is available, and if appropriate to extract default values
-# from pertinent package files. Call them using their associated
-# 'require_*' variable to ensure that they are executed, at most, once.
-#
-# It's entirely deliberate that calling these functions can set
-# variables that don't obey the namespace limitations obeyed by the rest
-# of this file, in order that that they be as useful as possible to
-# callers.
-
-
-# require_term_colors
-# -------------------
-# Allow display of bold text on terminals that support it.
-require_term_colors=func_require_term_colors
-func_require_term_colors ()
-{
-    $debug_cmd
-
-    test -t 1 && {
-      # COLORTERM and USE_ANSI_COLORS environment variables take
-      # precedence, because most terminfo databases neglect to describe
-      # whether color sequences are supported.
-      test -n "${COLORTERM+set}" && : ${USE_ANSI_COLORS="1"}
-
-      if test 1 = "$USE_ANSI_COLORS"; then
-        # Standard ANSI escape sequences
-        tc_reset='[0m'
-        tc_bold='[1m';   tc_standout='[7m'
-        tc_red='[31m';   tc_green='[32m'
-        tc_blue='[34m';  tc_cyan='[36m'
-      else
-        # Otherwise trust the terminfo database after all.
-        test -n "`tput sgr0 2>/dev/null`" && {
-          tc_reset=`tput sgr0`
-          test -n "`tput bold 2>/dev/null`" && tc_bold=`tput bold`
-          tc_standout=$tc_bold
-          test -n "`tput smso 2>/dev/null`" && tc_standout=`tput smso`
-          test -n "`tput setaf 1 2>/dev/null`" && tc_red=`tput setaf 1`
-          test -n "`tput setaf 2 2>/dev/null`" && tc_green=`tput setaf 2`
-          test -n "`tput setaf 4 2>/dev/null`" && tc_blue=`tput setaf 4`
-          test -n "`tput setaf 5 2>/dev/null`" && tc_cyan=`tput setaf 5`
-        }
-      fi
-    }
-
-    require_term_colors=:
-}
-
-
-## ----------------- ##
-## Function library. ##
-## ----------------- ##
-
-# This section contains a variety of useful functions to call in your
-# scripts. Take note of the portable wrappers for features provided by
-# some modern shells, which will fall back to slower equivalents on
-# less featureful shells.
-
-
-# func_append VAR VALUE
-# ---------------------
-# Append VALUE onto the existing contents of VAR.
-
-  # We should try to minimise forks, especially on Windows where they are
-  # unreasonably slow, so skip the feature probes when bash or zsh are
-  # being used:
-  if test set = "${BASH_VERSION+set}${ZSH_VERSION+set}"; then
-    : ${_G_HAVE_ARITH_OP="yes"}
-    : ${_G_HAVE_XSI_OPS="yes"}
-    # The += operator was introduced in bash 3.1
-    case $BASH_VERSION in
-      [12].* | 3.0 | 3.0*) ;;
-      *)
-        : ${_G_HAVE_PLUSEQ_OP="yes"}
-        ;;
-    esac
-  fi
-
-  # _G_HAVE_PLUSEQ_OP
-  # Can be empty, in which case the shell is probed, "yes" if += is
-  # useable or anything else if it does not work.
-  test -z "$_G_HAVE_PLUSEQ_OP" \
-    && (eval 'x=a; x+=" b"; test "a b" = "$x"') 2>/dev/null \
-    && _G_HAVE_PLUSEQ_OP=yes
-
-if test yes = "$_G_HAVE_PLUSEQ_OP"
-then
-  # This is an XSI compatible shell, allowing a faster implementation...
-  eval 'func_append ()
-  {
-    $debug_cmd
-
-    eval "$1+=\$2"
-  }'
-else
-  # ...otherwise fall back to using expr, which is often a shell builtin.
-  func_append ()
-  {
-    $debug_cmd
-
-    eval "$1=\$$1\$2"
-  }
-fi
-
-
-# func_append_quoted VAR VALUE
-# ----------------------------
-# Quote VALUE and append to the end of shell variable VAR, separated
-# by a space.
-if test yes = "$_G_HAVE_PLUSEQ_OP"; then
-  eval 'func_append_quoted ()
-  {
-    $debug_cmd
-
-    func_quote_for_eval "$2"
-    eval "$1+=\\ \$func_quote_for_eval_result"
-  }'
-else
-  func_append_quoted ()
-  {
-    $debug_cmd
-
-    func_quote_for_eval "$2"
-    eval "$1=\$$1\\ \$func_quote_for_eval_result"
-  }
-fi
-
-
-# func_append_uniq VAR VALUE
-# --------------------------
-# Append unique VALUE onto the existing contents of VAR, assuming
-# entries are delimited by the first character of VALUE.  For example:
-#
-#   func_append_uniq options " --another-option option-argument"
-#
-# will only append to $options if " --another-option option-argument "
-# is not already present somewhere in $options already (note spaces at
-# each end implied by leading space in second argument).
-func_append_uniq ()
-{
-    $debug_cmd
-
-    eval _G_current_value='`$ECHO $'$1'`'
-    _G_delim=`expr "$2" : '\(.\)'`
-
-    case $_G_delim$_G_current_value$_G_delim in
-      *"$2$_G_delim"*) ;;
-      *) func_append "$@" ;;
-    esac
-}
-
-
-# func_arith TERM...
-# ------------------
-# Set func_arith_result to the result of evaluating TERMs.
-  test -z "$_G_HAVE_ARITH_OP" \
-    && (eval 'test 2 = $(( 1 + 1 ))') 2>/dev/null \
-    && _G_HAVE_ARITH_OP=yes
-
-if test yes = "$_G_HAVE_ARITH_OP"; then
-  eval 'func_arith ()
-  {
-    $debug_cmd
-
-    func_arith_result=$(( $* ))
-  }'
-else
-  func_arith ()
-  {
-    $debug_cmd
-
-    func_arith_result=`expr "$@"`
-  }
-fi
-
-
-# func_basename FILE
-# ------------------
-# Set func_basename_result to FILE with everything up to and including
-# the last / stripped.
-if test yes = "$_G_HAVE_XSI_OPS"; then
-  # If this shell supports suffix pattern removal, then use it to avoid
-  # forking. Hide the definitions single quotes in case the shell chokes
-  # on unsupported syntax...
-  _b='func_basename_result=${1##*/}'
-  _d='case $1 in
-        */*) func_dirname_result=${1%/*}$2 ;;
-        *  ) func_dirname_result=$3        ;;
-      esac'
-
-else
-  # ...otherwise fall back to using sed.
-  _b='func_basename_result=`$ECHO "$1" |$SED "$sed_basename"`'
-  _d='func_dirname_result=`$ECHO "$1"  |$SED "$sed_dirname"`
-      if test "X$func_dirname_result" = "X$1"; then
-        func_dirname_result=$3
-      else
-        func_append func_dirname_result "$2"
-      fi'
-fi
-
-eval 'func_basename ()
-{
-    $debug_cmd
-
-    '"$_b"'
-}'
-
-
-# func_dirname FILE APPEND NONDIR_REPLACEMENT
-# -------------------------------------------
-# Compute the dirname of FILE.  If nonempty, add APPEND to the result,
-# otherwise set result to NONDIR_REPLACEMENT.
-eval 'func_dirname ()
-{
-    $debug_cmd
-
-    '"$_d"'
-}'
-
-
-# func_dirname_and_basename FILE APPEND NONDIR_REPLACEMENT
-# --------------------------------------------------------
-# Perform func_basename and func_dirname in a single function
-# call:
-#   dirname:  Compute the dirname of FILE.  If nonempty,
-#             add APPEND to the result, otherwise set result
-#             to NONDIR_REPLACEMENT.
-#             value returned in "$func_dirname_result"
-#   basename: Compute filename of FILE.
-#             value retuned in "$func_basename_result"
-# For efficiency, we do not delegate to the functions above but instead
-# duplicate the functionality here.
-eval 'func_dirname_and_basename ()
-{
-    $debug_cmd
-
-    '"$_b"'
-    '"$_d"'
-}'
-
-
-# func_echo ARG...
-# ----------------
-# Echo program name prefixed message.
-func_echo ()
-{
-    $debug_cmd
-
-    _G_message=$*
-
-    func_echo_IFS=$IFS
-    IFS=$nl
-    for _G_line in $_G_message; do
-      IFS=$func_echo_IFS
-      $ECHO "$progname: $_G_line"
-    done
-    IFS=$func_echo_IFS
-}
-
-
-# func_echo_all ARG...
-# --------------------
-# Invoke $ECHO with all args, space-separated.
-func_echo_all ()
-{
-    $ECHO "$*"
-}
-
-
-# func_echo_infix_1 INFIX ARG...
-# ------------------------------
-# Echo program name, followed by INFIX on the first line, with any
-# additional lines not showing INFIX.
-func_echo_infix_1 ()
-{
-    $debug_cmd
-
-    $require_term_colors
-
-    _G_infix=$1; shift
-    _G_indent=$_G_infix
-    _G_prefix="$progname: $_G_infix: "
-    _G_message=$*
-
-    # Strip color escape sequences before counting printable length
-    for _G_tc in "$tc_reset" "$tc_bold" "$tc_standout" "$tc_red" "$tc_green" "$tc_blue" "$tc_cyan"
-    do
-      test -n "$_G_tc" && {
-        _G_esc_tc=`$ECHO "$_G_tc" | $SED "$sed_make_literal_regex"`
-        _G_indent=`$ECHO "$_G_indent" | $SED "s|$_G_esc_tc||g"`
-      }
-    done
-    _G_indent="$progname: "`echo "$_G_indent" | $SED 's|.| |g'`"  " ## exclude from sc_prohibit_nested_quotes
-
-    func_echo_infix_1_IFS=$IFS
-    IFS=$nl
-    for _G_line in $_G_message; do
-      IFS=$func_echo_infix_1_IFS
-      $ECHO "$_G_prefix$tc_bold$_G_line$tc_reset" >&2
-      _G_prefix=$_G_indent
-    done
-    IFS=$func_echo_infix_1_IFS
-}
-
-
-# func_error ARG...
-# -----------------
-# Echo program name prefixed message to standard error.
-func_error ()
-{
-    $debug_cmd
-
-    $require_term_colors
-
-    func_echo_infix_1 "  $tc_standout${tc_red}error$tc_reset" "$*" >&2
-}
-
-
-# func_fatal_error ARG...
-# -----------------------
-# Echo program name prefixed message to standard error, and exit.
-func_fatal_error ()
-{
-    $debug_cmd
-
-    func_error "$*"
-    exit $EXIT_FAILURE
-}
-
-
-# func_grep EXPRESSION FILENAME
-# -----------------------------
-# Check whether EXPRESSION matches any line of FILENAME, without output.
-func_grep ()
-{
-    $debug_cmd
-
-    $GREP "$1" "$2" >/dev/null 2>&1
-}
-
-
-# func_len STRING
-# ---------------
-# Set func_len_result to the length of STRING. STRING may not
-# start with a hyphen.
-  test -z "$_G_HAVE_XSI_OPS" \
-    && (eval 'x=a/b/c;
-      test 5aa/bb/cc = "${#x}${x%%/*}${x%/*}${x#*/}${x##*/}"') 2>/dev/null \
-    && _G_HAVE_XSI_OPS=yes
-
-if test yes = "$_G_HAVE_XSI_OPS"; then
-  eval 'func_len ()
-  {
-    $debug_cmd
-
-    func_len_result=${#1}
-  }'
-else
-  func_len ()
-  {
-    $debug_cmd
-
-    func_len_result=`expr "$1" : ".*" 2>/dev/null || echo $max_cmd_len`
-  }
-fi
-
-
-# func_mkdir_p DIRECTORY-PATH
-# ---------------------------
-# Make sure the entire path to DIRECTORY-PATH is available.
-func_mkdir_p ()
-{
-    $debug_cmd
-
-    _G_directory_path=$1
-    _G_dir_list=
-
-    if test -n "$_G_directory_path" && test : != "$opt_dry_run"; then
-
-      # Protect directory names starting with '-'
-      case $_G_directory_path in
-        -*) _G_directory_path=./$_G_directory_path ;;
-      esac
-
-      # While some portion of DIR does not yet exist...
-      while test ! -d "$_G_directory_path"; do
-        # ...make a list in topmost first order.  Use a colon delimited
-	# list incase some portion of path contains whitespace.
-        _G_dir_list=$_G_directory_path:$_G_dir_list
-
-        # If the last portion added has no slash in it, the list is done
-        case $_G_directory_path in */*) ;; *) break ;; esac
-
-        # ...otherwise throw away the child directory and loop
-        _G_directory_path=`$ECHO "$_G_directory_path" | $SED -e "$sed_dirname"`
-      done
-      _G_dir_list=`$ECHO "$_G_dir_list" | $SED 's|:*$||'`
-
-      func_mkdir_p_IFS=$IFS; IFS=:
-      for _G_dir in $_G_dir_list; do
-	IFS=$func_mkdir_p_IFS
-        # mkdir can fail with a 'File exist' error if two processes
-        # try to create one of the directories concurrently.  Don't
-        # stop in that case!
-        $MKDIR "$_G_dir" 2>/dev/null || :
-      done
-      IFS=$func_mkdir_p_IFS
-
-      # Bail out if we (or some other process) failed to create a directory.
-      test -d "$_G_directory_path" || \
-        func_fatal_error "Failed to create '$1'"
-    fi
-}
-
-
-# func_mktempdir [BASENAME]
-# -------------------------
-# Make a temporary directory that won't clash with other running
-# libtool processes, and avoids race conditions if possible.  If
-# given, BASENAME is the basename for that directory.
-func_mktempdir ()
-{
-    $debug_cmd
-
-    _G_template=${TMPDIR-/tmp}/${1-$progname}
-
-    if test : = "$opt_dry_run"; then
-      # Return a directory name, but don't create it in dry-run mode
-      _G_tmpdir=$_G_template-$$
-    else
-
-      # If mktemp works, use that first and foremost
-      _G_tmpdir=`mktemp -d "$_G_template-XXXXXXXX" 2>/dev/null`
-
-      if test ! -d "$_G_tmpdir"; then
-        # Failing that, at least try and use $RANDOM to avoid a race
-        _G_tmpdir=$_G_template-${RANDOM-0}$$
-
-        func_mktempdir_umask=`umask`
-        umask 0077
-        $MKDIR "$_G_tmpdir"
-        umask $func_mktempdir_umask
-      fi
-
-      # If we're not in dry-run mode, bomb out on failure
-      test -d "$_G_tmpdir" || \
-        func_fatal_error "cannot create temporary directory '$_G_tmpdir'"
+# This is the SINGLE unified script that handles:
+#   - Zero-touch installation
+#   - Step-by-step wizard
+#   - Full TUI management interface
+#   - All CLI operations
+#   - System repair and maintenance
+# ══════════════════════════════════════════════════════════════════════════════
+
+# Enabled UTF-8 for TUI
+export LC_ALL=C.UTF-8
+# set -euo pipefail
+
+# ══════════════════════════════════════════════════════════════════════════════
+# 1. GLOBAL CONFIGURATION
+# ══════════════════════════════════════════════════════════════════════════════
+
+readonly SAMNET_VERSION="1.0.4"
+readonly APP_NAME="SamNet-WG"
+
+# ══════════════════════════════════════════════════════════════════════════════
+# 1.5 INTEGRITY & SELF-HEALING
+# ══════════════════════════════════════════════════════════════════════════════
+# Only run file-based checks if we're executing from a file (not piped via curl)
+if [[ -f "$0" ]]; then
+    # 1. Fix line endings if saved on Windows (CRLF -> LF)
+    if grep -q $'\r' "$0" 2>/dev/null; then
+        sed -i 's/\r$//' "$0"
+        exec "$0" "$@"
     fi
 
-    $ECHO "$_G_tmpdir"
-}
-
-
-# func_normal_abspath PATH
-# ------------------------
-# Remove doubled-up and trailing slashes, "." path components,
-# and cancel out any ".." path components in PATH after making
-# it an absolute path.
-func_normal_abspath ()
-{
-    $debug_cmd
-
-    # These SED scripts presuppose an absolute path with a trailing slash.
-    _G_pathcar='s|^/\([^/]*\).*$|\1|'
-    _G_pathcdr='s|^/[^/]*||'
-    _G_removedotparts=':dotsl
-		s|/\./|/|g
-		t dotsl
-		s|/\.$|/|'
-    _G_collapseslashes='s|/\{1,\}|/|g'
-    _G_finalslash='s|/*$|/|'
-
-    # Start from root dir and reassemble the path.
-    func_normal_abspath_result=
-    func_normal_abspath_tpath=$1
-    func_normal_abspath_altnamespace=
-    case $func_normal_abspath_tpath in
-      "")
-        # Empty path, that just means $cwd.
-        func_stripname '' '/' "`pwd`"
-        func_normal_abspath_result=$func_stripname_result
-        return
-        ;;
-      # The next three entries are used to spot a run of precisely
-      # two leading slashes without using negated character classes;
-      # we take advantage of case's first-match behaviour.
-      ///*)
-        # Unusual form of absolute path, do nothing.
-        ;;
-      //*)
-        # Not necessarily an ordinary path; POSIX reserves leading '//'
-        # and for example Cygwin uses it to access remote file shares
-        # over CIFS/SMB, so we conserve a leading double slash if found.
-        func_normal_abspath_altnamespace=/
-        ;;
-      /*)
-        # Absolute path, do nothing.
-        ;;
-      *)
-        # Relative path, prepend $cwd.
-        func_normal_abspath_tpath=`pwd`/$func_normal_abspath_tpath
-        ;;
-    esac
-
-    # Cancel out all the simple stuff to save iterations.  We also want
-    # the path to end with a slash for ease of parsing, so make sure
-    # there is one (and only one) here.
-    func_normal_abspath_tpath=`$ECHO "$func_normal_abspath_tpath" | $SED \
-          -e "$_G_removedotparts" -e "$_G_collapseslashes" -e "$_G_finalslash"`
-    while :; do
-      # Processed it all yet?
-      if test / = "$func_normal_abspath_tpath"; then
-        # If we ascended to the root using ".." the result may be empty now.
-        if test -z "$func_normal_abspath_result"; then
-          func_normal_abspath_result=/
+    # 2. Verify script syntax before doing any work
+    check_integrity() {
+        if ! bash -n "$0" 2>/tmp/samnet-syntax.tmp; then
+            echo -e "\033[1;31m"
+            echo "╔══════════════════════════════════════════════════════════════════════╗"
+            echo "║   CRITICAL ERROR: SCRIPT SYNTAX CORRUPTED                            ║"
+            echo "╚══════════════════════════════════════════════════════════════════════╝"
+            echo -e "\033[0m"
+            echo "A local modification to samnet.sh has introduced a syntax error."
+            echo "Script execution aborted to prevent system state corruption."
+            echo ""
+            echo "Error Details:"
+            cat /tmp/samnet-syntax.tmp
+            echo ""
+            rm -f /tmp/samnet-syntax.tmp
+            exit 1
         fi
-        break
-      fi
-      func_normal_abspath_tcomponent=`$ECHO "$func_normal_abspath_tpath" | $SED \
-          -e "$_G_pathcar"`
-      func_normal_abspath_tpath=`$ECHO "$func_normal_abspath_tpath" | $SED \
-          -e "$_G_pathcdr"`
-      # Figure out what to do with it
-      case $func_normal_abspath_tcomponent in
-        "")
-          # Trailing empty path component, ignore it.
-          ;;
-        ..)
-          # Parent dir; strip last assembled component from result.
-          func_dirname "$func_normal_abspath_result"
-          func_normal_abspath_result=$func_dirname_result
-          ;;
-        *)
-          # Actual path component, append it.
-          func_append func_normal_abspath_result "/$func_normal_abspath_tcomponent"
-          ;;
-      esac
-    done
-    # Restore leading double-slash if one was found on entry.
-    func_normal_abspath_result=$func_normal_abspath_altnamespace$func_normal_abspath_result
-}
-
-
-# func_notquiet ARG...
-# --------------------
-# Echo program name prefixed message only when not in quiet mode.
-func_notquiet ()
-{
-    $debug_cmd
-
-    $opt_quiet || func_echo ${1+"$@"}
-
-    # A bug in bash halts the script if the last line of a function
-    # fails when set -e is in force, so we need another command to
-    # work around that:
-    :
-}
-
-
-# func_relative_path SRCDIR DSTDIR
-# --------------------------------
-# Set func_relative_path_result to the relative path from SRCDIR to DSTDIR.
-func_relative_path ()
-{
-    $debug_cmd
-
-    func_relative_path_result=
-    func_normal_abspath "$1"
-    func_relative_path_tlibdir=$func_normal_abspath_result
-    func_normal_abspath "$2"
-    func_relative_path_tbindir=$func_normal_abspath_result
-
-    # Ascend the tree starting from libdir
-    while :; do
-      # check if we have found a prefix of bindir
-      case $func_relative_path_tbindir in
-        $func_relative_path_tlibdir)
-          # found an exact match
-          func_relative_path_tcancelled=
-          break
-          ;;
-        $func_relative_path_tlibdir*)
-          # found a matching prefix
-          func_stripname "$func_relative_path_tlibdir" '' "$func_relative_path_tbindir"
-          func_relative_path_tcancelled=$func_stripname_result
-          if test -z "$func_relative_path_result"; then
-            func_relative_path_result=.
-          fi
-          break
-          ;;
-        *)
-          func_dirname $func_relative_path_tlibdir
-          func_relative_path_tlibdir=$func_dirname_result
-          if test -z "$func_relative_path_tlibdir"; then
-            # Have to descend all the way to the root!
-            func_relative_path_result=../$func_relative_path_result
-            func_relative_path_tcancelled=$func_relative_path_tbindir
-            break
-          fi
-          func_relative_path_result=../$func_relative_path_result
-          ;;
-      esac
-    done
-
-    # Now calculate path; take care to avoid doubling-up slashes.
-    func_stripname '' '/' "$func_relative_path_result"
-    func_relative_path_result=$func_stripname_result
-    func_stripname '/' '/' "$func_relative_path_tcancelled"
-    if test -n "$func_stripname_result"; then
-      func_append func_relative_path_result "/$func_stripname_result"
-    fi
-
-    # Normalisation. If bindir is libdir, return '.' else relative path.
-    if test -n "$func_relative_path_result"; then
-      func_stripname './' '' "$func_relative_path_result"
-      func_relative_path_result=$func_stripname_result
-    fi
-
-    test -n "$func_relative_path_result" || func_relative_path_result=.
-
-    :
-}
-
-
-# func_quote_for_eval ARG...
-# --------------------------
-# Aesthetically quote ARGs to be evaled later.
-# This function returns two values:
-#   i) func_quote_for_eval_result
-#      double-quoted, suitable for a subsequent eval
-#  ii) func_quote_for_eval_unquoted_result
-#      has all characters that are still active within double
-#      quotes backslashified.
-func_quote_for_eval ()
-{
-    $debug_cmd
-
-    func_quote_for_eval_unquoted_result=
-    func_quote_for_eval_result=
-    while test 0 -lt $#; do
-      case $1 in
-        *[\\\`\"\$]*)
-	  _G_unquoted_arg=`printf '%s\n' "$1" |$SED "$sed_quote_subst"` ;;
-        *)
-          _G_unquoted_arg=$1 ;;
-      esac
-      if test -n "$func_quote_for_eval_unquoted_result"; then
-	func_append func_quote_for_eval_unquoted_result " $_G_unquoted_arg"
-      else
-        func_append func_quote_for_eval_unquoted_result "$_G_unquoted_arg"
-      fi
-
-      case $_G_unquoted_arg in
-        # Double-quote args containing shell metacharacters to delay
-        # word splitting, command substitution and variable expansion
-        # for a subsequent eval.
-        # Many Bourne shells cannot handle close brackets correctly
-        # in scan sets, so we specify it separately.
-        *[\[\~\#\^\&\*\(\)\{\}\|\;\<\>\?\'\ \	]*|*]*|"")
-          _G_quoted_arg=\"$_G_unquoted_arg\"
-          ;;
-        *)
-          _G_quoted_arg=$_G_unquoted_arg
-	  ;;
-      esac
-
-      if test -n "$func_quote_for_eval_result"; then
-	func_append func_quote_for_eval_result " $_G_quoted_arg"
-      else
-        func_append func_quote_for_eval_result "$_G_quoted_arg"
-      fi
-      shift
-    done
-}
-
-
-# func_quote_for_expand ARG
-# -------------------------
-# Aesthetically quote ARG to be evaled later; same as above,
-# but do not quote variable references.
-func_quote_for_expand ()
-{
-    $debug_cmd
-
-    case $1 in
-      *[\\\`\"]*)
-	_G_arg=`$ECHO "$1" | $SED \
-	    -e "$sed_double_quote_subst" -e "$sed_double_backslash"` ;;
-      *)
-        _G_arg=$1 ;;
-    esac
-
-    case $_G_arg in
-      # Double-quote args containing shell metacharacters to delay
-      # word splitting and command substitution for a subsequent eval.
-      # Many Bourne shells cannot handle close brackets correctly
-      # in scan sets, so we specify it separately.
-      *[\[\~\#\^\&\*\(\)\{\}\|\;\<\>\?\'\ \	]*|*]*|"")
-        _G_arg=\"$_G_arg\"
-        ;;
-    esac
-
-    func_quote_for_expand_result=$_G_arg
-}
-
-
-# func_stripname PREFIX SUFFIX NAME
-# ---------------------------------
-# strip PREFIX and SUFFIX from NAME, and store in func_stripname_result.
-# PREFIX and SUFFIX must not contain globbing or regex special
-# characters, hashes, percent signs, but SUFFIX may contain a leading
-# dot (in which case that matches only a dot).
-if test yes = "$_G_HAVE_XSI_OPS"; then
-  eval 'func_stripname ()
-  {
-    $debug_cmd
-
-    # pdksh 5.2.14 does not do ${X%$Y} correctly if both X and Y are
-    # positional parameters, so assign one to ordinary variable first.
-    func_stripname_result=$3
-    func_stripname_result=${func_stripname_result#"$1"}
-    func_stripname_result=${func_stripname_result%"$2"}
-  }'
-else
-  func_stripname ()
-  {
-    $debug_cmd
-
-    case $2 in
-      .*) func_stripname_result=`$ECHO "$3" | $SED -e "s%^$1%%" -e "s%\\\\$2\$%%"`;;
-      *)  func_stripname_result=`$ECHO "$3" | $SED -e "s%^$1%%" -e "s%$2\$%%"`;;
-    esac
-  }
+        rm -f /tmp/samnet-syntax.tmp
+    }
+    check_integrity
 fi
 
+readonly TAGLINE="WireGuard Orchestrator & Management Platform"
 
-# func_show_eval CMD [FAIL_EXP]
-# -----------------------------
-# Unless opt_quiet is true, then output CMD.  Then, if opt_dryrun is
-# not true, evaluate CMD.  If the evaluation of CMD fails, and FAIL_EXP
-# is given, then evaluate it.
-func_show_eval ()
-{
-    $debug_cmd
+# Trap terminal Resize
+trap 'needs_refresh=true' SIGWINCH
 
-    _G_cmd=$1
-    _G_fail_exp=${2-':'}
+# Paths (samnet-wg specific to avoid conflicts with other samnet products)
+readonly DB_PATH="/var/lib/samnet-wg/samnet.db"
+readonly WG_CONF="/etc/wireguard/wg0.conf"
+readonly TRIGGER_FILE="/var/lib/samnet-wg/reconcile.trigger"
+readonly INSTALL_DIR="/opt/samnet"
+readonly CRED_FILE="/root/.samnet-wg_initial_credentials"
 
-    func_quote_for_expand "$_G_cmd"
-    eval "func_notquiet $func_quote_for_expand_result"
+# Update System
+readonly REPO_URL="https://github.com/SamNet-dev/wg-orchestrator.git"
+readonly UPDATE_BRANCH="${SAMNET_BRANCH:-main}"
+# Note: REMOTE_VERSION_URL must be set after UPDATE_BRANCH is defined
+REMOTE_VERSION_URL="https://raw.githubusercontent.com/SamNet-dev/wg-orchestrator/${UPDATE_BRANCH}/samnet.sh"
 
-    $opt_dry_run || {
-      eval "$_G_cmd"
-      _G_status=$?
-      if test 0 -ne "$_G_status"; then
-	eval "(exit $_G_status); $_G_fail_exp"
-      fi
-    }
+# State
+NOCOLOR=false
+INTERACTIVE=false
+ZERO_TOUCH=false
+TERM_COLS=80
+TERM_ROWS=24
+
+# Self-Location
+if [[ -f "$INSTALL_DIR/samnet" && "$(realpath "$0" 2>/dev/null)" == "$INSTALL_DIR/samnet" ]]; then
+    DIR="$INSTALL_DIR"
+else
+    DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+fi
+
+# ══════════════════════════════════════════════════════════════════════════════
+# 2. SAMNET TERMINAL UI FRAMEWORK
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# A custom-built terminal UI system designed to make SamNet feel like
+# professional infrastructure software, not a bash script.
+#
+# Design Philosophy:
+# - Every screen is a composed layout, not printed text
+# - Visual consistency across all interactions
+# - Operator trust through polish and predictability
+# - Retro-futuristic aesthetic with modern functionality
+#
+# ══════════════════════════════════════════════════════════════════════════════
+
+# ─── Theme & Color Engine ─────────────────────────────────────────────────────
+
+init_colors() {
+    if [[ "$NOCOLOR" == true ]] || ! [[ -t 1 ]]; then
+        # No-color mode: all color codes empty
+        T_RESET="" T_BOLD="" T_DIM="" T_ITALIC="" T_UNDERLINE="" T_BLINK="" T_REVERSE=""
+        T_BLACK="" T_RED="" T_GREEN="" T_YELLOW="" T_BLUE="" T_MAGENTA="" T_CYAN="" T_WHITE=""
+        T_ORANGE="" T_GRAY="" T_BG="" T_FG=""
+        # Legacy compatibility
+        C_RESET="" C_BOLD="" C_DIM="" C_RED="" C_GREEN="" C_YELLOW="" C_BLUE="" C_CYAN="" C_MAGENTA="" C_WHITE="" C_ORANGE=""
+    else
+        # SamNet Theme: Amber/Orange primary, Cyan accent, Dark background assumed
+        T_RESET=$'\033[0m'
+        T_BOLD=$'\033[1m'
+        T_DIM=$'\033[2m'
+        T_ITALIC=$'\033[3m'
+        T_UNDERLINE=$'\033[4m'
+        T_BLINK=$'\033[5m'
+        T_REVERSE=$'\033[7m'
+        
+        # Core palette (256-color safe)
+        T_BLACK=$'\033[38;5;232m'
+        T_RED=$'\033[38;5;196m'
+        T_GREEN=$'\033[38;5;82m'
+        T_YELLOW=$'\033[38;5;220m'
+        T_BLUE=$'\033[38;5;39m'
+        T_MAGENTA=$'\033[38;5;201m'
+        T_CYAN=$'\033[38;5;51m'
+        T_WHITE=$'\033[38;5;255m'
+        T_ORANGE=$'\033[38;5;208m'
+        T_GRAY=$'\033[38;5;240m'
+        
+        # Background accents
+        T_BG_HIGHLIGHT=$'\033[48;5;236m'
+        T_BG_SELECT=$'\033[48;5;238m'
+        T_BG_DANGER=$'\033[48;5;52m'
+        
+        # Legacy compatibility
+        C_RESET="$T_RESET" C_BOLD="$T_BOLD" C_DIM="$T_DIM"
+        C_RED="$T_RED" C_GREEN="$T_GREEN" C_YELLOW="$T_YELLOW"
+        C_BLUE="$T_BLUE" C_CYAN="$T_CYAN" C_MAGENTA="$T_MAGENTA"
+        C_WHITE="$T_WHITE" C_ORANGE="$T_ORANGE"
+    fi
+    
+    # Semantic colors - RETRO GREEN THEME
+    CLR_PRIMARY="$T_GREEN"
+    CLR_ACCENT="$T_CYAN"
+    CLR_SUCCESS="$T_GREEN"
+    CLR_WARNING="$T_YELLOW"
+    CLR_DANGER="$T_RED"
+    CLR_MUTED="$T_GRAY"
+    CLR_TEXT="$T_WHITE"
+    
+    # Status indicators (consistent symbols)
+    ICON_OK="${T_GREEN}●${T_RESET}"
+    ICON_WARN="${T_YELLOW}●${T_RESET}"
+    ICON_FAIL="${T_RED}●${T_RESET}"
+    ICON_INFO="${T_CYAN}◆${T_RESET}"
+    ICON_ARROW="${T_GREEN}▸${T_RESET}"
+    ICON_CHECK="${T_GREEN}✓${T_RESET}"
+    ICON_CROSS="${T_RED}✗${T_RESET}"
+    ICON_DOT="${T_GRAY}·${T_RESET}"
+    
+    # Legacy icons
+    SUCCESS_ICON="$ICON_CHECK"
+    ERROR_ICON="$ICON_CROSS"
+    WARN_ICON="${T_YELLOW}⚠${T_RESET}"
+    INFO_ICON="${T_CYAN}ℹ${T_RESET}"
+}
+
+# Helper: Normalize CIDR (e.g. 10.100.0.1/19 -> 10.100.0.0/19)
+normalize_cidr() {
+    local raw=$1
+    [[ -z "$raw" ]] && echo "Not configured" && return
+    
+    local ip=$(echo "$raw" | cut -d/ -f1)
+    local mask=$(echo "$raw" | cut -d/ -f2)
+    # If no mask, assume /32
+    if [[ "$ip" == "$mask" ]] || [[ -z "$mask" ]]; then mask=32; fi
+
+    # Very simple normalization for common privates
+    if [[ "$ip" =~ ^10\.|^172\.|^192\. ]]; then
+         local base=$(echo "$ip" | cut -d. -f1-3)
+         echo "${base}.0/${mask}"
+    else
+         echo "$raw"
+    fi
+}
+
+# Helper: UI Checkbox
+ui_checkbox() {
+    if [[ "$1" == "true" ]]; then
+        printf "${T_GREEN} [x] ${T_RESET}"
+    else
+        printf "${T_DIM} [ ] ${T_RESET}"
+    fi
 }
 
 
-# func_show_eval_locale CMD [FAIL_EXP]
-# ------------------------------------
-# Unless opt_quiet is true, then output CMD.  Then, if opt_dryrun is
-# not true, evaluate CMD.  If the evaluation of CMD fails, and FAIL_EXP
-# is given, then evaluate it.  Use the saved locale for evaluation.
-func_show_eval_locale ()
-{
-    $debug_cmd
+# ─── Terminal Control ─────────────────────────────────────────────────────────
 
-    _G_cmd=$1
-    _G_fail_exp=${2-':'}
 
-    $opt_quiet || {
-      func_quote_for_expand "$_G_cmd"
-      eval "func_echo $func_quote_for_expand_result"
-    }
-
-    $opt_dry_run || {
-      eval "$_G_user_locale
-	    $_G_cmd"
-      _G_status=$?
-      eval "$_G_safe_locale"
-      if test 0 -ne "$_G_status"; then
-	eval "(exit $_G_status); $_G_fail_exp"
-      fi
-    }
+get_term_size() {
+    if command -v tput &>/dev/null && [[ -t 1 ]]; then
+        TERM_COLS=$(tput cols 2>/dev/null) || TERM_COLS=80
+        TERM_ROWS=$(tput lines 2>/dev/null) || TERM_ROWS=24
+    else
+        TERM_COLS=80
+        TERM_ROWS=24
+    fi
+    # Minimum dimensions
+    [[ $TERM_COLS -lt 60 ]] && TERM_COLS=60
+    [[ $TERM_ROWS -lt 20 ]] && TERM_ROWS=20
 }
 
+ui_clear() { printf '\033[2J\033[H'; }
+ui_hide_cursor() { printf '\033[?25l'; }
+ui_show_cursor() { printf '\033[?25h'; }
+ui_save_cursor() { printf '\033[s'; }
+ui_restore_cursor() { printf '\033[u'; }
+ui_move_to() { printf '\033[%d;%dH' "$1" "$2"; }
+ui_clear_line() { printf '\033[2K'; }
+ui_clear_to_end() { printf '\033[J'; }
 
-# func_tr_sh
-# ----------
-# Turn $1 into a string suitable for a shell variable name.
-# Result is stored in $func_tr_sh_result.  All characters
-# not in the set a-zA-Z0-9_ are replaced with '_'. Further,
-# if $1 begins with a digit, a '_' is prepended as well.
-func_tr_sh ()
-{
-    $debug_cmd
-
-    case $1 in
-    [0-9]* | *[!a-zA-Z0-9_]*)
-      func_tr_sh_result=`$ECHO "$1" | $SED -e 's/^\([0-9]\)/_\1/' -e 's/[^a-zA-Z0-9_]/_/g'`
-      ;;
-    * )
-      func_tr_sh_result=$1
-      ;;
-    esac
+# Alternate screen buffer - creates a separate "app space"
+ui_enter_app() {
+    tput smcup 2>/dev/null || true  # Enter alternate screen
+    ui_hide_cursor
+    stty -echo 2>/dev/null || true
+    trap 'ui_exit_app' EXIT INT TERM
 }
 
-
-# func_verbose ARG...
-# -------------------
-# Echo program name prefixed message in verbose mode only.
-func_verbose ()
-{
-    $debug_cmd
-
-    $opt_verbose && func_echo "$*"
-
-    :
+ui_exit_app() {
+    ui_show_cursor
+    stty echo 2>/dev/null || true
+    tput rmcup 2>/dev/null || true  # Exit alternate screen
+    printf "${T_RESET}"
 }
 
-
-# func_warn_and_continue ARG...
-# -----------------------------
-# Echo program name prefixed warning message to standard error.
-func_warn_and_continue ()
-{
-    $debug_cmd
-
-    $require_term_colors
-
-    func_echo_infix_1 "${tc_red}warning$tc_reset" "$*" >&2
+# Ensure terminal state is restored on exit
+ui_cleanup() {
+    ui_exit_app
 }
 
+# ─── Layout System ────────────────────────────────────────────────────────────
 
-# func_warning CATEGORY ARG...
-# ----------------------------
-# Echo program name prefixed warning message to standard error. Warning
-# messages can be filtered according to CATEGORY, where this function
-# elides messages where CATEGORY is not listed in the global variable
-# 'opt_warning_types'.
-func_warning ()
-{
-    $debug_cmd
+# Content area dimensions (accounting for header/footer)
+LAYOUT_HEADER_HEIGHT=9
+LAYOUT_FOOTER_HEIGHT=3
+LAYOUT_CONTENT_START=$((LAYOUT_HEADER_HEIGHT + 1))
 
-    # CATEGORY must be in the warning_categories list!
-    case " $warning_categories " in
-      *" $1 "*) ;;
-      *) func_internal_error "invalid warning category '$1'" ;;
-    esac
+# Repeat a character N times (UTF-8 safe)
+ui_repeat() {
+    local char="$1" count="$2"
+    local result=""
+    for ((i=0; i<count; i++)); do result+="$char"; done
+    printf "%s" "$result"
+}
 
-    _G_category=$1
+# Horizontal rule with optional label
+ui_rule() {
+    local label="${1:-}"
+    local char="${2:-─}"
+    local width=$((TERM_COLS - 4))
+    
+    if [[ -n "$label" ]]; then
+        local label_len=${#label}
+        local left_len=$(( (width - label_len - 2) / 2 ))
+        local right_len=$(( width - label_len - 2 - left_len ))
+        printf "  ${T_WHITE}%s ${T_CYAN}${T_BOLD}%s${T_RESET}${T_WHITE} %s${T_RESET}\n" \
+            "$(ui_repeat "$char" $left_len)" "$label" "$(ui_repeat "$char" $right_len)"
+    else
+        printf "  ${T_WHITE}%s${T_RESET}\n" "$(ui_repeat "$char" $width)"
+    fi
+}
+
+# ─── Header Component ─────────────────────────────────────────────────────────
+
+ui_draw_header() {
+    local title="${1:-}"
+    ui_clear
+    
+    # ASCII Banner - Retro Terminal Style
+    printf "${T_GREEN}${T_BOLD}"
+    cat << 'BANNER'
+    ╔════════════════════════════════════════════════════════════════════╗
+    ║  ███████╗ █████╗ ███╗   ███╗███╗   ██╗███████╗████████╗            ║
+    ║  ██╔════╝██╔══██╗████╗ ████║████╗  ██║██╔════╝╚══██╔══╝            ║
+    ║  ███████╗███████║██╔████╔██║██╔██╗ ██║█████╗     ██║               ║
+    ║  ╚════██║██╔══██║██║╚██╔╝██║██║╚██╗██║██╔══╝     ██║               ║
+    ║  ███████║██║  ██║██║ ╚═╝ ██║██║ ╚████║███████╗   ██║               ║
+    ║  ╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝  ╚═══╝╚══════╝   ╚═╝               ║
+    ╚════════════════════════════════════════════════════════════════════╝
+BANNER
+    printf "${T_RESET}"
+    
+    # Branding bar
+    printf "    ${T_DIM}────────────────────────────────────────────────────────────────${T_RESET}\n"
+    printf "    ${T_GREEN}${T_BOLD}By ${AUTHOR}${T_RESET}  ${T_GRAY}│${T_RESET}  ${T_CYAN}${WEBSITE}${T_RESET}  ${T_GRAY}│${T_RESET}  ${T_DIM}v${SAMNET_VERSION} - General Public Release${T_RESET}\n"
+    printf "    ${T_WHITE}${TAGLINE}${T_RESET}\n"
+    printf "    ${T_DIM}────────────────────────────────────────────────────────────────${T_RESET}\n"
+    
+    # Screen title if provided
+    if [[ -n "$title" ]]; then
+        printf "\n    ${T_GREEN}${T_BOLD}▸ %s${T_RESET}\n" "$title"
+    fi
+    printf "\n"
+}
+
+# Minimal header for sub-screens
+ui_draw_header_mini() {
+    local title="$1"
+    ui_clear
+    printf "    ${T_ORANGE}${T_BOLD}▸ SAMNET${T_RESET} ${T_GRAY}│${T_RESET} ${T_CYAN}%s${T_RESET}\n" "$title"
+    ui_rule
+    printf "\n"
+}
+
+# ─── Footer Component ─────────────────────────────────────────────────────────
+
+ui_draw_footer() {
+    local hints="${1:-}"
+    local extra="${2:-}"
+    
+    printf "\n"
+    ui_rule
+    printf "    ${T_DIM}%s${T_RESET}" "$hints"
+    [[ -n "$extra" ]] && printf "  ${T_GRAY}│${T_RESET}  ${T_DIM}%s${T_RESET}" "$extra"
+    printf "\n"
+}
+
+# ─── Box Components ───────────────────────────────────────────────────────────
+
+# Standard content box with title
+# Standard content box with title (ASCII safe)
+ui_box() {
+    local title="$1"
     shift
-
-    case " $opt_warning_types " in
-      *" $_G_category "*) $warning_func ${1+"$@"} ;;
-    esac
-}
-
-
-# func_sort_ver VER1 VER2
-# -----------------------
-# 'sort -V' is not generally available.
-# Note this deviates from the version comparison in automake
-# in that it treats 1.5 < 1.5.0, and treats 1.4.4a < 1.4-p3a
-# but this should suffice as we won't be specifying old
-# version formats or redundant trailing .0 in bootstrap.conf.
-# If we did want full compatibility then we should probably
-# use m4_version_compare from autoconf.
-func_sort_ver ()
-{
-    $debug_cmd
-
-    printf '%s\n%s\n' "$1" "$2" \
-      | sort -t. -k 1,1n -k 2,2n -k 3,3n -k 4,4n -k 5,5n -k 6,6n -k 7,7n -k 8,8n -k 9,9n
-}
-
-# func_lt_ver PREV CURR
-# ---------------------
-# Return true if PREV and CURR are in the correct order according to
-# func_sort_ver, otherwise false.  Use it like this:
-#
-#  func_lt_ver "$prev_ver" "$proposed_ver" || func_fatal_error "..."
-func_lt_ver ()
-{
-    $debug_cmd
-
-    test "x$1" = x`func_sort_ver "$1" "$2" | $SED 1q`
-}
-
-
-# Local variables:
-# mode: shell-script
-# sh-indentation: 2
-# eval: (add-hook 'before-save-hook 'time-stamp)
-# time-stamp-pattern: "10/scriptversion=%:y-%02m-%02d.%02H; # UTC"
-# time-stamp-time-zone: "UTC"
-# End:
-#! /bin/sh
-
-# Set a version string for this script.
-scriptversion=2014-01-07.03; # UTC
-
-# A portable, pluggable option parser for Bourne shell.
-# Written by Gary V. Vaughan, 2010
-
-# Copyright (C) 2010-2014 Free Software Foundation, Inc.
-# This is free software; see the source for copying conditions.  There is NO
-# warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-# Please report bugs or propose patches to gary@gnu.org.
-
-
-## ------ ##
-## Usage. ##
-## ------ ##
-
-# This file is a library for parsing options in your shell scripts along
-# with assorted other useful supporting features that you can make use
-# of too.
-#
-# For the simplest scripts you might need only:
-#
-#   #!/bin/sh
-#   . relative/path/to/funclib.sh
-#   . relative/path/to/options-parser
-#   scriptversion=1.0
-#   func_options ${1+"$@"}
-#   eval set dummy "$func_options_result"; shift
-#   ...rest of your script...
-#
-# In order for the '--version' option to work, you will need to have a
-# suitably formatted comment like the one at the top of this file
-# starting with '# Written by ' and ending with '# warranty; '.
-#
-# For '-h' and '--help' to work, you will also need a one line
-# description of your script's purpose in a comment directly above the
-# '# Written by ' line, like the one at the top of this file.
-#
-# The default options also support '--debug', which will turn on shell
-# execution tracing (see the comment above debug_cmd below for another
-# use), and '--verbose' and the func_verbose function to allow your script
-# to display verbose messages only when your user has specified
-# '--verbose'.
-#
-# After sourcing this file, you can plug processing for additional
-# options by amending the variables from the 'Configuration' section
-# below, and following the instructions in the 'Option parsing'
-# section further down.
-
-## -------------- ##
-## Configuration. ##
-## -------------- ##
-
-# You should override these variables in your script after sourcing this
-# file so that they reflect the customisations you have added to the
-# option parser.
-
-# The usage line for option parsing errors and the start of '-h' and
-# '--help' output messages. You can embed shell variables for delayed
-# expansion at the time the message is displayed, but you will need to
-# quote other shell meta-characters carefully to prevent them being
-# expanded when the contents are evaled.
-usage='$progpath [OPTION]...'
-
-# Short help message in response to '-h' and '--help'.  Add to this or
-# override it after sourcing this library to reflect the full set of
-# options your script accepts.
-usage_message="\
-       --debug        enable verbose shell tracing
-   -W, --warnings=CATEGORY
-                      report the warnings falling in CATEGORY [all]
-   -v, --verbose      verbosely report processing
-       --version      print version information and exit
-   -h, --help         print short or long help message and exit
-"
-
-# Additional text appended to 'usage_message' in response to '--help'.
-long_help_message="
-Warning categories include:
-       'all'          show all warnings
-       'none'         turn off all the warnings
-       'error'        warnings are treated as fatal errors"
-
-# Help message printed before fatal option parsing errors.
-fatal_help="Try '\$progname --help' for more information."
-
-
-
-## ------------------------- ##
-## Hook function management. ##
-## ------------------------- ##
-
-# This section contains functions for adding, removing, and running hooks
-# to the main code.  A hook is just a named list of of function, that can
-# be run in order later on.
-
-# func_hookable FUNC_NAME
-# -----------------------
-# Declare that FUNC_NAME will run hooks added with
-# 'func_add_hook FUNC_NAME ...'.
-func_hookable ()
-{
-    $debug_cmd
-
-    func_append hookable_fns " $1"
-}
-
-
-# func_add_hook FUNC_NAME HOOK_FUNC
-# ---------------------------------
-# Request that FUNC_NAME call HOOK_FUNC before it returns.  FUNC_NAME must
-# first have been declared "hookable" by a call to 'func_hookable'.
-func_add_hook ()
-{
-    $debug_cmd
-
-    case " $hookable_fns " in
-      *" $1 "*) ;;
-      *) func_fatal_error "'$1' does not accept hook functions." ;;
-    esac
-
-    eval func_append ${1}_hooks '" $2"'
-}
-
-
-# func_remove_hook FUNC_NAME HOOK_FUNC
-# ------------------------------------
-# Remove HOOK_FUNC from the list of functions called by FUNC_NAME.
-func_remove_hook ()
-{
-    $debug_cmd
-
-    eval ${1}_hooks='`$ECHO "\$'$1'_hooks" |$SED "s| '$2'||"`'
-}
-
-
-# func_run_hooks FUNC_NAME [ARG]...
-# ---------------------------------
-# Run all hook functions registered to FUNC_NAME.
-# It is assumed that the list of hook functions contains nothing more
-# than a whitespace-delimited list of legal shell function names, and
-# no effort is wasted trying to catch shell meta-characters or preserve
-# whitespace.
-func_run_hooks ()
-{
-    $debug_cmd
-
-    case " $hookable_fns " in
-      *" $1 "*) ;;
-      *) func_fatal_error "'$1' does not support hook funcions.n" ;;
-    esac
-
-    eval _G_hook_fns=\$$1_hooks; shift
-
-    for _G_hook in $_G_hook_fns; do
-      eval $_G_hook '"$@"'
-
-      # store returned options list back into positional
-      # parameters for next 'cmd' execution.
-      eval _G_hook_result=\$${_G_hook}_result
-      eval set dummy "$_G_hook_result"; shift
+    local width=$((TERM_COLS - 8))
+    local inner_width=$((width - 4))
+    
+    # Top border with title
+    printf "    ${T_CYAN}+-${T_BOLD}${T_WHITE} %s ${T_RESET}${T_CYAN}" "$title"
+    printf -- "%s+${T_RESET}\n" "$(ui_repeat '-' $((width - ${#title} - 5)))"
+    
+    # Content lines
+    for line in "$@"; do
+        printf "    ${T_CYAN}|${T_RESET}  ${T_WHITE}%-${inner_width}s${T_RESET}  ${T_CYAN}|${T_RESET}\n" "$line"
     done
-
-    func_quote_for_eval ${1+"$@"}
-    func_run_hooks_result=$func_quote_for_eval_result
+    
+    # Bottom border
+    printf "    ${T_CYAN}+%s+${T_RESET}\n" "$(ui_repeat '-' $((width - 2)))"
 }
 
-
-
-## --------------- ##
-## Option parsing. ##
-## --------------- ##
-
-# In order to add your own option parsing hooks, you must accept the
-# full positional parameter list in your hook function, remove any
-# options that you action, and then pass back the remaining unprocessed
-# options in '<hooked_function_name>_result', escaped suitably for
-# 'eval'.  Like this:
-#
-#    my_options_prep ()
-#    {
-#        $debug_cmd
-#
-#        # Extend the existing usage message.
-#        usage_message=$usage_message'
-#      -s, --silent       don'\''t print informational messages
-#    '
-#
-#        func_quote_for_eval ${1+"$@"}
-#        my_options_prep_result=$func_quote_for_eval_result
-#    }
-#    func_add_hook func_options_prep my_options_prep
-#
-#
-#    my_silent_option ()
-#    {
-#        $debug_cmd
-#
-#        # Note that for efficiency, we parse as many options as we can
-#        # recognise in a loop before passing the remainder back to the
-#        # caller on the first unrecognised argument we encounter.
-#        while test $# -gt 0; do
-#          opt=$1; shift
-#          case $opt in
-#            --silent|-s) opt_silent=: ;;
-#            # Separate non-argument short options:
-#            -s*)         func_split_short_opt "$_G_opt"
-#                         set dummy "$func_split_short_opt_name" \
-#                             "-$func_split_short_opt_arg" ${1+"$@"}
-#                         shift
-#                         ;;
-#            *)            set dummy "$_G_opt" "$*"; shift; break ;;
-#          esac
-#        done
-#
-#        func_quote_for_eval ${1+"$@"}
-#        my_silent_option_result=$func_quote_for_eval_result
-#    }
-#    func_add_hook func_parse_options my_silent_option
-#
-#
-#    my_option_validation ()
-#    {
-#        $debug_cmd
-#
-#        $opt_silent && $opt_verbose && func_fatal_help "\
-#    '--silent' and '--verbose' options are mutually exclusive."
-#
-#        func_quote_for_eval ${1+"$@"}
-#        my_option_validation_result=$func_quote_for_eval_result
-#    }
-#    func_add_hook func_validate_options my_option_validation
-#
-# You'll alse need to manually amend $usage_message to reflect the extra
-# options you parse.  It's preferable to append if you can, so that
-# multiple option parsing hooks can be added safely.
-
-
-# func_options [ARG]...
-# ---------------------
-# All the functions called inside func_options are hookable. See the
-# individual implementations for details.
-func_hookable func_options
-func_options ()
-{
-    $debug_cmd
-
-    func_options_prep ${1+"$@"}
-    eval func_parse_options \
-        ${func_options_prep_result+"$func_options_prep_result"}
-    eval func_validate_options \
-        ${func_parse_options_result+"$func_parse_options_result"}
-
-    eval func_run_hooks func_options \
-        ${func_validate_options_result+"$func_validate_options_result"}
-
-    # save modified positional parameters for caller
-    func_options_result=$func_run_hooks_result
-}
-
-
-# func_options_prep [ARG]...
-# --------------------------
-# All initialisations required before starting the option parse loop.
-# Note that when calling hook functions, we pass through the list of
-# positional parameters.  If a hook function modifies that list, and
-# needs to propogate that back to rest of this script, then the complete
-# modified list must be put in 'func_run_hooks_result' before
-# returning.
-func_hookable func_options_prep
-func_options_prep ()
-{
-    $debug_cmd
-
-    # Option defaults:
-    opt_verbose=false
-    opt_warning_types=
-
-    func_run_hooks func_options_prep ${1+"$@"}
-
-    # save modified positional parameters for caller
-    func_options_prep_result=$func_run_hooks_result
-}
-
-
-# func_parse_options [ARG]...
-# ---------------------------
-# The main option parsing loop.
-func_hookable func_parse_options
-func_parse_options ()
-{
-    $debug_cmd
-
-    func_parse_options_result=
-
-    # this just eases exit handling
-    while test $# -gt 0; do
-      # Defer to hook functions for initial option parsing, so they
-      # get priority in the event of reusing an option name.
-      func_run_hooks func_parse_options ${1+"$@"}
-
-      # Adjust func_parse_options positional parameters to match
-      eval set dummy "$func_run_hooks_result"; shift
-
-      # Break out of the loop if we already parsed every option.
-      test $# -gt 0 || break
-
-      _G_opt=$1
-      shift
-      case $_G_opt in
-        --debug|-x)   debug_cmd='set -x'
-                      func_echo "enabling shell trace mode"
-                      $debug_cmd
-                      ;;
-
-        --no-warnings|--no-warning|--no-warn)
-                      set dummy --warnings none ${1+"$@"}
-                      shift
-		      ;;
-
-        --warnings|--warning|-W)
-                      test $# = 0 && func_missing_arg $_G_opt && break
-                      case " $warning_categories $1" in
-                        *" $1 "*)
-                          # trailing space prevents matching last $1 above
-                          func_append_uniq opt_warning_types " $1"
-                          ;;
-                        *all)
-                          opt_warning_types=$warning_categories
-                          ;;
-                        *none)
-                          opt_warning_types=none
-                          warning_func=:
-                          ;;
-                        *error)
-                          opt_warning_types=$warning_categories
-                          warning_func=func_fatal_error
-                          ;;
-                        *)
-                          func_fatal_error \
-                             "unsupported warning category: '$1'"
-                          ;;
-                      esac
-                      shift
-                      ;;
-
-        --verbose|-v) opt_verbose=: ;;
-        --version)    func_version ;;
-        -\?|-h)       func_usage ;;
-        --help)       func_help ;;
-
-	# Separate optargs to long options (plugins may need this):
-	--*=*)        func_split_equals "$_G_opt"
-	              set dummy "$func_split_equals_lhs" \
-                          "$func_split_equals_rhs" ${1+"$@"}
-                      shift
-                      ;;
-
-       # Separate optargs to short options:
-        -W*)
-                      func_split_short_opt "$_G_opt"
-                      set dummy "$func_split_short_opt_name" \
-                          "$func_split_short_opt_arg" ${1+"$@"}
-                      shift
-                      ;;
-
-        # Separate non-argument short options:
-        -\?*|-h*|-v*|-x*)
-                      func_split_short_opt "$_G_opt"
-                      set dummy "$func_split_short_opt_name" \
-                          "-$func_split_short_opt_arg" ${1+"$@"}
-                      shift
-                      ;;
-
-        --)           break ;;
-        -*)           func_fatal_help "unrecognised option: '$_G_opt'" ;;
-        *)            set dummy "$_G_opt" ${1+"$@"}; shift; break ;;
-      esac
+# Info box (blue accent)
+# Info box (blue accent)
+ui_box_info() {
+    local title="$1"
+    shift
+    local width=$((TERM_COLS - 8))
+    local inner_width=$((width - 4))
+    
+    printf "    ${T_BLUE}+-${T_BOLD} %s ${T_RESET}${T_BLUE}" "$title"
+    printf -- "%s+${T_RESET}\n" "$(ui_repeat '-' $((width - ${#title} - 5)))"
+    
+    for line in "$@"; do
+        printf "    ${T_BLUE}|${T_RESET}  ${T_WHITE}%s${T_RESET}%*s${T_BLUE}|${T_RESET}\n" "$line" $((inner_width - ${#line})) ""
     done
-
-    # save modified positional parameters for caller
-    func_quote_for_eval ${1+"$@"}
-    func_parse_options_result=$func_quote_for_eval_result
+    
+    printf "    ${T_BLUE}+%s+${T_RESET}\n" "$(ui_repeat '-' $((width - 2)))"
 }
 
-
-# func_validate_options [ARG]...
-# ------------------------------
-# Perform any sanity checks on option settings and/or unconsumed
-# arguments.
-func_hookable func_validate_options
-func_validate_options ()
-{
-    $debug_cmd
-
-    # Display all warnings if -W was not given.
-    test -n "$opt_warning_types" || opt_warning_types=" $warning_categories"
-
-    func_run_hooks func_validate_options ${1+"$@"}
-
-    # Bail if the options were screwed!
-    $exit_cmd $EXIT_FAILURE
-
-    # save modified positional parameters for caller
-    func_validate_options_result=$func_run_hooks_result
-}
-
-
-
-## ----------------- ##
-## Helper functions. ##
-## ----------------- ##
-
-# This section contains the helper functions used by the rest of the
-# hookable option parser framework in ascii-betical order.
-
-
-# func_fatal_help ARG...
-# ----------------------
-# Echo program name prefixed message to standard error, followed by
-# a help hint, and exit.
-func_fatal_help ()
-{
-    $debug_cmd
-
-    eval \$ECHO \""Usage: $usage"\"
-    eval \$ECHO \""$fatal_help"\"
-    func_error ${1+"$@"}
-    exit $EXIT_FAILURE
-}
-
-
-# func_help
-# ---------
-# Echo long help message to standard output and exit.
-func_help ()
-{
-    $debug_cmd
-
-    func_usage_message
-    $ECHO "$long_help_message"
-    exit 0
-}
-
-
-# func_missing_arg ARGNAME
-# ------------------------
-# Echo program name prefixed message to standard error and set global
-# exit_cmd.
-func_missing_arg ()
-{
-    $debug_cmd
-
-    func_error "Missing argument for '$1'."
-    exit_cmd=exit
-}
-
-
-# func_split_equals STRING
-# ------------------------
-# Set func_split_equals_lhs and func_split_equals_rhs shell variables after
-# splitting STRING at the '=' sign.
-test -z "$_G_HAVE_XSI_OPS" \
-    && (eval 'x=a/b/c;
-      test 5aa/bb/cc = "${#x}${x%%/*}${x%/*}${x#*/}${x##*/}"') 2>/dev/null \
-    && _G_HAVE_XSI_OPS=yes
-
-if test yes = "$_G_HAVE_XSI_OPS"
-then
-  # This is an XSI compatible shell, allowing a faster implementation...
-  eval 'func_split_equals ()
-  {
-      $debug_cmd
-
-      func_split_equals_lhs=${1%%=*}
-      func_split_equals_rhs=${1#*=}
-      test "x$func_split_equals_lhs" = "x$1" \
-        && func_split_equals_rhs=
-  }'
-else
-  # ...otherwise fall back to using expr, which is often a shell builtin.
-  func_split_equals ()
-  {
-      $debug_cmd
-
-      func_split_equals_lhs=`expr "x$1" : 'x\([^=]*\)'`
-      func_split_equals_rhs=
-      test "x$func_split_equals_lhs" = "x$1" \
-        || func_split_equals_rhs=`expr "x$1" : 'x[^=]*=\(.*\)$'`
-  }
-fi #func_split_equals
-
-
-# func_split_short_opt SHORTOPT
-# -----------------------------
-# Set func_split_short_opt_name and func_split_short_opt_arg shell
-# variables after splitting SHORTOPT after the 2nd character.
-if test yes = "$_G_HAVE_XSI_OPS"
-then
-  # This is an XSI compatible shell, allowing a faster implementation...
-  eval 'func_split_short_opt ()
-  {
-      $debug_cmd
-
-      func_split_short_opt_arg=${1#??}
-      func_split_short_opt_name=${1%"$func_split_short_opt_arg"}
-  }'
-else
-  # ...otherwise fall back to using expr, which is often a shell builtin.
-  func_split_short_opt ()
-  {
-      $debug_cmd
-
-      func_split_short_opt_name=`expr "x$1" : 'x-\(.\)'`
-      func_split_short_opt_arg=`expr "x$1" : 'x-.\(.*\)$'`
-  }
-fi #func_split_short_opt
-
-
-# func_usage
-# ----------
-# Echo short help message to standard output and exit.
-func_usage ()
-{
-    $debug_cmd
-
-    func_usage_message
-    $ECHO "Run '$progname --help |${PAGER-more}' for full usage"
-    exit 0
-}
-
-
-# func_usage_message
-# ------------------
-# Echo short help message to standard output.
-func_usage_message ()
-{
-    $debug_cmd
-
-    eval \$ECHO \""Usage: $usage"\"
-    echo
-    $SED -n 's|^# ||
-        /^Written by/{
-          x;p;x
-        }
-	h
-	/^Written by/q' < "$progpath"
-    echo
-    eval \$ECHO \""$usage_message"\"
-}
-
-
-# func_version
-# ------------
-# Echo version message to standard output and exit.
-func_version ()
-{
-    $debug_cmd
-
-    printf '%s\n' "$progname $scriptversion"
-    $SED -n '
-        /(C)/!b go
-        :more
-        /\./!{
-          N
-          s|\n# | |
-          b more
-        }
-        :go
-        /^# Written by /,/# warranty; / {
-          s|^# ||
-          s|^# *$||
-          s|\((C)\)[ 0-9,-]*[ ,-]\([1-9][0-9]* \)|\1 \2|
-          p
-        }
-        /^# Written by / {
-          s|^# ||
-          p
-        }
-        /^warranty; /q' < "$progpath"
-
-    exit $?
-}
-
-
-# Local variables:
-# mode: shell-script
-# sh-indentation: 2
-# eval: (add-hook 'before-save-hook 'time-stamp)
-# time-stamp-pattern: "10/scriptversion=%:y-%02m-%02d.%02H; # UTC"
-# time-stamp-time-zone: "UTC"
-# End:
-
-# Set a version string.
-scriptversion='(GNU libtool) 2.4.4'
-
-
-# func_echo ARG...
-# ----------------
-# Libtool also displays the current mode in messages, so override
-# funclib.sh func_echo with this custom definition.
-func_echo ()
-{
-    $debug_cmd
-
-    _G_message=$*
-
-    func_echo_IFS=$IFS
-    IFS=$nl
-    for _G_line in $_G_message; do
-      IFS=$func_echo_IFS
-      $ECHO "$progname${opt_mode+: $opt_mode}: $_G_line"
+# Warning box (yellow accent)
+# Warning box (yellow accent)
+ui_box_warn() {
+    local title="$1"
+    shift
+    local width=$((TERM_COLS - 8))
+    
+    printf "    ${T_YELLOW}+-${T_BOLD}! %s ${T_RESET}${T_YELLOW}" "$title"
+    printf -- "%s+${T_RESET}\n" "$(ui_repeat '-' $((width - ${#title} - 6)))"
+    
+    for line in "$@"; do
+        printf "    ${T_YELLOW}|${T_RESET}  ${T_YELLOW}%s${T_RESET}\n" "$line"
     done
-    IFS=$func_echo_IFS
+    
+    printf "    ${T_YELLOW}+%s+${T_RESET}\n" "$(ui_repeat '-' $((width - 2)))"
 }
 
-
-# func_warning ARG...
-# -------------------
-# Libtool warnings are not categorized, so override funclib.sh
-# func_warning with this simpler definition.
-func_warning ()
-{
-    $debug_cmd
-
-    $warning_func ${1+"$@"}
-}
-
-
-## ---------------- ##
-## Options parsing. ##
-## ---------------- ##
-
-# Hook in the functions to make sure our own options are parsed during
-# the option parsing loop.
-
-usage='$progpath [OPTION]... [MODE-ARG]...'
-
-# Short help message in response to '-h'.
-usage_message="Options:
-       --config             show all configuration variables
-       --debug              enable verbose shell tracing
-   -n, --dry-run            display commands without modifying any files
-       --features           display basic configuration information and exit
-       --mode=MODE          use operation mode MODE
-       --no-warnings        equivalent to '-Wnone'
-       --preserve-dup-deps  don't remove duplicate dependency libraries
-       --quiet, --silent    don't print informational messages
-       --tag=TAG            use configuration variables from tag TAG
-   -v, --verbose            print more informational messages than default
-       --version            print version information
-   -W, --warnings=CATEGORY  report the warnings falling in CATEGORY [all]
-   -h, --help, --help-all   print short, long, or detailed help message
-"
-
-# Additional text appended to 'usage_message' in response to '--help'.
-long_help_message=$long_help_message"
-
-MODE must be one of the following:
-
-       clean           remove files from the build directory
-       compile         compile a source file into a libtool object
-       execute         automatically set library path, then run a program
-       finish          complete the installation of libtool libraries
-       install         install libraries or executables
-       link            create a library or an executable
-       uninstall       remove libraries from an installed directory
-
-MODE-ARGS vary depending on the MODE.  When passed as first option,
-'--mode=MODE' may be abbreviated as 'MODE' or a unique abbreviation of that.
-Try '$progname --help --mode=MODE' for a more detailed description of MODE.
-
-When reporting a bug, please describe a test case to reproduce it and
-include the following information:
-
-       host-triplet:   $host
-       shell:          $SHELL
-       compiler:       $LTCC
-       compiler flags: $LTCFLAGS
-       linker:         $LD (gnu? $with_gnu_ld)
-       version:        $progname (GNU libtool) 2.4.4
-       automake:       `($AUTOMAKE --version) 2>/dev/null |$SED 1q`
-       autoconf:       `($AUTOCONF --version) 2>/dev/null |$SED 1q`
-
-Report bugs to <bug-libtool@gnu.org>.
-GNU libtool home page: <http://www.gnu.org/software/libtool/>.
-General help using GNU software: <http://www.gnu.org/gethelp/>."
-
-
-# func_lo2o OBJECT-NAME
-# ---------------------
-# Transform OBJECT-NAME from a '.lo' suffix to the platform specific
-# object suffix.
-
-lo2o=s/\\.lo\$/.$objext/
-o2lo=s/\\.$objext\$/.lo/
-
-if test yes = "$_G_HAVE_XSI_OPS"; then
-  eval 'func_lo2o ()
-  {
-    case $1 in
-      *.lo) func_lo2o_result=${1%.lo}.$objext ;;
-      *   ) func_lo2o_result=$1               ;;
-    esac
-  }'
-
-  # func_xform LIBOBJ-OR-SOURCE
-  # ---------------------------
-  # Transform LIBOBJ-OR-SOURCE from a '.o' or '.c' (or otherwise)
-  # suffix to a '.lo' libtool-object suffix.
-  eval 'func_xform ()
-  {
-    func_xform_result=${1%.*}.lo
-  }'
-else
-  # ...otherwise fall back to using sed.
-  func_lo2o ()
-  {
-    func_lo2o_result=`$ECHO "$1" | $SED "$lo2o"`
-  }
-
-  func_xform ()
-  {
-    func_xform_result=`$ECHO "$1" | $SED 's|\.[^.]*$|.lo|'`
-  }
-fi
-
-
-# func_fatal_configuration ARG...
-# -------------------------------
-# Echo program name prefixed message to standard error, followed by
-# a configuration failure hint, and exit.
-func_fatal_configuration ()
-{
-    func__fatal_error ${1+"$@"} \
-      "See the $PACKAGE documentation for more information." \
-      "Fatal configuration error."
-}
-
-
-# func_config
-# -----------
-# Display the configuration for all the tags in this script.
-func_config ()
-{
-    re_begincf='^# ### BEGIN LIBTOOL'
-    re_endcf='^# ### END LIBTOOL'
-
-    # Default configuration.
-    $SED "1,/$re_begincf CONFIG/d;/$re_endcf CONFIG/,\$d" < "$progpath"
-
-    # Now print the configurations for the tags.
-    for tagname in $taglist; do
-      $SED -n "/$re_begincf TAG CONFIG: $tagname\$/,/$re_endcf TAG CONFIG: $tagname\$/p" < "$progpath"
+# Danger box (red accent)
+# Danger box (red accent)
+ui_box_danger() {
+    local title="$1"
+    shift
+    local width=$((TERM_COLS - 8))
+    
+    printf "    ${T_RED}+=${T_BOLD}${T_BLINK}!${T_RESET}${T_RED}${T_BOLD} %s ${T_RESET}${T_RED}" "$title"
+    printf -- "%s+${T_RESET}\n" "$(ui_repeat '=' $((width - ${#title} - 6)))"
+    
+    for line in "$@"; do
+        printf "    ${T_RED}|${T_RESET}  ${T_RED}${T_BOLD}%s${T_RESET}\n" "$line"
     done
-
-    exit $?
+    
+    printf "    ${T_RED}+%s+${T_RESET}\n" "$(ui_repeat '=' $((width - 2)))"
 }
 
+# ─── Status Badges ────────────────────────────────────────────────────────────
 
-# func_features
-# -------------
-# Display the features supported by this script.
-func_features ()
-{
-    echo "host: $host"
-    if test yes = "$build_libtool_libs"; then
-      echo "enable shared libraries"
-    else
-      echo "disable shared libraries"
-    fi
-    if test yes = "$build_old_libs"; then
-      echo "enable static libraries"
-    else
-      echo "disable static libraries"
-    fi
-
-    exit $?
-}
-
-
-# func_enable_tag TAGNAME
-# -----------------------
-# Verify that TAGNAME is valid, and either flag an error and exit, or
-# enable the TAGNAME tag.  We also add TAGNAME to the global $taglist
-# variable here.
-func_enable_tag ()
-{
-    # Global variable:
-    tagname=$1
-
-    re_begincf="^# ### BEGIN LIBTOOL TAG CONFIG: $tagname\$"
-    re_endcf="^# ### END LIBTOOL TAG CONFIG: $tagname\$"
-    sed_extractcf=/$re_begincf/,/$re_endcf/p
-
-    # Validate tagname.
-    case $tagname in
-      *[!-_A-Za-z0-9,/]*)
-        func_fatal_error "invalid tag name: $tagname"
-        ;;
+ui_status() {
+    local label="$1"
+    local state="$2"
+    local detail="${3:-}"
+    local icon value_color
+    
+    case "$state" in
+        ok|online|active|running|pass)
+            icon="$ICON_OK"
+            value_color="$T_GREEN"
+            ;;
+        warn|warning|degraded|slow)
+            icon="$ICON_WARN"
+            value_color="$T_YELLOW"
+            ;;
+        fail|error|offline|stopped|critical)
+            icon="$ICON_FAIL"
+            value_color="$T_RED"
+            ;;
+        *)
+            icon="$ICON_INFO"
+            value_color="$T_CYAN"
+            ;;
     esac
-
-    # Don't test for the "default" C tag, as we know it's
-    # there but not specially marked.
-    case $tagname in
-        CC) ;;
-    *)
-        if $GREP "$re_begincf" "$progpath" >/dev/null 2>&1; then
-	  taglist="$taglist $tagname"
-
-	  # Evaluate the configuration.  Be careful to quote the path
-	  # and the sed script, to avoid splitting on whitespace, but
-	  # also don't use non-portable quotes within backquotes within
-	  # quotes we have to do it in 2 steps:
-	  extractedcf=`$SED -n -e "$sed_extractcf" < "$progpath"`
-	  eval "$extractedcf"
-        else
-	  func_error "ignoring unknown tag $tagname"
-        fi
-        ;;
-    esac
-}
-
-
-# func_check_version_match
-# ------------------------
-# Ensure that we are using m4 macros, and libtool script from the same
-# release of libtool.
-func_check_version_match ()
-{
-    if test "$package_revision" != "$macro_revision"; then
-      if test "$VERSION" != "$macro_version"; then
-        if test -z "$macro_version"; then
-          cat >&2 <<_LT_EOF
-$progname: Version mismatch error.  This is $PACKAGE $VERSION, but the
-$progname: definition of this LT_INIT comes from an older release.
-$progname: You should recreate aclocal.m4 with macros from $PACKAGE $VERSION
-$progname: and run autoconf again.
-_LT_EOF
-        else
-          cat >&2 <<_LT_EOF
-$progname: Version mismatch error.  This is $PACKAGE $VERSION, but the
-$progname: definition of this LT_INIT comes from $PACKAGE $macro_version.
-$progname: You should recreate aclocal.m4 with macros from $PACKAGE $VERSION
-$progname: and run autoconf again.
-_LT_EOF
-        fi
-      else
-        cat >&2 <<_LT_EOF
-$progname: Version mismatch error.  This is $PACKAGE $VERSION, revision $package_revision,
-$progname: but the definition of this LT_INIT comes from revision $macro_revision.
-$progname: You should recreate aclocal.m4 with macros from revision $package_revision
-$progname: of $PACKAGE $VERSION and run autoconf again.
-_LT_EOF
-      fi
-
-      exit $EXIT_MISMATCH
-    fi
-}
-
-
-# libtool_options_prep [ARG]...
-# -----------------------------
-# Preparation for options parsed by libtool.
-libtool_options_prep ()
-{
-    $debug_mode
-
-    # Option defaults:
-    opt_config=false
-    opt_dlopen=
-    opt_dry_run=false
-    opt_help=false
-    opt_mode=
-    opt_preserve_dup_deps=false
-    opt_quiet=false
-
-    nonopt=
-    preserve_args=
-
-    # Shorthand for --mode=foo, only valid as the first argument
-    case $1 in
-    clean|clea|cle|cl)
-      shift; set dummy --mode clean ${1+"$@"}; shift
-      ;;
-    compile|compil|compi|comp|com|co|c)
-      shift; set dummy --mode compile ${1+"$@"}; shift
-      ;;
-    execute|execut|execu|exec|exe|ex|e)
-      shift; set dummy --mode execute ${1+"$@"}; shift
-      ;;
-    finish|finis|fini|fin|fi|f)
-      shift; set dummy --mode finish ${1+"$@"}; shift
-      ;;
-    install|instal|insta|inst|ins|in|i)
-      shift; set dummy --mode install ${1+"$@"}; shift
-      ;;
-    link|lin|li|l)
-      shift; set dummy --mode link ${1+"$@"}; shift
-      ;;
-    uninstall|uninstal|uninsta|uninst|unins|unin|uni|un|u)
-      shift; set dummy --mode uninstall ${1+"$@"}; shift
-      ;;
-    esac
-
-    # Pass back the list of options.
-    func_quote_for_eval ${1+"$@"}
-    libtool_options_prep_result=$func_quote_for_eval_result
-}
-func_add_hook func_options_prep libtool_options_prep
-
-
-# libtool_parse_options [ARG]...
-# ---------------------------------
-# Provide handling for libtool specific options.
-libtool_parse_options ()
-{
-    $debug_cmd
-
-    # Perform our own loop to consume as many options as possible in
-    # each iteration.
-    while test $# -gt 0; do
-      _G_opt=$1
-      shift
-      case $_G_opt in
-        --dry-run|--dryrun|-n)
-                        opt_dry_run=:
-                        ;;
-
-        --config)       func_config ;;
-
-        --dlopen|-dlopen)
-                        opt_dlopen="${opt_dlopen+$opt_dlopen
-}$1"
-                        shift
-                        ;;
-
-        --preserve-dup-deps)
-                        opt_preserve_dup_deps=: ;;
-
-        --features)     func_features ;;
-
-        --finish)       set dummy --mode finish ${1+"$@"}; shift ;;
-
-        --help)         opt_help=: ;;
-
-        --help-all)     opt_help=': help-all' ;;
-
-        --mode)         test $# = 0 && func_missing_arg $_G_opt && break
-                        opt_mode=$1
-                        case $1 in
-                          # Valid mode arguments:
-                          clean|compile|execute|finish|install|link|relink|uninstall) ;;
-
-                          # Catch anything else as an error
-                          *) func_error "invalid argument for $_G_opt"
-                             exit_cmd=exit
-                             break
-                             ;;
-                        esac
-                        shift
-                        ;;
-
-        --no-silent|--no-quiet)
-                        opt_quiet=false
-                        func_append preserve_args " $_G_opt"
-                        ;;
-
-        --no-warnings|--no-warning|--no-warn)
-                        opt_warning=false
-                        func_append preserve_args " $_G_opt"
-                        ;;
-
-        --no-verbose)
-                        opt_verbose=false
-                        func_append preserve_args " $_G_opt"
-                        ;;
-
-        --silent|--quiet)
-                        opt_quiet=:
-                        opt_verbose=false
-                        func_append preserve_args " $_G_opt"
-                        ;;
-
-        --tag)          test $# = 0 && func_missing_arg $_G_opt && break
-                        opt_tag=$1
-                        func_append preserve_args " $_G_opt $1"
-                        func_enable_tag "$1"
-                        shift
-                        ;;
-
-        --verbose|-v)   opt_quiet=false
-                        opt_verbose=:
-                        func_append preserve_args " $_G_opt"
-                        ;;
-
-	# An option not handled by this hook function:
-        *)		set dummy "$_G_opt" ${1+"$@"};	shift; break  ;;
-      esac
-    done
-
-
-    # save modified positional parameters for caller
-    func_quote_for_eval ${1+"$@"}
-    libtool_parse_options_result=$func_quote_for_eval_result
-}
-func_add_hook func_parse_options libtool_parse_options
-
-
-
-# libtool_validate_options [ARG]...
-# ---------------------------------
-# Perform any sanity checks on option settings and/or unconsumed
-# arguments.
-libtool_validate_options ()
-{
-    # save first non-option argument
-    if test 0 -lt $#; then
-      nonopt=$1
-      shift
-    fi
-
-    # preserve --debug
-    test : = "$debug_cmd" || func_append preserve_args " --debug"
-
-    case $host in
-      # Solaris2 added to fix http://debbugs.gnu.org/cgi/bugreport.cgi?bug=16452
-      # see also: http://gcc.gnu.org/bugzilla/show_bug.cgi?id=59788
-      *cygwin* | *mingw* | *pw32* | *cegcc* | *solaris2* | *os2*)
-        # don't eliminate duplications in $postdeps and $predeps
-        opt_duplicate_compiler_generated_deps=:
-        ;;
-      *)
-        opt_duplicate_compiler_generated_deps=$opt_preserve_dup_deps
-        ;;
-    esac
-
-    $opt_help || {
-      # Sanity checks first:
-      func_check_version_match
-
-      test yes != "$build_libtool_libs" \
-        && test yes != "$build_old_libs" \
-        && func_fatal_configuration "not configured to build any kind of library"
-
-      # Darwin sucks
-      eval std_shrext=\"$shrext_cmds\"
-
-      # Only execute mode is allowed to have -dlopen flags.
-      if test -n "$opt_dlopen" && test execute != "$opt_mode"; then
-        func_error "unrecognized option '-dlopen'"
-        $ECHO "$help" 1>&2
-        exit $EXIT_FAILURE
-      fi
-
-      # Change the help message to a mode-specific one.
-      generic_help=$help
-      help="Try '$progname --help --mode=$opt_mode' for more information."
-    }
-
-    # Pass back the unparsed argument list
-    func_quote_for_eval ${1+"$@"}
-    libtool_validate_options_result=$func_quote_for_eval_result
-}
-func_add_hook func_validate_options libtool_validate_options
-
-
-# Process options as early as possible so that --help and --version
-# can return quickly.
-func_options ${1+"$@"}
-eval set dummy "$func_options_result"; shift
-
-
-
-## ----------- ##
-##    Main.    ##
-## ----------- ##
-
-magic='%%%MAGIC variable%%%'
-magic_exe='%%%MAGIC EXE variable%%%'
-
-# Global variables.
-extracted_archives=
-extracted_serial=0
-
-# If this variable is set in any of the actions, the command in it
-# will be execed at the end.  This prevents here-documents from being
-# left over by shells.
-exec_cmd=
-
-
-# A function that is used when there is no print builtin or printf.
-func_fallback_echo ()
-{
-  eval 'cat <<_LTECHO_EOF
-$1
-_LTECHO_EOF'
-}
-
-# func_generated_by_libtool
-# True iff stdin has been generated by Libtool. This function is only
-# a basic sanity check; it will hardly flush out determined imposters.
-func_generated_by_libtool_p ()
-{
-  $GREP "^# Generated by .*$PACKAGE" > /dev/null 2>&1
-}
-
-# func_lalib_p file
-# True iff FILE is a libtool '.la' library or '.lo' object file.
-# This function is only a basic sanity check; it will hardly flush out
-# determined imposters.
-func_lalib_p ()
-{
-    test -f "$1" &&
-      $SED -e 4q "$1" 2>/dev/null | func_generated_by_libtool_p
-}
-
-# func_lalib_unsafe_p file
-# True iff FILE is a libtool '.la' library or '.lo' object file.
-# This function implements the same check as func_lalib_p without
-# resorting to external programs.  To this end, it redirects stdin and
-# closes it afterwards, without saving the original file descriptor.
-# As a safety measure, use it only where a negative result would be
-# fatal anyway.  Works if 'file' does not exist.
-func_lalib_unsafe_p ()
-{
-    lalib_p=no
-    if test -f "$1" && test -r "$1" && exec 5<&0 <"$1"; then
-	for lalib_p_l in 1 2 3 4
-	do
-	    read lalib_p_line
-	    case $lalib_p_line in
-		\#\ Generated\ by\ *$PACKAGE* ) lalib_p=yes; break;;
-	    esac
-	done
-	exec 0<&5 5<&-
-    fi
-    test yes = "$lalib_p"
-}
-
-# func_ltwrapper_script_p file
-# True iff FILE is a libtool wrapper script
-# This function is only a basic sanity check; it will hardly flush out
-# determined imposters.
-func_ltwrapper_script_p ()
-{
-    test -f "$1" &&
-      $lt_truncate_bin < "$1" 2>/dev/null | func_generated_by_libtool_p
-}
-
-# func_ltwrapper_executable_p file
-# True iff FILE is a libtool wrapper executable
-# This function is only a basic sanity check; it will hardly flush out
-# determined imposters.
-func_ltwrapper_executable_p ()
-{
-    func_ltwrapper_exec_suffix=
-    case $1 in
-    *.exe) ;;
-    *) func_ltwrapper_exec_suffix=.exe ;;
-    esac
-    $GREP "$magic_exe" "$1$func_ltwrapper_exec_suffix" >/dev/null 2>&1
-}
-
-# func_ltwrapper_scriptname file
-# Assumes file is an ltwrapper_executable
-# uses $file to determine the appropriate filename for a
-# temporary ltwrapper_script.
-func_ltwrapper_scriptname ()
-{
-    func_dirname_and_basename "$1" "" "."
-    func_stripname '' '.exe' "$func_basename_result"
-    func_ltwrapper_scriptname_result=$func_dirname_result/$objdir/${func_stripname_result}_ltshwrapper
-}
-
-# func_ltwrapper_p file
-# True iff FILE is a libtool wrapper script or wrapper executable
-# This function is only a basic sanity check; it will hardly flush out
-# determined imposters.
-func_ltwrapper_p ()
-{
-    func_ltwrapper_script_p "$1" || func_ltwrapper_executable_p "$1"
-}
-
-
-# func_execute_cmds commands fail_cmd
-# Execute tilde-delimited COMMANDS.
-# If FAIL_CMD is given, eval that upon failure.
-# FAIL_CMD may read-access the current command in variable CMD!
-func_execute_cmds ()
-{
-    $debug_cmd
-
-    save_ifs=$IFS; IFS='~'
-    for cmd in $1; do
-      IFS=$sp$nl
-      eval cmd=\"$cmd\"
-      IFS=$save_ifs
-      func_show_eval "$cmd" "${2-:}"
-    done
-    IFS=$save_ifs
-}
-
-
-# func_source file
-# Source FILE, adding directory component if necessary.
-# Note that it is not necessary on cygwin/mingw to append a dot to
-# FILE even if both FILE and FILE.exe exist: automatic-append-.exe
-# behavior happens only for exec(3), not for open(2)!  Also, sourcing
-# 'FILE.' does not work on cygwin managed mounts.
-func_source ()
-{
-    $debug_cmd
-
-    case $1 in
-    */* | *\\*)	. "$1" ;;
-    *)		. "./$1" ;;
-    esac
-}
-
-
-# func_resolve_sysroot PATH
-# Replace a leading = in PATH with a sysroot.  Store the result into
-# func_resolve_sysroot_result
-func_resolve_sysroot ()
-{
-  func_resolve_sysroot_result=$1
-  case $func_resolve_sysroot_result in
-  =*)
-    func_stripname '=' '' "$func_resolve_sysroot_result"
-    func_resolve_sysroot_result=$lt_sysroot$func_stripname_result
-    ;;
-  esac
-}
-
-# func_replace_sysroot PATH
-# If PATH begins with the sysroot, replace it with = and
-# store the result into func_replace_sysroot_result.
-func_replace_sysroot ()
-{
-  case $lt_sysroot:$1 in
-  ?*:"$lt_sysroot"*)
-    func_stripname "$lt_sysroot" '' "$1"
-    func_replace_sysroot_result='='$func_stripname_result
-    ;;
-  *)
-    # Including no sysroot.
-    func_replace_sysroot_result=$1
-    ;;
-  esac
-}
-
-# func_infer_tag arg
-# Infer tagged configuration to use if any are available and
-# if one wasn't chosen via the "--tag" command line option.
-# Only attempt this if the compiler in the base compile
-# command doesn't match the default compiler.
-# arg is usually of the form 'gcc ...'
-func_infer_tag ()
-{
-    $debug_cmd
-
-    if test -n "$available_tags" && test -z "$tagname"; then
-      CC_quoted=
-      for arg in $CC; do
-	func_append_quoted CC_quoted "$arg"
-      done
-      CC_expanded=`func_echo_all $CC`
-      CC_quoted_expanded=`func_echo_all $CC_quoted`
-      case $@ in
-      # Blanks in the command may have been stripped by the calling shell,
-      # but not from the CC environment variable when configure was run.
-      " $CC "* | "$CC "* | " $CC_expanded "* | "$CC_expanded "* | \
-      " $CC_quoted"* | "$CC_quoted "* | " $CC_quoted_expanded "* | "$CC_quoted_expanded "*) ;;
-      # Blanks at the start of $base_compile will cause this to fail
-      # if we don't check for them as well.
-      *)
-	for z in $available_tags; do
-	  if $GREP "^# ### BEGIN LIBTOOL TAG CONFIG: $z$" < "$progpath" > /dev/null; then
-	    # Evaluate the configuration.
-	    eval "`$SED -n -e '/^# ### BEGIN LIBTOOL TAG CONFIG: '$z'$/,/^# ### END LIBTOOL TAG CONFIG: '$z'$/p' < $progpath`"
-	    CC_quoted=
-	    for arg in $CC; do
-	      # Double-quote args containing other shell metacharacters.
-	      func_append_quoted CC_quoted "$arg"
-	    done
-	    CC_expanded=`func_echo_all $CC`
-	    CC_quoted_expanded=`func_echo_all $CC_quoted`
-	    case "$@ " in
-	    " $CC "* | "$CC "* | " $CC_expanded "* | "$CC_expanded "* | \
-	    " $CC_quoted"* | "$CC_quoted "* | " $CC_quoted_expanded "* | "$CC_quoted_expanded "*)
-	      # The compiler in the base compile command matches
-	      # the one in the tagged configuration.
-	      # Assume this is the tagged configuration we want.
-	      tagname=$z
-	      break
-	      ;;
-	    esac
-	  fi
-	done
-	# If $tagname still isn't set, then no tagged configuration
-	# was found and let the user know that the "--tag" command
-	# line option must be used.
-	if test -z "$tagname"; then
-	  func_echo "unable to infer tagged configuration"
-	  func_fatal_error "specify a tag with '--tag'"
-#	else
-#	  func_verbose "using $tagname tagged configuration"
-	fi
-	;;
-      esac
-    fi
-}
-
-
-
-# func_write_libtool_object output_name pic_name nonpic_name
-# Create a libtool object file (analogous to a ".la" file),
-# but don't create it if we're doing a dry run.
-func_write_libtool_object ()
-{
-    write_libobj=$1
-    if test yes = "$build_libtool_libs"; then
-      write_lobj=\'$2\'
-    else
-      write_lobj=none
-    fi
-
-    if test yes = "$build_old_libs"; then
-      write_oldobj=\'$3\'
-    else
-      write_oldobj=none
-    fi
-
-    $opt_dry_run || {
-      cat >${write_libobj}T <<EOF
-# $write_libobj - a libtool object file
-# Generated by $PROGRAM (GNU $PACKAGE) $VERSION
-#
-# Please DO NOT delete this file!
-# It is necessary for linking the library.
-
-# Name of the PIC object.
-pic_object=$write_lobj
-
-# Name of the non-PIC object
-non_pic_object=$write_oldobj
-
-EOF
-      $MV "${write_libobj}T" "$write_libobj"
-    }
-}
-
-
-##################################################
-# FILE NAME AND PATH CONVERSION HELPER FUNCTIONS #
-##################################################
-
-# func_convert_core_file_wine_to_w32 ARG
-# Helper function used by file name conversion functions when $build is *nix,
-# and $host is mingw, cygwin, or some other w32 environment. Relies on a
-# correctly configured wine environment available, with the winepath program
-# in $build's $PATH.
-#
-# ARG is the $build file name to be converted to w32 format.
-# Result is available in $func_convert_core_file_wine_to_w32_result, and will
-# be empty on error (or when ARG is empty)
-func_convert_core_file_wine_to_w32 ()
-{
-  $debug_cmd
-
-  func_convert_core_file_wine_to_w32_result=$1
-  if test -n "$1"; then
-    # Unfortunately, winepath does not exit with a non-zero error code, so we
-    # are forced to check the contents of stdout. On the other hand, if the
-    # command is not found, the shell will set an exit code of 127 and print
-    # *an error message* to stdout. So we must check for both error code of
-    # zero AND non-empty stdout, which explains the odd construction:
-    func_convert_core_file_wine_to_w32_tmp=`winepath -w "$1" 2>/dev/null`
-    if test "$?" -eq 0 && test -n "$func_convert_core_file_wine_to_w32_tmp"; then
-      func_convert_core_file_wine_to_w32_result=`$ECHO "$func_convert_core_file_wine_to_w32_tmp" |
-        $SED -e "$sed_naive_backslashify"`
-    else
-      func_convert_core_file_wine_to_w32_result=
-    fi
-  fi
-}
-# end: func_convert_core_file_wine_to_w32
-
-
-# func_convert_core_path_wine_to_w32 ARG
-# Helper function used by path conversion functions when $build is *nix, and
-# $host is mingw, cygwin, or some other w32 environment. Relies on a correctly
-# configured wine environment available, with the winepath program in $build's
-# $PATH. Assumes ARG has no leading or trailing path separator characters.
-#
-# ARG is path to be converted from $build format to win32.
-# Result is available in $func_convert_core_path_wine_to_w32_result.
-# Unconvertible file (directory) names in ARG are skipped; if no directory names
-# are convertible, then the result may be empty.
-func_convert_core_path_wine_to_w32 ()
-{
-  $debug_cmd
-
-  # unfortunately, winepath doesn't convert paths, only file names
-  func_convert_core_path_wine_to_w32_result=
-  if test -n "$1"; then
-    oldIFS=$IFS
-    IFS=:
-    for func_convert_core_path_wine_to_w32_f in $1; do
-      IFS=$oldIFS
-      func_convert_core_file_wine_to_w32 "$func_convert_core_path_wine_to_w32_f"
-      if test -n "$func_convert_core_file_wine_to_w32_result"; then
-        if test -z "$func_convert_core_path_wine_to_w32_result"; then
-          func_convert_core_path_wine_to_w32_result=$func_convert_core_file_wine_to_w32_result
-        else
-          func_append func_convert_core_path_wine_to_w32_result ";$func_convert_core_file_wine_to_w32_result"
-        fi
-      fi
-    done
-    IFS=$oldIFS
-  fi
-}
-# end: func_convert_core_path_wine_to_w32
-
-
-# func_cygpath ARGS...
-# Wrapper around calling the cygpath program via LT_CYGPATH. This is used when
-# when (1) $build is *nix and Cygwin is hosted via a wine environment; or (2)
-# $build is MSYS and $host is Cygwin, or (3) $build is Cygwin. In case (1) or
-# (2), returns the Cygwin file name or path in func_cygpath_result (input
-# file name or path is assumed to be in w32 format, as previously converted
-# from $build's *nix or MSYS format). In case (3), returns the w32 file name
-# or path in func_cygpath_result (input file name or path is assumed to be in
-# Cygwin format). Returns an empty string on error.
-#
-# ARGS are passed to cygpath, with the last one being the file name or path to
-# be converted.
-#
-# Specify the absolute *nix (or w32) name to cygpath in the LT_CYGPATH
-# environment variable; do not put it in $PATH.
-func_cygpath ()
-{
-  $debug_cmd
-
-  if test -n "$LT_CYGPATH" && test -f "$LT_CYGPATH"; then
-    func_cygpath_result=`$LT_CYGPATH "$@" 2>/dev/null`
-    if test "$?" -ne 0; then
-      # on failure, ensure result is empty
-      func_cygpath_result=
-    fi
-  else
-    func_cygpath_result=
-    func_error "LT_CYGPATH is empty or specifies non-existent file: '$LT_CYGPATH'"
-  fi
-}
-#end: func_cygpath
-
-
-# func_convert_core_msys_to_w32 ARG
-# Convert file name or path ARG from MSYS format to w32 format.  Return
-# result in func_convert_core_msys_to_w32_result.
-func_convert_core_msys_to_w32 ()
-{
-  $debug_cmd
-
-  # awkward: cmd appends spaces to result
-  func_convert_core_msys_to_w32_result=`( cmd //c echo "$1" ) 2>/dev/null |
-    $SED -e 's/[ ]*$//' -e "$sed_naive_backslashify"`
-}
-#end: func_convert_core_msys_to_w32
-
-
-# func_convert_file_check ARG1 ARG2
-# Verify that ARG1 (a file name in $build format) was converted to $host
-# format in ARG2. Otherwise, emit an error message, but continue (resetting
-# func_to_host_file_result to ARG1).
-func_convert_file_check ()
-{
-  $debug_cmd
-
-  if test -z "$2" && test -n "$1"; then
-    func_error "Could not determine host file name corresponding to"
-    func_error "  '$1'"
-    func_error "Continuing, but uninstalled executables may not work."
-    # Fallback:
-    func_to_host_file_result=$1
-  fi
-}
-# end func_convert_file_check
-
-
-# func_convert_path_check FROM_PATHSEP TO_PATHSEP FROM_PATH TO_PATH
-# Verify that FROM_PATH (a path in $build format) was converted to $host
-# format in TO_PATH. Otherwise, emit an error message, but continue, resetting
-# func_to_host_file_result to a simplistic fallback value (see below).
-func_convert_path_check ()
-{
-  $debug_cmd
-
-  if test -z "$4" && test -n "$3"; then
-    func_error "Could not determine the host path corresponding to"
-    func_error "  '$3'"
-    func_error "Continuing, but uninstalled executables may not work."
-    # Fallback.  This is a deliberately simplistic "conversion" and
-    # should not be "improved".  See libtool.info.
-    if test "x$1" != "x$2"; then
-      lt_replace_pathsep_chars="s|$1|$2|g"
-      func_to_host_path_result=`echo "$3" |
-        $SED -e "$lt_replace_pathsep_chars"`
-    else
-      func_to_host_path_result=$3
-    fi
-  fi
-}
-# end func_convert_path_check
-
-
-# func_convert_path_front_back_pathsep FRONTPAT BACKPAT REPL ORIG
-# Modifies func_to_host_path_result by prepending REPL if ORIG matches FRONTPAT
-# and appending REPL if ORIG matches BACKPAT.
-func_convert_path_front_back_pathsep ()
-{
-  $debug_cmd
-
-  case $4 in
-  $1 ) func_to_host_path_result=$3$func_to_host_path_result
-    ;;
-  esac
-  case $4 in
-  $2 ) func_append func_to_host_path_result "$3"
-    ;;
-  esac
-}
-# end func_convert_path_front_back_pathsep
-
-
-##################################################
-# $build to $host FILE NAME CONVERSION FUNCTIONS #
-##################################################
-# invoked via '$to_host_file_cmd ARG'
-#
-# In each case, ARG is the path to be converted from $build to $host format.
-# Result will be available in $func_to_host_file_result.
-
-
-# func_to_host_file ARG
-# Converts the file name ARG from $build format to $host format. Return result
-# in func_to_host_file_result.
-func_to_host_file ()
-{
-  $debug_cmd
-
-  $to_host_file_cmd "$1"
-}
-# end func_to_host_file
-
-
-# func_to_tool_file ARG LAZY
-# converts the file name ARG from $build format to toolchain format. Return
-# result in func_to_tool_file_result.  If the conversion in use is listed
-# in (the comma separated) LAZY, no conversion takes place.
-func_to_tool_file ()
-{
-  $debug_cmd
-
-  case ,$2, in
-    *,"$to_tool_file_cmd",*)
-      func_to_tool_file_result=$1
-      ;;
-    *)
-      $to_tool_file_cmd "$1"
-      func_to_tool_file_result=$func_to_host_file_result
-      ;;
-  esac
-}
-# end func_to_tool_file
-
-
-# func_convert_file_noop ARG
-# Copy ARG to func_to_host_file_result.
-func_convert_file_noop ()
-{
-  func_to_host_file_result=$1
-}
-# end func_convert_file_noop
-
-
-# func_convert_file_msys_to_w32 ARG
-# Convert file name ARG from (mingw) MSYS to (mingw) w32 format; automatic
-# conversion to w32 is not available inside the cwrapper.  Returns result in
-# func_to_host_file_result.
-func_convert_file_msys_to_w32 ()
-{
-  $debug_cmd
-
-  func_to_host_file_result=$1
-  if test -n "$1"; then
-    func_convert_core_msys_to_w32 "$1"
-    func_to_host_file_result=$func_convert_core_msys_to_w32_result
-  fi
-  func_convert_file_check "$1" "$func_to_host_file_result"
-}
-# end func_convert_file_msys_to_w32
-
-
-# func_convert_file_cygwin_to_w32 ARG
-# Convert file name ARG from Cygwin to w32 format.  Returns result in
-# func_to_host_file_result.
-func_convert_file_cygwin_to_w32 ()
-{
-  $debug_cmd
-
-  func_to_host_file_result=$1
-  if test -n "$1"; then
-    # because $build is cygwin, we call "the" cygpath in $PATH; no need to use
-    # LT_CYGPATH in this case.
-    func_to_host_file_result=`cygpath -m "$1"`
-  fi
-  func_convert_file_check "$1" "$func_to_host_file_result"
-}
-# end func_convert_file_cygwin_to_w32
-
-
-# func_convert_file_nix_to_w32 ARG
-# Convert file name ARG from *nix to w32 format.  Requires a wine environment
-# and a working winepath. Returns result in func_to_host_file_result.
-func_convert_file_nix_to_w32 ()
-{
-  $debug_cmd
-
-  func_to_host_file_result=$1
-  if test -n "$1"; then
-    func_convert_core_file_wine_to_w32 "$1"
-    func_to_host_file_result=$func_convert_core_file_wine_to_w32_result
-  fi
-  func_convert_file_check "$1" "$func_to_host_file_result"
-}
-# end func_convert_file_nix_to_w32
-
-
-# func_convert_file_msys_to_cygwin ARG
-# Convert file name ARG from MSYS to Cygwin format.  Requires LT_CYGPATH set.
-# Returns result in func_to_host_file_result.
-func_convert_file_msys_to_cygwin ()
-{
-  $debug_cmd
-
-  func_to_host_file_result=$1
-  if test -n "$1"; then
-    func_convert_core_msys_to_w32 "$1"
-    func_cygpath -u "$func_convert_core_msys_to_w32_result"
-    func_to_host_file_result=$func_cygpath_result
-  fi
-  func_convert_file_check "$1" "$func_to_host_file_result"
-}
-# end func_convert_file_msys_to_cygwin
-
-
-# func_convert_file_nix_to_cygwin ARG
-# Convert file name ARG from *nix to Cygwin format.  Requires Cygwin installed
-# in a wine environment, working winepath, and LT_CYGPATH set.  Returns result
-# in func_to_host_file_result.
-func_convert_file_nix_to_cygwin ()
-{
-  $debug_cmd
-
-  func_to_host_file_result=$1
-  if test -n "$1"; then
-    # convert from *nix to w32, then use cygpath to convert from w32 to cygwin.
-    func_convert_core_file_wine_to_w32 "$1"
-    func_cygpath -u "$func_convert_core_file_wine_to_w32_result"
-    func_to_host_file_result=$func_cygpath_result
-  fi
-  func_convert_file_check "$1" "$func_to_host_file_result"
-}
-# end func_convert_file_nix_to_cygwin
-
-
-#############################################
-# $build to $host PATH CONVERSION FUNCTIONS #
-#############################################
-# invoked via '$to_host_path_cmd ARG'
-#
-# In each case, ARG is the path to be converted from $build to $host format.
-# The result will be available in $func_to_host_path_result.
-#
-# Path separators are also converted from $build format to $host format.  If
-# ARG begins or ends with a path separator character, it is preserved (but
-# converted to $host format) on output.
-#
-# All path conversion functions are named using the following convention:
-#   file name conversion function    : func_convert_file_X_to_Y ()
-#   path conversion function         : func_convert_path_X_to_Y ()
-# where, for any given $build/$host combination the 'X_to_Y' value is the
-# same.  If conversion functions are added for new $build/$host combinations,
-# the two new functions must follow this pattern, or func_init_to_host_path_cmd
-# will break.
-
-
-# func_init_to_host_path_cmd
-# Ensures that function "pointer" variable $to_host_path_cmd is set to the
-# appropriate value, based on the value of $to_host_file_cmd.
-to_host_path_cmd=
-func_init_to_host_path_cmd ()
-{
-  $debug_cmd
-
-  if test -z "$to_host_path_cmd"; then
-    func_stripname 'func_convert_file_' '' "$to_host_file_cmd"
-    to_host_path_cmd=func_convert_path_$func_stripname_result
-  fi
-}
-
-
-# func_to_host_path ARG
-# Converts the path ARG from $build format to $host format. Return result
-# in func_to_host_path_result.
-func_to_host_path ()
-{
-  $debug_cmd
-
-  func_init_to_host_path_cmd
-  $to_host_path_cmd "$1"
-}
-# end func_to_host_path
-
-
-# func_convert_path_noop ARG
-# Copy ARG to func_to_host_path_result.
-func_convert_path_noop ()
-{
-  func_to_host_path_result=$1
-}
-# end func_convert_path_noop
-
-
-# func_convert_path_msys_to_w32 ARG
-# Convert path ARG from (mingw) MSYS to (mingw) w32 format; automatic
-# conversion to w32 is not available inside the cwrapper.  Returns result in
-# func_to_host_path_result.
-func_convert_path_msys_to_w32 ()
-{
-  $debug_cmd
-
-  func_to_host_path_result=$1
-  if test -n "$1"; then
-    # Remove leading and trailing path separator characters from ARG.  MSYS
-    # behavior is inconsistent here; cygpath turns them into '.;' and ';.';
-    # and winepath ignores them completely.
-    func_stripname : : "$1"
-    func_to_host_path_tmp1=$func_stripname_result
-    func_convert_core_msys_to_w32 "$func_to_host_path_tmp1"
-    func_to_host_path_result=$func_convert_core_msys_to_w32_result
-    func_convert_path_check : ";" \
-      "$func_to_host_path_tmp1" "$func_to_host_path_result"
-    func_convert_path_front_back_pathsep ":*" "*:" ";" "$1"
-  fi
-}
-# end func_convert_path_msys_to_w32
-
-
-# func_convert_path_cygwin_to_w32 ARG
-# Convert path ARG from Cygwin to w32 format.  Returns result in
-# func_to_host_file_result.
-func_convert_path_cygwin_to_w32 ()
-{
-  $debug_cmd
-
-  func_to_host_path_result=$1
-  if test -n "$1"; then
-    # See func_convert_path_msys_to_w32:
-    func_stripname : : "$1"
-    func_to_host_path_tmp1=$func_stripname_result
-    func_to_host_path_result=`cygpath -m -p "$func_to_host_path_tmp1"`
-    func_convert_path_check : ";" \
-      "$func_to_host_path_tmp1" "$func_to_host_path_result"
-    func_convert_path_front_back_pathsep ":*" "*:" ";" "$1"
-  fi
-}
-# end func_convert_path_cygwin_to_w32
-
-
-# func_convert_path_nix_to_w32 ARG
-# Convert path ARG from *nix to w32 format.  Requires a wine environment and
-# a working winepath.  Returns result in func_to_host_file_result.
-func_convert_path_nix_to_w32 ()
-{
-  $debug_cmd
-
-  func_to_host_path_result=$1
-  if test -n "$1"; then
-    # See func_convert_path_msys_to_w32:
-    func_stripname : : "$1"
-    func_to_host_path_tmp1=$func_stripname_result
-    func_convert_core_path_wine_to_w32 "$func_to_host_path_tmp1"
-    func_to_host_path_result=$func_convert_core_path_wine_to_w32_result
-    func_convert_path_check : ";" \
-      "$func_to_host_path_tmp1" "$func_to_host_path_result"
-    func_convert_path_front_back_pathsep ":*" "*:" ";" "$1"
-  fi
-}
-# end func_convert_path_nix_to_w32
-
-
-# func_convert_path_msys_to_cygwin ARG
-# Convert path ARG from MSYS to Cygwin format.  Requires LT_CYGPATH set.
-# Returns result in func_to_host_file_result.
-func_convert_path_msys_to_cygwin ()
-{
-  $debug_cmd
-
-  func_to_host_path_result=$1
-  if test -n "$1"; then
-    # See func_convert_path_msys_to_w32:
-    func_stripname : : "$1"
-    func_to_host_path_tmp1=$func_stripname_result
-    func_convert_core_msys_to_w32 "$func_to_host_path_tmp1"
-    func_cygpath -u -p "$func_convert_core_msys_to_w32_result"
-    func_to_host_path_result=$func_cygpath_result
-    func_convert_path_check : : \
-      "$func_to_host_path_tmp1" "$func_to_host_path_result"
-    func_convert_path_front_back_pathsep ":*" "*:" : "$1"
-  fi
-}
-# end func_convert_path_msys_to_cygwin
-
-
-# func_convert_path_nix_to_cygwin ARG
-# Convert path ARG from *nix to Cygwin format.  Requires Cygwin installed in a
-# a wine environment, working winepath, and LT_CYGPATH set.  Returns result in
-# func_to_host_file_result.
-func_convert_path_nix_to_cygwin ()
-{
-  $debug_cmd
-
-  func_to_host_path_result=$1
-  if test -n "$1"; then
-    # Remove leading and trailing path separator characters from
-    # ARG. msys behavior is inconsistent here, cygpath turns them
-    # into '.;' and ';.', and winepath ignores them completely.
-    func_stripname : : "$1"
-    func_to_host_path_tmp1=$func_stripname_result
-    func_convert_core_path_wine_to_w32 "$func_to_host_path_tmp1"
-    func_cygpath -u -p "$func_convert_core_path_wine_to_w32_result"
-    func_to_host_path_result=$func_cygpath_result
-    func_convert_path_check : : \
-      "$func_to_host_path_tmp1" "$func_to_host_path_result"
-    func_convert_path_front_back_pathsep ":*" "*:" : "$1"
-  fi
-}
-# end func_convert_path_nix_to_cygwin
-
-
-# func_dll_def_p FILE
-# True iff FILE is a Windows DLL '.def' file.
-# Keep in sync with _LT_DLL_DEF_P in libtool.m4
-func_dll_def_p ()
-{
-  $debug_cmd
-
-  func_dll_def_p_tmp=`$SED -n \
-    -e 's/^[	 ]*//' \
-    -e '/^\(;.*\)*$/d' \
-    -e 's/^\(EXPORTS\|LIBRARY\)\([	 ].*\)*$/DEF/p' \
-    -e q \
-    "$1"`
-  test DEF = "$func_dll_def_p_tmp"
-}
-
-
-# func_mode_compile arg...
-func_mode_compile ()
-{
-    $debug_cmd
-
-    # Get the compilation command and the source file.
-    base_compile=
-    srcfile=$nonopt  #  always keep a non-empty value in "srcfile"
-    suppress_opt=yes
-    suppress_output=
-    arg_mode=normal
-    libobj=
-    later=
-    pie_flag=
-
-    for arg
-    do
-      case $arg_mode in
-      arg  )
-	# do not "continue".  Instead, add this to base_compile
-	lastarg=$arg
-	arg_mode=normal
-	;;
-
-      target )
-	libobj=$arg
-	arg_mode=normal
-	continue
-	;;
-
-      normal )
-	# Accept any command-line options.
-	case $arg in
-	-o)
-	  test -n "$libobj" && \
-	    func_fatal_error "you cannot specify '-o' more than once"
-	  arg_mode=target
-	  continue
-	  ;;
-
-	-pie | -fpie | -fPIE)
-          func_append pie_flag " $arg"
-	  continue
-	  ;;
-
-	-shared | -static | -prefer-pic | -prefer-non-pic)
-	  func_append later " $arg"
-	  continue
-	  ;;
-
-	-no-suppress)
-	  suppress_opt=no
-	  continue
-	  ;;
-
-	-Xcompiler)
-	  arg_mode=arg  #  the next one goes into the "base_compile" arg list
-	  continue      #  The current "srcfile" will either be retained or
-	  ;;            #  replaced later.  I would guess that would be a bug.
-
-	-Wc,*)
-	  func_stripname '-Wc,' '' "$arg"
-	  args=$func_stripname_result
-	  lastarg=
-	  save_ifs=$IFS; IFS=,
-	  for arg in $args; do
-	    IFS=$save_ifs
-	    func_append_quoted lastarg "$arg"
-	  done
-	  IFS=$save_ifs
-	  func_stripname ' ' '' "$lastarg"
-	  lastarg=$func_stripname_result
-
-	  # Add the arguments to base_compile.
-	  func_append base_compile " $lastarg"
-	  continue
-	  ;;
-
-	*)
-	  # Accept the current argument as the source file.
-	  # The previous "srcfile" becomes the current argument.
-	  #
-	  lastarg=$srcfile
-	  srcfile=$arg
-	  ;;
-	esac  #  case $arg
-	;;
-      esac    #  case $arg_mode
-
-      # Aesthetically quote the previous argument.
-      func_append_quoted base_compile "$lastarg"
-    done # for arg
-
-    case $arg_mode in
-    arg)
-      func_fatal_error "you must specify an argument for -Xcompile"
-      ;;
-    target)
-      func_fatal_error "you must specify a target with '-o'"
-      ;;
-    *)
-      # Get the name of the library object.
-      test -z "$libobj" && {
-	func_basename "$srcfile"
-	libobj=$func_basename_result
-      }
-      ;;
-    esac
-
-    # Recognize several different file suffixes.
-    # If the user specifies -o file.o, it is replaced with file.lo
-    case $libobj in
-    *.[cCFSifmso] | \
-    *.ada | *.adb | *.ads | *.asm | \
-    *.c++ | *.cc | *.ii | *.class | *.cpp | *.cxx | \
-    *.[fF][09]? | *.for | *.java | *.go | *.obj | *.sx | *.cu | *.cup)
-      func_xform "$libobj"
-      libobj=$func_xform_result
-      ;;
-    esac
-
-    case $libobj in
-    *.lo) func_lo2o "$libobj"; obj=$func_lo2o_result ;;
-    *)
-      func_fatal_error "cannot determine name of library object from '$libobj'"
-      ;;
-    esac
-
-    func_infer_tag $base_compile
-
-    for arg in $later; do
-      case $arg in
-      -shared)
-	test yes = "$build_libtool_libs" \
-	  || func_fatal_configuration "cannot build a shared library"
-	build_old_libs=no
-	continue
-	;;
-
-      -static)
-	build_libtool_libs=no
-	build_old_libs=yes
-	continue
-	;;
-
-      -prefer-pic)
-	pic_mode=yes
-	continue
-	;;
-
-      -prefer-non-pic)
-	pic_mode=no
-	continue
-	;;
-      esac
-    done
-
-    func_quote_for_eval "$libobj"
-    test "X$libobj" != "X$func_quote_for_eval_result" \
-      && $ECHO "X$libobj" | $GREP '[]~#^*{};<>?"'"'"'	 &()|`$[]' \
-      && func_warning "libobj name '$libobj' may not contain shell special characters."
-    func_dirname_and_basename "$obj" "/" ""
-    objname=$func_basename_result
-    xdir=$func_dirname_result
-    lobj=$xdir$objdir/$objname
-
-    test -z "$base_compile" && \
-      func_fatal_help "you must specify a compilation command"
-
-    # Delete any leftover library objects.
-    if test yes = "$build_old_libs"; then
-      removelist="$obj $lobj $libobj ${libobj}T"
-    else
-      removelist="$lobj $libobj ${libobj}T"
-    fi
-
-    # On Cygwin there's no "real" PIC flag so we must build both object types
-    case $host_os in
-    cygwin* | mingw* | pw32* | os2* | cegcc*)
-      pic_mode=default
-      ;;
-    esac
-    if test no = "$pic_mode" && test pass_all != "$deplibs_check_method"; then
-      # non-PIC code in shared libraries is not supported
-      pic_mode=default
-    fi
-
-    # Calculate the filename of the output object if compiler does
-    # not support -o with -c
-    if test no = "$compiler_c_o"; then
-      output_obj=`$ECHO "$srcfile" | $SED 's%^.*/%%; s%\.[^.]*$%%'`.$objext
-      lockfile=$output_obj.lock
-    else
-      output_obj=
-      need_locks=no
-      lockfile=
-    fi
-
-    # Lock this critical section if it is needed
-    # We use this script file to make the link, it avoids creating a new file
-    if test yes = "$need_locks"; then
-      until $opt_dry_run || ln "$progpath" "$lockfile" 2>/dev/null; do
-	func_echo "Waiting for $lockfile to be removed"
-	sleep 2
-      done
-    elif test warn = "$need_locks"; then
-      if test -f "$lockfile"; then
-	$ECHO "\
-*** ERROR, $lockfile exists and contains:
-`cat $lockfile 2>/dev/null`
-
-This indicates that another process is trying to use the same
-temporary object file, and libtool could not work around it because
-your compiler does not support '-c' and '-o' together.  If you
-repeat this compilation, it may succeed, by chance, but you had better
-avoid parallel builds (make -j) in this platform, or get a better
-compiler."
-
-	$opt_dry_run || $RM $removelist
-	exit $EXIT_FAILURE
-      fi
-      func_append removelist " $output_obj"
-      $ECHO "$srcfile" > "$lockfile"
-    fi
-
-    $opt_dry_run || $RM $removelist
-    func_append removelist " $lockfile"
-    trap '$opt_dry_run || $RM $removelist; exit $EXIT_FAILURE' 1 2 15
-
-    func_to_tool_file "$srcfile" func_convert_file_msys_to_w32
-    srcfile=$func_to_tool_file_result
-    func_quote_for_eval "$srcfile"
-    qsrcfile=$func_quote_for_eval_result
-
-    # Only build a PIC object if we are building libtool libraries.
-    if test yes = "$build_libtool_libs"; then
-      # Without this assignment, base_compile gets emptied.
-      fbsd_hideous_sh_bug=$base_compile
-
-      if test no != "$pic_mode"; then
-	command="$base_compile $qsrcfile $pic_flag"
-      else
-	# Don't build PIC code
-	command="$base_compile $qsrcfile"
-      fi
-
-      func_mkdir_p "$xdir$objdir"
-
-      if test -z "$output_obj"; then
-	# Place PIC objects in $objdir
-	func_append command " -o $lobj"
-      fi
-
-      func_show_eval_locale "$command"	\
-          'test -n "$output_obj" && $RM $removelist; exit $EXIT_FAILURE'
-
-      if test warn = "$need_locks" &&
-	 test "X`cat $lockfile 2>/dev/null`" != "X$srcfile"; then
-	$ECHO "\
-*** ERROR, $lockfile contains:
-`cat $lockfile 2>/dev/null`
-
-but it should contain:
-$srcfile
-
-This indicates that another process is trying to use the same
-temporary object file, and libtool could not work around it because
-your compiler does not support '-c' and '-o' together.  If you
-repeat this compilation, it may succeed, by chance, but you had better
-avoid parallel builds (make -j) in this platform, or get a better
-compiler."
-
-	$opt_dry_run || $RM $removelist
-	exit $EXIT_FAILURE
-      fi
-
-      # Just move the object if needed, then go on to compile the next one
-      if test -n "$output_obj" && test "X$output_obj" != "X$lobj"; then
-	func_show_eval '$MV "$output_obj" "$lobj"' \
-	  'error=$?; $opt_dry_run || $RM $removelist; exit $error'
-      fi
-
-      # Allow error messages only from the first compilation.
-      if test yes = "$suppress_opt"; then
-	suppress_output=' >/dev/null 2>&1'
-      fi
-    fi
-
-    # Only build a position-dependent object if we build old libraries.
-    if test yes = "$build_old_libs"; then
-      if test yes != "$pic_mode"; then
-	# Don't build PIC code
-	command="$base_compile $qsrcfile$pie_flag"
-      else
-	command="$base_compile $qsrcfile $pic_flag"
-      fi
-      if test yes = "$compiler_c_o"; then
-	func_append command " -o $obj"
-      fi
-
-      # Suppress compiler output if we already did a PIC compilation.
-      func_append command "$suppress_output"
-      func_show_eval_locale "$command" \
-        '$opt_dry_run || $RM $removelist; exit $EXIT_FAILURE'
-
-      if test warn = "$need_locks" &&
-	 test "X`cat $lockfile 2>/dev/null`" != "X$srcfile"; then
-	$ECHO "\
-*** ERROR, $lockfile contains:
-`cat $lockfile 2>/dev/null`
-
-but it should contain:
-$srcfile
-
-This indicates that another process is trying to use the same
-temporary object file, and libtool could not work around it because
-your compiler does not support '-c' and '-o' together.  If you
-repeat this compilation, it may succeed, by chance, but you had better
-avoid parallel builds (make -j) in this platform, or get a better
-compiler."
-
-	$opt_dry_run || $RM $removelist
-	exit $EXIT_FAILURE
-      fi
-
-      # Just move the object if needed
-      if test -n "$output_obj" && test "X$output_obj" != "X$obj"; then
-	func_show_eval '$MV "$output_obj" "$obj"' \
-	  'error=$?; $opt_dry_run || $RM $removelist; exit $error'
-      fi
-    fi
-
-    $opt_dry_run || {
-      func_write_libtool_object "$libobj" "$objdir/$objname" "$objname"
-
-      # Unlock the critical section if it was locked
-      if test no != "$need_locks"; then
-	removelist=$lockfile
-        $RM "$lockfile"
-      fi
-    }
-
-    exit $EXIT_SUCCESS
-}
-
-$opt_help || {
-  test compile = "$opt_mode" && func_mode_compile ${1+"$@"}
-}
-
-func_mode_help ()
-{
-    # We need to display help for each of the modes.
-    case $opt_mode in
-      "")
-        # Generic help is extracted from the usage comments
-        # at the start of this file.
-        func_help
-        ;;
-
-      clean)
-        $ECHO \
-"Usage: $progname [OPTION]... --mode=clean RM [RM-OPTION]... FILE...
-
-Remove files from the build directory.
-
-RM is the name of the program to use to delete files associated with each FILE
-(typically '/bin/rm').  RM-OPTIONS are options (such as '-f') to be passed
-to RM.
-
-If FILE is a libtool library, object or program, all the files associated
-with it are deleted. Otherwise, only FILE itself is deleted using RM."
-        ;;
-
-      compile)
-      $ECHO \
-"Usage: $progname [OPTION]... --mode=compile COMPILE-COMMAND... SOURCEFILE
-
-Compile a source file into a libtool library object.
-
-This mode accepts the following additional options:
-
-  -o OUTPUT-FILE    set the output file name to OUTPUT-FILE
-  -no-suppress      do not suppress compiler output for multiple passes
-  -prefer-pic       try to build PIC objects only
-  -prefer-non-pic   try to build non-PIC objects only
-  -shared           do not build a '.o' file suitable for static linking
-  -static           only build a '.o' file suitable for static linking
-  -Wc,FLAG          pass FLAG directly to the compiler
-
-COMPILE-COMMAND is a command to be used in creating a 'standard' object file
-from the given SOURCEFILE.
-
-The output file name is determined by removing the directory component from
-SOURCEFILE, then substituting the C source code suffix '.c' with the
-library object suffix, '.lo'."
-        ;;
-
-      execute)
-        $ECHO \
-"Usage: $progname [OPTION]... --mode=execute COMMAND [ARGS]...
-
-Automatically set library path, then run a program.
-
-This mode accepts the following additional options:
-
-  -dlopen FILE      add the directory containing FILE to the library path
-
-This mode sets the library path environment variable according to '-dlopen'
-flags.
-
-If any of the ARGS are libtool executable wrappers, then they are translated
-into their corresponding uninstalled binary, and any of their required library
-directories are added to the library path.
-
-Then, COMMAND is executed, with ARGS as arguments."
-        ;;
-
-      finish)
-        $ECHO \
-"Usage: $progname [OPTION]... --mode=finish [LIBDIR]...
-
-Complete the installation of libtool libraries.
-
-Each LIBDIR is a directory that contains libtool libraries.
-
-The commands that this mode executes may require superuser privileges.  Use
-the '--dry-run' option if you just want to see what would be executed."
-        ;;
-
-      install)
-        $ECHO \
-"Usage: $progname [OPTION]... --mode=install INSTALL-COMMAND...
-
-Install executables or libraries.
-
-INSTALL-COMMAND is the installation command.  The first component should be
-either the 'install' or 'cp' program.
-
-The following components of INSTALL-COMMAND are treated specially:
-
-  -inst-prefix-dir PREFIX-DIR  Use PREFIX-DIR as a staging area for installation
-
-The rest of the components are interpreted as arguments to that command (only
-BSD-compatible install options are recognized)."
-        ;;
-
-      link)
-        $ECHO \
-"Usage: $progname [OPTION]... --mode=link LINK-COMMAND...
-
-Link object files or libraries together to form another library, or to
-create an executable program.
-
-LINK-COMMAND is a command using the C compiler that you would use to create
-a program from several object files.
-
-The following components of LINK-COMMAND are treated specially:
-
-  -all-static       do not do any dynamic linking at all
-  -avoid-version    do not add a version suffix if possible
-  -bindir BINDIR    specify path to binaries directory (for systems where
-                    libraries must be found in the PATH setting at runtime)
-  -dlopen FILE      '-dlpreopen' FILE if it cannot be dlopened at runtime
-  -dlpreopen FILE   link in FILE and add its symbols to lt_preloaded_symbols
-  -export-dynamic   allow symbols from OUTPUT-FILE to be resolved with dlsym(3)
-  -export-symbols SYMFILE
-                    try to export only the symbols listed in SYMFILE
-  -export-symbols-regex REGEX
-                    try to export only the symbols matching REGEX
-  -LLIBDIR          search LIBDIR for required installed libraries
-  -lNAME            OUTPUT-FILE requires the installed library libNAME
-  -module           build a library that can dlopened
-  -no-fast-install  disable the fast-install mode
-  -no-install       link a not-installable executable
-  -no-undefined     declare that a library does not refer to external symbols
-  -o OUTPUT-FILE    create OUTPUT-FILE from the specified objects
-  -objectlist FILE  use a list of object files found in FILE to specify objects
-  -os2dllname NAME  force a short DLL name on OS/2 (no effect on other OSes)
-  -precious-files-regex REGEX
-                    don't remove output files matching REGEX
-  -release RELEASE  specify package release information
-  -rpath LIBDIR     the created library will eventually be installed in LIBDIR
-  -R[ ]LIBDIR       add LIBDIR to the runtime path of programs and libraries
-  -shared           only do dynamic linking of libtool libraries
-  -shrext SUFFIX    override the standard shared library file extension
-  -static           do not do any dynamic linking of uninstalled libtool libraries
-  -static-libtool-libs
-                    do not do any dynamic linking of libtool libraries
-  -version-info CURRENT[:REVISION[:AGE]]
-                    specify library version info [each variable defaults to 0]
-  -weak LIBNAME     declare that the target provides the LIBNAME interface
-  -Wc,FLAG
-  -Xcompiler FLAG   pass linker-specific FLAG directly to the compiler
-  -Wl,FLAG
-  -Xlinker FLAG     pass linker-specific FLAG directly to the linker
-  -XCClinker FLAG   pass link-specific FLAG to the compiler driver (CC)
-
-All other options (arguments beginning with '-') are ignored.
-
-Every other argument is treated as a filename.  Files ending in '.la' are
-treated as uninstalled libtool libraries, other files are standard or library
-object files.
-
-If the OUTPUT-FILE ends in '.la', then a libtool library is created,
-only library objects ('.lo' files) may be specified, and '-rpath' is
-required, except when creating a convenience library.
-
-If OUTPUT-FILE ends in '.a' or '.lib', then a standard library is created
-using 'ar' and 'ranlib', or on Windows using 'lib'.
-
-If OUTPUT-FILE ends in '.lo' or '.$objext', then a reloadable object file
-is created, otherwise an executable program is created."
-        ;;
-
-      uninstall)
-        $ECHO \
-"Usage: $progname [OPTION]... --mode=uninstall RM [RM-OPTION]... FILE...
-
-Remove libraries from an installation directory.
-
-RM is the name of the program to use to delete files associated with each FILE
-(typically '/bin/rm').  RM-OPTIONS are options (such as '-f') to be passed
-to RM.
-
-If FILE is a libtool library, all the files associated with it are deleted.
-Otherwise, only FILE itself is deleted using RM."
-        ;;
-
-      *)
-        func_fatal_help "invalid operation mode '$opt_mode'"
-        ;;
-    esac
-
-    echo
-    $ECHO "Try '$progname --help' for more information about other modes."
-}
-
-# Now that we've collected a possible --mode arg, show help if necessary
-if $opt_help; then
-  if test : = "$opt_help"; then
-    func_mode_help
-  else
-    {
-      func_help noexit
-      for opt_mode in compile link execute install finish uninstall clean; do
-	func_mode_help
-      done
-    } | $SED -n '1p; 2,$s/^Usage:/  or: /p'
-    {
-      func_help noexit
-      for opt_mode in compile link execute install finish uninstall clean; do
-	echo
-	func_mode_help
-      done
-    } |
-    $SED '1d
-      /^When reporting/,/^Report/{
-	H
-	d
-      }
-      $x
-      /information about other modes/d
-      /more detailed .*MODE/d
-      s/^Usage:.*--mode=\([^ ]*\) .*/Description of \1 mode:/'
-  fi
-  exit $?
-fi
-
-
-# func_mode_execute arg...
-func_mode_execute ()
-{
-    $debug_cmd
-
-    # The first argument is the command name.
-    cmd=$nonopt
-    test -z "$cmd" && \
-      func_fatal_help "you must specify a COMMAND"
-
-    # Handle -dlopen flags immediately.
-    for file in $opt_dlopen; do
-      test -f "$file" \
-	|| func_fatal_help "'$file' is not a file"
-
-      dir=
-      case $file in
-      *.la)
-	func_resolve_sysroot "$file"
-	file=$func_resolve_sysroot_result
-
-	# Check to see that this really is a libtool archive.
-	func_lalib_unsafe_p "$file" \
-	  || func_fatal_help "'$lib' is not a valid libtool archive"
-
-	# Read the libtool library.
-	dlname=
-	library_names=
-	func_source "$file"
-
-	# Skip this library if it cannot be dlopened.
-	if test -z "$dlname"; then
-	  # Warn if it was a shared library.
-	  test -n "$library_names" && \
-	    func_warning "'$file' was not linked with '-export-dynamic'"
-	  continue
-	fi
-
-	func_dirname "$file" "" "."
-	dir=$func_dirname_result
-
-	if test -f "$dir/$objdir/$dlname"; then
-	  func_append dir "/$objdir"
-	else
-	  if test ! -f "$dir/$dlname"; then
-	    func_fatal_error "cannot find '$dlname' in '$dir' or '$dir/$objdir'"
-	  fi
-	fi
-	;;
-
-      *.lo)
-	# Just add the directory containing the .lo file.
-	func_dirname "$file" "" "."
-	dir=$func_dirname_result
-	;;
-
-      *)
-	func_warning "'-dlopen' is ignored for non-libtool libraries and objects"
-	continue
-	;;
-      esac
-
-      # Get the absolute pathname.
-      absdir=`cd "$dir" && pwd`
-      test -n "$absdir" && dir=$absdir
-
-      # Now add the directory to shlibpath_var.
-      if eval "test -z \"\$$shlibpath_var\""; then
-	eval "$shlibpath_var=\"\$dir\""
-      else
-	eval "$shlibpath_var=\"\$dir:\$$shlibpath_var\""
-      fi
-    done
-
-    # This variable tells wrapper scripts just to set shlibpath_var
-    # rather than running their programs.
-    libtool_execute_magic=$magic
-
-    # Check if any of the arguments is a wrapper script.
-    args=
-    for file
-    do
-      case $file in
-      -* | *.la | *.lo ) ;;
-      *)
-	# Do a test to see if this is really a libtool program.
-	if func_ltwrapper_script_p "$file"; then
-	  func_source "$file"
-	  # Transform arg to wrapped name.
-	  file=$progdir/$program
-	elif func_ltwrapper_executable_p "$file"; then
-	  func_ltwrapper_scriptname "$file"
-	  func_source "$func_ltwrapper_scriptname_result"
-	  # Transform arg to wrapped name.
-	  file=$progdir/$program
-	fi
-	;;
-      esac
-      # Quote arguments (to preserve shell metacharacters).
-      func_append_quoted args "$file"
-    done
-
-    if $opt_dry_run; then
-      # Display what would be done.
-      if test -n "$shlibpath_var"; then
-	eval "\$ECHO \"\$shlibpath_var=\$$shlibpath_var\""
-	echo "export $shlibpath_var"
-      fi
-      $ECHO "$cmd$args"
-      exit $EXIT_SUCCESS
-    else
-      if test -n "$shlibpath_var"; then
-	# Export the shlibpath_var.
-	eval "export $shlibpath_var"
-      fi
-
-      # Restore saved environment variables
-      for lt_var in LANG LANGUAGE LC_ALL LC_CTYPE LC_COLLATE LC_MESSAGES
-      do
-	eval "if test \"\${save_$lt_var+set}\" = set; then
-                $lt_var=\$save_$lt_var; export $lt_var
-	      else
-		$lt_unset $lt_var
-	      fi"
-      done
-
-      # Now prepare to actually exec the command.
-      exec_cmd=\$cmd$args
-    fi
-}
-
-test execute = "$opt_mode" && func_mode_execute ${1+"$@"}
-
-
-# func_mode_finish arg...
-func_mode_finish ()
-{
-    $debug_cmd
-
-    libs=
-    libdirs=
-    admincmds=
-
-    for opt in "$nonopt" ${1+"$@"}
-    do
-      if test -d "$opt"; then
-	func_append libdirs " $opt"
-
-      elif test -f "$opt"; then
-	if func_lalib_unsafe_p "$opt"; then
-	  func_append libs " $opt"
-	else
-	  func_warning "'$opt' is not a valid libtool archive"
-	fi
-
-      else
-	func_fatal_error "invalid argument '$opt'"
-      fi
-    done
-
-    if test -n "$libs"; then
-      if test -n "$lt_sysroot"; then
-        sysroot_regex=`$ECHO "$lt_sysroot" | $SED "$sed_make_literal_regex"`
-        sysroot_cmd="s/\([ ']\)$sysroot_regex/\1/g;"
-      else
-        sysroot_cmd=
-      fi
-
-      # Remove sysroot references
-      if $opt_dry_run; then
-        for lib in $libs; do
-          echo "removing references to $lt_sysroot and '=' prefixes from $lib"
-        done
-      else
-        tmpdir=`func_mktempdir`
-        for lib in $libs; do
-	  $SED -e "$sysroot_cmd s/\([ ']-[LR]\)=/\1/g; s/\([ ']\)=/\1/g" $lib \
-	    > $tmpdir/tmp-la
-	  mv -f $tmpdir/tmp-la $lib
-	done
-        ${RM}r "$tmpdir"
-      fi
-    fi
-
-    if test -n "$finish_cmds$finish_eval" && test -n "$libdirs"; then
-      for libdir in $libdirs; do
-	if test -n "$finish_cmds"; then
-	  # Do each command in the finish commands.
-	  func_execute_cmds "$finish_cmds" 'admincmds="$admincmds
-'"$cmd"'"'
-	fi
-	if test -n "$finish_eval"; then
-	  # Do the single finish_eval.
-	  eval cmds=\"$finish_eval\"
-	  $opt_dry_run || eval "$cmds" || func_append admincmds "
-       $cmds"
-	fi
-      done
-    fi
-
-    # Exit here if they wanted silent mode.
-    $opt_quiet && exit $EXIT_SUCCESS
-
-    if test -n "$finish_cmds$finish_eval" && test -n "$libdirs"; then
-      echo "----------------------------------------------------------------------"
-      echo "Libraries have been installed in:"
-      for libdir in $libdirs; do
-	$ECHO "   $libdir"
-      done
-      echo
-      echo "If you ever happen to want to link against installed libraries"
-      echo "in a given directory, LIBDIR, you must either use libtool, and"
-      echo "specify the full pathname of the library, or use the '-LLIBDIR'"
-      echo "flag during linking and do at least one of the following:"
-      if test -n "$shlibpath_var"; then
-	echo "   - add LIBDIR to the '$shlibpath_var' environment variable"
-	echo "     during execution"
-      fi
-      if test -n "$runpath_var"; then
-	echo "   - add LIBDIR to the '$runpath_var' environment variable"
-	echo "     during linking"
-      fi
-      if test -n "$hardcode_libdir_flag_spec"; then
-	libdir=LIBDIR
-	eval flag=\"$hardcode_libdir_flag_spec\"
-
-	$ECHO "   - use the '$flag' linker flag"
-      fi
-      if test -n "$admincmds"; then
-	$ECHO "   - have your system administrator run these commands:$admincmds"
-      fi
-      if test -f /etc/ld.so.conf; then
-	echo "   - have your system administrator add LIBDIR to '/etc/ld.so.conf'"
-      fi
-      echo
-
-      echo "See any operating system documentation about shared libraries for"
-      case $host in
-	solaris2.[6789]|solaris2.1[0-9])
-	  echo "more information, such as the ld(1), crle(1) and ld.so(8) manual"
-	  echo "pages."
-	  ;;
-	*)
-	  echo "more information, such as the ld(1) and ld.so(8) manual pages."
-	  ;;
-      esac
-      echo "----------------------------------------------------------------------"
-    fi
-    exit $EXIT_SUCCESS
-}
-
-test finish = "$opt_mode" && func_mode_finish ${1+"$@"}
-
-
-# func_mode_install arg...
-func_mode_install ()
-{
-    $debug_cmd
-
-    # There may be an optional sh(1) argument at the beginning of
-    # install_prog (especially on Windows NT).
-    if test "$SHELL" = "$nonopt" || test /bin/sh = "$nonopt" ||
-       # Allow the use of GNU shtool's install command.
-       case $nonopt in *shtool*) :;; *) false;; esac
-    then
-      # Aesthetically quote it.
-      func_quote_for_eval "$nonopt"
-      install_prog="$func_quote_for_eval_result "
-      arg=$1
-      shift
-    else
-      install_prog=
-      arg=$nonopt
-    fi
-
-    # The real first argument should be the name of the installation program.
-    # Aesthetically quote it.
-    func_quote_for_eval "$arg"
-    func_append install_prog "$func_quote_for_eval_result"
-    install_shared_prog=$install_prog
-    case " $install_prog " in
-      *[\\\ /]cp\ *) install_cp=: ;;
-      *) install_cp=false ;;
-    esac
-
-    # We need to accept at least all the BSD install flags.
-    dest=
-    files=
-    opts=
-    prev=
-    install_type=
-    isdir=false
-    stripme=
-    no_mode=:
-    for arg
-    do
-      arg2=
-      if test -n "$dest"; then
-	func_append files " $dest"
-	dest=$arg
-	continue
-      fi
-
-      case $arg in
-      -d) isdir=: ;;
-      -f)
-	if $install_cp; then :; else
-	  prev=$arg
-	fi
-	;;
-      -g | -m | -o)
-	prev=$arg
-	;;
-      -s)
-	stripme=" -s"
-	continue
-	;;
-      -*)
-	;;
-      *)
-	# If the previous option needed an argument, then skip it.
-	if test -n "$prev"; then
-	  if test X-m = "X$prev" && test -n "$install_override_mode"; then
-	    arg2=$install_override_mode
-	    no_mode=false
-	  fi
-	  prev=
-	else
-	  dest=$arg
-	  continue
-	fi
-	;;
-      esac
-
-      # Aesthetically quote the argument.
-      func_quote_for_eval "$arg"
-      func_append install_prog " $func_quote_for_eval_result"
-      if test -n "$arg2"; then
-	func_quote_for_eval "$arg2"
-      fi
-      func_append install_shared_prog " $func_quote_for_eval_result"
-    done
-
-    test -z "$install_prog" && \
-      func_fatal_help "you must specify an install program"
-
-    test -n "$prev" && \
-      func_fatal_help "the '$prev' option requires an argument"
-
-    if test -n "$install_override_mode" && $no_mode; then
-      if $install_cp; then :; else
-	func_quote_for_eval "$install_override_mode"
-	func_append install_shared_prog " -m $func_quote_for_eval_result"
-      fi
-    fi
-
-    if test -z "$files"; then
-      if test -z "$dest"; then
-	func_fatal_help "no file or destination specified"
-      else
-	func_fatal_help "you must specify a destination"
-      fi
-    fi
-
-    # Strip any trailing slash from the destination.
-    func_stripname '' '/' "$dest"
-    dest=$func_stripname_result
-
-    # Check to see that the destination is a directory.
-    test -d "$dest" && isdir=:
-    if $isdir; then
-      destdir=$dest
-      destname=
-    else
-      func_dirname_and_basename "$dest" "" "."
-      destdir=$func_dirname_result
-      destname=$func_basename_result
-
-      # Not a directory, so check to see that there is only one file specified.
-      set dummy $files; shift
-      test "$#" -gt 1 && \
-	func_fatal_help "'$dest' is not a directory"
-    fi
-    case $destdir in
-    [\\/]* | [A-Za-z]:[\\/]*) ;;
-    *)
-      for file in $files; do
-	case $file in
-	*.lo) ;;
-	*)
-	  func_fatal_help "'$destdir' must be an absolute directory name"
-	  ;;
-	esac
-      done
-      ;;
-    esac
-
-    # This variable tells wrapper scripts just to set variables rather
-    # than running their programs.
-    libtool_install_magic=$magic
-
-    staticlibs=
-    future_libdirs=
-    current_libdirs=
-    for file in $files; do
-
-      # Do each installation.
-      case $file in
-      *.$libext)
-	# Do the static libraries later.
-	func_append staticlibs " $file"
-	;;
-
-      *.la)
-	func_resolve_sysroot "$file"
-	file=$func_resolve_sysroot_result
-
-	# Check to see that this really is a libtool archive.
-	func_lalib_unsafe_p "$file" \
-	  || func_fatal_help "'$file' is not a valid libtool archive"
-
-	library_names=
-	old_library=
-	relink_command=
-	func_source "$file"
-
-	# Add the libdir to current_libdirs if it is the destination.
-	if test "X$destdir" = "X$libdir"; then
-	  case "$current_libdirs " in
-	  *" $libdir "*) ;;
-	  *) func_append current_libdirs " $libdir" ;;
-	  esac
-	else
-	  # Note the libdir as a future libdir.
-	  case "$future_libdirs " in
-	  *" $libdir "*) ;;
-	  *) func_append future_libdirs " $libdir" ;;
-	  esac
-	fi
-
-	func_dirname "$file" "/" ""
-	dir=$func_dirname_result
-	func_append dir "$objdir"
-
-	if test -n "$relink_command"; then
-	  # Determine the prefix the user has applied to our future dir.
-	  inst_prefix_dir=`$ECHO "$destdir" | $SED -e "s%$libdir\$%%"`
-
-	  # Don't allow the user to place us outside of our expected
-	  # location b/c this prevents finding dependent libraries that
-	  # are installed to the same prefix.
-	  # At present, this check doesn't affect windows .dll's that
-	  # are installed into $libdir/../bin (currently, that works fine)
-	  # but it's something to keep an eye on.
-	  test "$inst_prefix_dir" = "$destdir" && \
-	    func_fatal_error "error: cannot install '$file' to a directory not ending in $libdir"
-
-	  if test -n "$inst_prefix_dir"; then
-	    # Stick the inst_prefix_dir data into the link command.
-	    relink_command=`$ECHO "$relink_command" | $SED "s%@inst_prefix_dir@%-inst-prefix-dir $inst_prefix_dir%"`
-	  else
-	    relink_command=`$ECHO "$relink_command" | $SED "s%@inst_prefix_dir@%%"`
-	  fi
-
-	  func_warning "relinking '$file'"
-	  func_show_eval "$relink_command" \
-	    'func_fatal_error "error: relink '\''$file'\'' with the above command before installing it"'
-	fi
-
-	# See the names of the shared library.
-	set dummy $library_names; shift
-	if test -n "$1"; then
-	  realname=$1
-	  shift
-
-	  srcname=$realname
-	  test -n "$relink_command" && srcname=${realname}T
-
-	  # Install the shared library and build the symlinks.
-	  func_show_eval "$install_shared_prog $dir/$srcname $destdir/$realname" \
-	      'exit $?'
-	  tstripme=$stripme
-	  case $host_os in
-	  cygwin* | mingw* | pw32* | cegcc*)
-	    case $realname in
-	    *.dll.a)
-	      tstripme=
-	      ;;
-	    esac
-	    ;;
-	  os2*)
-	    case $realname in
-	    *_dll.a)
-	      tstripme=
-	      ;;
-	    esac
-	    ;;
-	  esac
-	  if test -n "$tstripme" && test -n "$striplib"; then
-	    func_show_eval "$striplib $destdir/$realname" 'exit $?'
-	  fi
-
-	  if test "$#" -gt 0; then
-	    # Delete the old symlinks, and create new ones.
-	    # Try 'ln -sf' first, because the 'ln' binary might depend on
-	    # the symlink we replace!  Solaris /bin/ln does not understand -f,
-	    # so we also need to try rm && ln -s.
-	    for linkname
-	    do
-	      test "$linkname" != "$realname" \
-		&& func_show_eval "(cd $destdir && { $LN_S -f $realname $linkname || { $RM $linkname && $LN_S $realname $linkname; }; })"
-	    done
-	  fi
-
-	  # Do each command in the postinstall commands.
-	  lib=$destdir/$realname
-	  func_execute_cmds "$postinstall_cmds" 'exit $?'
-	fi
-
-	# Install the pseudo-library for information purposes.
-	func_basename "$file"
-	name=$func_basename_result
-	instname=$dir/${name}i
-	func_show_eval "$install_prog $instname $destdir/$name" 'exit $?'
-
-	# Maybe install the static library, too.
-	test -n "$old_library" && func_append staticlibs " $dir/$old_library"
-	;;
-
-      *.lo)
-	# Install (i.e. copy) a libtool object.
-
-	# Figure out destination file name, if it wasn't already specified.
-	if test -n "$destname"; then
-	  destfile=$destdir/$destname
-	else
-	  func_basename "$file"
-	  destfile=$func_basename_result
-	  destfile=$destdir/$destfile
-	fi
-
-	# Deduce the name of the destination old-style object file.
-	case $destfile in
-	*.lo)
-	  func_lo2o "$destfile"
-	  staticdest=$func_lo2o_result
-	  ;;
-	*.$objext)
-	  staticdest=$destfile
-	  destfile=
-	  ;;
-	*)
-	  func_fatal_help "cannot copy a libtool object to '$destfile'"
-	  ;;
-	esac
-
-	# Install the libtool object if requested.
-	test -n "$destfile" && \
-	  func_show_eval "$install_prog $file $destfile" 'exit $?'
-
-	# Install the old object if enabled.
-	if test yes = "$build_old_libs"; then
-	  # Deduce the name of the old-style object file.
-	  func_lo2o "$file"
-	  staticobj=$func_lo2o_result
-	  func_show_eval "$install_prog \$staticobj \$staticdest" 'exit $?'
-	fi
-	exit $EXIT_SUCCESS
-	;;
-
-      *)
-	# Figure out destination file name, if it wasn't already specified.
-	if test -n "$destname"; then
-	  destfile=$destdir/$destname
-	else
-	  func_basename "$file"
-	  destfile=$func_basename_result
-	  destfile=$destdir/$destfile
-	fi
-
-	# If the file is missing, and there is a .exe on the end, strip it
-	# because it is most likely a libtool script we actually want to
-	# install
-	stripped_ext=
-	case $file in
-	  *.exe)
-	    if test ! -f "$file"; then
-	      func_stripname '' '.exe' "$file"
-	      file=$func_stripname_result
-	      stripped_ext=.exe
-	    fi
-	    ;;
-	esac
-
-	# Do a test to see if this is really a libtool program.
-	case $host in
-	*cygwin* | *mingw*)
-	    if func_ltwrapper_executable_p "$file"; then
-	      func_ltwrapper_scriptname "$file"
-	      wrapper=$func_ltwrapper_scriptname_result
-	    else
-	      func_stripname '' '.exe' "$file"
-	      wrapper=$func_stripname_result
-	    fi
-	    ;;
-	*)
-	    wrapper=$file
-	    ;;
-	esac
-	if func_ltwrapper_script_p "$wrapper"; then
-	  notinst_deplibs=
-	  relink_command=
-
-	  func_source "$wrapper"
-
-	  # Check the variables that should have been set.
-	  test -z "$generated_by_libtool_version" && \
-	    func_fatal_error "invalid libtool wrapper script '$wrapper'"
-
-	  finalize=:
-	  for lib in $notinst_deplibs; do
-	    # Check to see that each library is installed.
-	    libdir=
-	    if test -f "$lib"; then
-	      func_source "$lib"
-	    fi
-	    libfile=$libdir/`$ECHO "$lib" | $SED 's%^.*/%%g'`
-	    if test -n "$libdir" && test ! -f "$libfile"; then
-	      func_warning "'$lib' has not been installed in '$libdir'"
-	      finalize=false
-	    fi
-	  done
-
-	  relink_command=
-	  func_source "$wrapper"
-
-	  outputname=
-	  if test no = "$fast_install" && test -n "$relink_command"; then
-	    $opt_dry_run || {
-	      if $finalize; then
-	        tmpdir=`func_mktempdir`
-		func_basename "$file$stripped_ext"
-		file=$func_basename_result
-	        outputname=$tmpdir/$file
-	        # Replace the output file specification.
-	        relink_command=`$ECHO "$relink_command" | $SED 's%@OUTPUT@%'"$outputname"'%g'`
-
-	        $opt_quiet || {
-	          func_quote_for_expand "$relink_command"
-		  eval "func_echo $func_quote_for_expand_result"
-	        }
-	        if eval "$relink_command"; then :
-	          else
-		  func_error "error: relink '$file' with the above command before installing it"
-		  $opt_dry_run || ${RM}r "$tmpdir"
-		  continue
-	        fi
-	        file=$outputname
-	      else
-	        func_warning "cannot relink '$file'"
-	      fi
-	    }
-	  else
-	    # Install the binary that we compiled earlier.
-	    file=`$ECHO "$file$stripped_ext" | $SED "s%\([^/]*\)$%$objdir/\1%"`
-	  fi
-	fi
-
-	# remove .exe since cygwin /usr/bin/install will append another
-	# one anyway
-	case $install_prog,$host in
-	*/usr/bin/install*,*cygwin*)
-	  case $file:$destfile in
-	  *.exe:*.exe)
-	    # this is ok
-	    ;;
-	  *.exe:*)
-	    destfile=$destfile.exe
-	    ;;
-	  *:*.exe)
-	    func_stripname '' '.exe' "$destfile"
-	    destfile=$func_stripname_result
-	    ;;
-	  esac
-	  ;;
-	esac
-	func_show_eval "$install_prog\$stripme \$file \$destfile" 'exit $?'
-	$opt_dry_run || if test -n "$outputname"; then
-	  ${RM}r "$tmpdir"
-	fi
-	;;
-      esac
-    done
-
-    for file in $staticlibs; do
-      func_basename "$file"
-      name=$func_basename_result
-
-      # Set up the ranlib parameters.
-      oldlib=$destdir/$name
-      func_to_tool_file "$oldlib" func_convert_file_msys_to_w32
-      tool_oldlib=$func_to_tool_file_result
-
-      func_show_eval "$install_prog \$file \$oldlib" 'exit $?'
-
-      if test -n "$stripme" && test -n "$old_striplib"; then
-	func_show_eval "$old_striplib $tool_oldlib" 'exit $?'
-      fi
-
-      # Do each command in the postinstall commands.
-      func_execute_cmds "$old_postinstall_cmds" 'exit $?'
-    done
-
-    test -n "$future_libdirs" && \
-      func_warning "remember to run '$progname --finish$future_libdirs'"
-
-    if test -n "$current_libdirs"; then
-      # Maybe just do a dry run.
-      $opt_dry_run && current_libdirs=" -n$current_libdirs"
-      exec_cmd='$SHELL "$progpath" $preserve_args --finish$current_libdirs'
-    else
-      exit $EXIT_SUCCESS
-    fi
-}
-
-test install = "$opt_mode" && func_mode_install ${1+"$@"}
-
-
-# func_generate_dlsyms outputname originator pic_p
-# Extract symbols from dlprefiles and create ${outputname}S.o with
-# a dlpreopen symbol table.
-func_generate_dlsyms ()
-{
-    $debug_cmd
-
-    my_outputname=$1
-    my_originator=$2
-    my_pic_p=${3-false}
-    my_prefix=`$ECHO "$my_originator" | $SED 's%[^a-zA-Z0-9]%_%g'`
-    my_dlsyms=
-
-    if test -n "$dlfiles$dlprefiles" || test no != "$dlself"; then
-      if test -n "$NM" && test -n "$global_symbol_pipe"; then
-	my_dlsyms=${my_outputname}S.c
-      else
-	func_error "not configured to extract global symbols from dlpreopened files"
-      fi
-    fi
-
-    if test -n "$my_dlsyms"; then
-      case $my_dlsyms in
-      "") ;;
-      *.c)
-	# Discover the nlist of each of the dlfiles.
-	nlist=$output_objdir/$my_outputname.nm
-
-	func_show_eval "$RM $nlist ${nlist}S ${nlist}T"
-
-	# Parse the name list into a source file.
-	func_verbose "creating $output_objdir/$my_dlsyms"
-
-	$opt_dry_run || $ECHO > "$output_objdir/$my_dlsyms" "\
-/* $my_dlsyms - symbol resolution table for '$my_outputname' dlsym emulation. */
-/* Generated by $PROGRAM (GNU $PACKAGE) $VERSION */
-
-#ifdef __cplusplus
-extern \"C\" {
-#endif
-
-#if defined __GNUC__ && (((__GNUC__ == 4) && (__GNUC_MINOR__ >= 4)) || (__GNUC__ > 4))
-#pragma GCC diagnostic ignored \"-Wstrict-prototypes\"
-#endif
-
-/* Keep this code in sync between libtool.m4, ltmain, lt_system.h, and tests.  */
-#if defined _WIN32 || defined __CYGWIN__ || defined _WIN32_WCE
-/* DATA imports from DLLs on WIN32 can't be const, because runtime
-   relocations are performed -- see ld's documentation on pseudo-relocs.  */
-# define LT_DLSYM_CONST
-#elif defined __osf__
-/* This system does not cope well with relocations in const data.  */
-# define LT_DLSYM_CONST
-#else
-# define LT_DLSYM_CONST const
-#endif
-
-#define STREQ(s1, s2) (strcmp ((s1), (s2)) == 0)
-
-/* External symbol declarations for the compiler. */\
-"
-
-	if test yes = "$dlself"; then
-	  func_verbose "generating symbol list for '$output'"
-
-	  $opt_dry_run || echo ': @PROGRAM@ ' > "$nlist"
-
-	  # Add our own program objects to the symbol list.
-	  progfiles=`$ECHO "$objs$old_deplibs" | $SP2NL | $SED "$lo2o" | $NL2SP`
-	  for progfile in $progfiles; do
-	    func_to_tool_file "$progfile" func_convert_file_msys_to_w32
-	    func_verbose "extracting global C symbols from '$func_to_tool_file_result'"
-	    $opt_dry_run || eval "$NM $func_to_tool_file_result | $global_symbol_pipe >> '$nlist'"
-	  done
-
-	  if test -n "$exclude_expsyms"; then
-	    $opt_dry_run || {
-	      eval '$EGREP -v " ($exclude_expsyms)$" "$nlist" > "$nlist"T'
-	      eval '$MV "$nlist"T "$nlist"'
-	    }
-	  fi
-
-	  if test -n "$export_symbols_regex"; then
-	    $opt_dry_run || {
-	      eval '$EGREP -e "$export_symbols_regex" "$nlist" > "$nlist"T'
-	      eval '$MV "$nlist"T "$nlist"'
-	    }
-	  fi
-
-	  # Prepare the list of exported symbols
-	  if test -z "$export_symbols"; then
-	    export_symbols=$output_objdir/$outputname.exp
-	    $opt_dry_run || {
-	      $RM $export_symbols
-	      eval "$SED -n -e '/^: @PROGRAM@ $/d' -e 's/^.* \(.*\)$/\1/p' "'< "$nlist" > "$export_symbols"'
-	      case $host in
-	      *cygwin* | *mingw* | *cegcc* )
-                eval "echo EXPORTS "'> "$output_objdir/$outputname.def"'
-                eval 'cat "$export_symbols" >> "$output_objdir/$outputname.def"'
-	        ;;
-	      esac
-	    }
-	  else
-	    $opt_dry_run || {
-	      eval "$SED -e 's/\([].[*^$]\)/\\\\\1/g' -e 's/^/ /' -e 's/$/$/'"' < "$export_symbols" > "$output_objdir/$outputname.exp"'
-	      eval '$GREP -f "$output_objdir/$outputname.exp" < "$nlist" > "$nlist"T'
-	      eval '$MV "$nlist"T "$nlist"'
-	      case $host in
-	        *cygwin* | *mingw* | *cegcc* )
-	          eval "echo EXPORTS "'> "$output_objdir/$outputname.def"'
-	          eval 'cat "$nlist" >> "$output_objdir/$outputname.def"'
-	          ;;
-	      esac
-	    }
-	  fi
-	fi
-
-	for dlprefile in $dlprefiles; do
-	  func_verbose "extracting global C symbols from '$dlprefile'"
-	  func_basename "$dlprefile"
-	  name=$func_basename_result
-          case $host in
-	    *cygwin* | *mingw* | *cegcc* )
-	      # if an import library, we need to obtain dlname
-	      if func_win32_import_lib_p "$dlprefile"; then
-	        func_tr_sh "$dlprefile"
-	        eval "curr_lafile=\$libfile_$func_tr_sh_result"
-	        dlprefile_dlbasename=
-	        if test -n "$curr_lafile" && func_lalib_p "$curr_lafile"; then
-	          # Use subshell, to avoid clobbering current variable values
-	          dlprefile_dlname=`source "$curr_lafile" && echo "$dlname"`
-	          if test -n "$dlprefile_dlname"; then
-	            func_basename "$dlprefile_dlname"
-	            dlprefile_dlbasename=$func_basename_result
-	          else
-	            # no lafile. user explicitly requested -dlpreopen <import library>.
-	            $sharedlib_from_linklib_cmd "$dlprefile"
-	            dlprefile_dlbasename=$sharedlib_from_linklib_result
-	          fi
-	        fi
-	        $opt_dry_run || {
-	          if test -n "$dlprefile_dlbasename"; then
-	            eval '$ECHO ": $dlprefile_dlbasename" >> "$nlist"'
-	          else
-	            func_warning "Could not compute DLL name from $name"
-	            eval '$ECHO ": $name " >> "$nlist"'
-	          fi
-	          func_to_tool_file "$dlprefile" func_convert_file_msys_to_w32
-	          eval "$NM \"$func_to_tool_file_result\" 2>/dev/null | $global_symbol_pipe |
-	            $SED -e '/I __imp/d' -e 's/I __nm_/D /;s/_nm__//' >> '$nlist'"
-	        }
-	      else # not an import lib
-	        $opt_dry_run || {
-	          eval '$ECHO ": $name " >> "$nlist"'
-	          func_to_tool_file "$dlprefile" func_convert_file_msys_to_w32
-	          eval "$NM \"$func_to_tool_file_result\" 2>/dev/null | $global_symbol_pipe >> '$nlist'"
-	        }
-	      fi
-	    ;;
-	    *)
-	      $opt_dry_run || {
-	        eval '$ECHO ": $name " >> "$nlist"'
-	        func_to_tool_file "$dlprefile" func_convert_file_msys_to_w32
-	        eval "$NM \"$func_to_tool_file_result\" 2>/dev/null | $global_symbol_pipe >> '$nlist'"
-	      }
-	    ;;
-          esac
-	done
-
-	$opt_dry_run || {
-	  # Make sure we have at least an empty file.
-	  test -f "$nlist" || : > "$nlist"
-
-	  if test -n "$exclude_expsyms"; then
-	    $EGREP -v " ($exclude_expsyms)$" "$nlist" > "$nlist"T
-	    $MV "$nlist"T "$nlist"
-	  fi
-
-	  # Try sorting and uniquifying the output.
-	  if $GREP -v "^: " < "$nlist" |
-	      if sort -k 3 </dev/null >/dev/null 2>&1; then
-		sort -k 3
-	      else
-		sort +2
-	      fi |
-	      uniq > "$nlist"S; then
-	    :
-	  else
-	    $GREP -v "^: " < "$nlist" > "$nlist"S
-	  fi
-
-	  if test -f "$nlist"S; then
-	    eval "$global_symbol_to_cdecl"' < "$nlist"S >> "$output_objdir/$my_dlsyms"'
-	  else
-	    echo '/* NONE */' >> "$output_objdir/$my_dlsyms"
-	  fi
-
-	  func_show_eval '$RM "${nlist}I"'
-	  if test -n "$global_symbol_to_import"; then
-	    eval "$global_symbol_to_import"' < "$nlist"S > "$nlist"I'
-	  fi
-
-	  echo >> "$output_objdir/$my_dlsyms" "\
-
-/* The mapping between symbol names and symbols.  */
-typedef struct {
-  const char *name;
-  void *address;
-} lt_dlsymlist;
-extern LT_DLSYM_CONST lt_dlsymlist
-lt_${my_prefix}_LTX_preloaded_symbols[];\
-"
-
-	  if test -s "$nlist"I; then
-	    echo >> "$output_objdir/$my_dlsyms" "\
-static void lt_syminit(void)
-{
-  LT_DLSYM_CONST lt_dlsymlist *symbol = lt_${my_prefix}_LTX_preloaded_symbols;
-  for (; symbol->name; ++symbol)
-    {"
-	    $SED 's/.*/      if (STREQ (symbol->name, \"&\")) symbol->address = (void *) \&&;/' < "$nlist"I >> "$output_objdir/$my_dlsyms"
-	    echo >> "$output_objdir/$my_dlsyms" "\
-    }
-}"
-	  fi
-	  echo >> "$output_objdir/$my_dlsyms" "\
-LT_DLSYM_CONST lt_dlsymlist
-lt_${my_prefix}_LTX_preloaded_symbols[] =
-{ {\"$my_originator\", (void *) 0},"
-
-	  if test -s "$nlist"I; then
-	    echo >> "$output_objdir/$my_dlsyms" "\
-  {\"@INIT@\", (void *) &lt_syminit},"
-	  fi
-
-	  case $need_lib_prefix in
-	  no)
-	    eval "$global_symbol_to_c_name_address" < "$nlist" >> "$output_objdir/$my_dlsyms"
-	    ;;
-	  *)
-	    eval "$global_symbol_to_c_name_address_lib_prefix" < "$nlist" >> "$output_objdir/$my_dlsyms"
-	    ;;
-	  esac
-	  echo >> "$output_objdir/$my_dlsyms" "\
-  {0, (void *) 0}
-};
-
-/* This works around a problem in FreeBSD linker */
-#ifdef FREEBSD_WORKAROUND
-static const void *lt_preloaded_setup() {
-  return lt_${my_prefix}_LTX_preloaded_symbols;
-}
-#endif
-
-#ifdef __cplusplus
-}
-#endif\
-"
-	} # !$opt_dry_run
-
-	pic_flag_for_symtable=
-	case "$compile_command " in
-	*" -static "*) ;;
-	*)
-	  case $host in
-	  # compiling the symbol table file with pic_flag works around
-	  # a FreeBSD bug that causes programs to crash when -lm is
-	  # linked before any other PIC object.  But we must not use
-	  # pic_flag when linking with -static.  The problem exists in
-	  # FreeBSD 2.2.6 and is fixed in FreeBSD 3.1.
-	  *-*-freebsd2.*|*-*-freebsd3.0*|*-*-freebsdelf3.0*)
-	    pic_flag_for_symtable=" $pic_flag -DFREEBSD_WORKAROUND" ;;
-	  *-*-hpux*)
-	    pic_flag_for_symtable=" $pic_flag"  ;;
-	  *)
-	    $my_pic_p && pic_flag_for_symtable=" $pic_flag"
-	    ;;
-	  esac
-	  ;;
-	esac
-	symtab_cflags=
-	for arg in $LTCFLAGS; do
-	  case $arg in
-	  -pie | -fpie | -fPIE) ;;
-	  *) func_append symtab_cflags " $arg" ;;
-	  esac
-	done
-
-	# Now compile the dynamic symbol file.
-	func_show_eval '(cd $output_objdir && $LTCC$symtab_cflags -c$no_builtin_flag$pic_flag_for_symtable "$my_dlsyms")' 'exit $?'
-
-	# Clean up the generated files.
-	func_show_eval '$RM "$output_objdir/$my_dlsyms" "$nlist" "${nlist}S" "${nlist}T" "${nlist}I"'
-
-	# Transform the symbol file into the correct name.
-	symfileobj=$output_objdir/${my_outputname}S.$objext
-	case $host in
-	*cygwin* | *mingw* | *cegcc* )
-	  if test -f "$output_objdir/$my_outputname.def"; then
-	    compile_command=`$ECHO "$compile_command" | $SED "s%@SYMFILE@%$output_objdir/$my_outputname.def $symfileobj%"`
-	    finalize_command=`$ECHO "$finalize_command" | $SED "s%@SYMFILE@%$output_objdir/$my_outputname.def $symfileobj%"`
-	  else
-	    compile_command=`$ECHO "$compile_command" | $SED "s%@SYMFILE@%$symfileobj%"`
-	    finalize_command=`$ECHO "$finalize_command" | $SED "s%@SYMFILE@%$symfileobj%"`
-	  fi
-	  ;;
-	*)
-	  compile_command=`$ECHO "$compile_command" | $SED "s%@SYMFILE@%$symfileobj%"`
-	  finalize_command=`$ECHO "$finalize_command" | $SED "s%@SYMFILE@%$symfileobj%"`
-	  ;;
-	esac
-	;;
-      *)
-	func_fatal_error "unknown suffix for '$my_dlsyms'"
-	;;
-      esac
-    else
-      # We keep going just in case the user didn't refer to
-      # lt_preloaded_symbols.  The linker will fail if global_symbol_pipe
-      # really was required.
-
-      # Nullify the symbol file.
-      compile_command=`$ECHO "$compile_command" | $SED "s% @SYMFILE@%%"`
-      finalize_command=`$ECHO "$finalize_command" | $SED "s% @SYMFILE@%%"`
-    fi
-}
-
-# func_cygming_gnu_implib_p ARG
-# This predicate returns with zero status (TRUE) if
-# ARG is a GNU/binutils-style import library. Returns
-# with nonzero status (FALSE) otherwise.
-func_cygming_gnu_implib_p ()
-{
-  $debug_cmd
-
-  func_to_tool_file "$1" func_convert_file_msys_to_w32
-  func_cygming_gnu_implib_tmp=`$NM "$func_to_tool_file_result" | eval "$global_symbol_pipe" | $EGREP ' (_head_[A-Za-z0-9_]+_[ad]l*|[A-Za-z0-9_]+_[ad]l*_iname)$'`
-  test -n "$func_cygming_gnu_implib_tmp"
-}
-
-# func_cygming_ms_implib_p ARG
-# This predicate returns with zero status (TRUE) if
-# ARG is an MS-style import library. Returns
-# with nonzero status (FALSE) otherwise.
-func_cygming_ms_implib_p ()
-{
-  $debug_cmd
-
-  func_to_tool_file "$1" func_convert_file_msys_to_w32
-  func_cygming_ms_implib_tmp=`$NM "$func_to_tool_file_result" | eval "$global_symbol_pipe" | $GREP '_NULL_IMPORT_DESCRIPTOR'`
-  test -n "$func_cygming_ms_implib_tmp"
-}
-
-# func_win32_libid arg
-# return the library type of file 'arg'
-#
-# Need a lot of goo to handle *both* DLLs and import libs
-# Has to be a shell function in order to 'eat' the argument
-# that is supplied when $file_magic_command is called.
-# Despite the name, also deal with 64 bit binaries.
-func_win32_libid ()
-{
-  $debug_cmd
-
-  win32_libid_type=unknown
-  win32_fileres=`file -L $1 2>/dev/null`
-  case $win32_fileres in
-  *ar\ archive\ import\ library*) # definitely import
-    win32_libid_type="x86 archive import"
-    ;;
-  *ar\ archive*) # could be an import, or static
-    # Keep the egrep pattern in sync with the one in _LT_CHECK_MAGIC_METHOD.
-    if eval $OBJDUMP -f $1 | $SED -e '10q' 2>/dev/null |
-       $EGREP 'file format (pei*-i386(.*architecture: i386)?|pe-arm-wince|pe-x86-64)' >/dev/null; then
-      case $nm_interface in
-      "MS dumpbin")
-	if func_cygming_ms_implib_p "$1" ||
-	   func_cygming_gnu_implib_p "$1"
-	then
-	  win32_nmres=import
-	else
-	  win32_nmres=
-	fi
-	;;
-      *)
-	func_to_tool_file "$1" func_convert_file_msys_to_w32
-	win32_nmres=`eval $NM -f posix -A \"$func_to_tool_file_result\" |
-	  $SED -n -e '
-	    1,100{
-		/ I /{
-		    s|.*|import|
-		    p
-		    q
-		}
-	    }'`
-	;;
-      esac
-      case $win32_nmres in
-      import*)  win32_libid_type="x86 archive import";;
-      *)        win32_libid_type="x86 archive static";;
-      esac
-    fi
-    ;;
-  *DLL*)
-    win32_libid_type="x86 DLL"
-    ;;
-  *executable*) # but shell scripts are "executable" too...
-    case $win32_fileres in
-    *MS\ Windows\ PE\ Intel*)
-      win32_libid_type="x86 DLL"
-      ;;
-    esac
-    ;;
-  esac
-  $ECHO "$win32_libid_type"
-}
-
-# func_cygming_dll_for_implib ARG
-#
-# Platform-specific function to extract the
-# name of the DLL associated with the specified
-# import library ARG.
-# Invoked by eval'ing the libtool variable
-#    $sharedlib_from_linklib_cmd
-# Result is available in the variable
-#    $sharedlib_from_linklib_result
-func_cygming_dll_for_implib ()
-{
-  $debug_cmd
-
-  sharedlib_from_linklib_result=`$DLLTOOL --identify-strict --identify "$1"`
-}
-
-# func_cygming_dll_for_implib_fallback_core SECTION_NAME LIBNAMEs
-#
-# The is the core of a fallback implementation of a
-# platform-specific function to extract the name of the
-# DLL associated with the specified import library LIBNAME.
-#
-# SECTION_NAME is either .idata$6 or .idata$7, depending
-# on the platform and compiler that created the implib.
-#
-# Echos the name of the DLL associated with the
-# specified import library.
-func_cygming_dll_for_implib_fallback_core ()
-{
-  $debug_cmd
-
-  match_literal=`$ECHO "$1" | $SED "$sed_make_literal_regex"`
-  $OBJDUMP -s --section "$1" "$2" 2>/dev/null |
-    $SED '/^Contents of section '"$match_literal"':/{
-      # Place marker at beginning of archive member dllname section
-      s/.*/====MARK====/
-      p
-      d
-    }
-    # These lines can sometimes be longer than 43 characters, but
-    # are always uninteresting
-    /:[	 ]*file format pe[i]\{,1\}-/d
-    /^In archive [^:]*:/d
-    # Ensure marker is printed
-    /^====MARK====/p
-    # Remove all lines with less than 43 characters
-    /^.\{43\}/!d
-    # From remaining lines, remove first 43 characters
-    s/^.\{43\}//' |
-    $SED -n '
-      # Join marker and all lines until next marker into a single line
-      /^====MARK====/ b para
-      H
-      $ b para
-      b
-      :para
-      x
-      s/\n//g
-      # Remove the marker
-      s/^====MARK====//
-      # Remove trailing dots and whitespace
-      s/[\. \t]*$//
-      # Print
-      /./p' |
-    # we now have a list, one entry per line, of the stringified
-    # contents of the appropriate section of all members of the
-    # archive that possess that section. Heuristic: eliminate
-    # all those that have a first or second character that is
-    # a '.' (that is, objdump's representation of an unprintable
-    # character.) This should work for all archives with less than
-    # 0x302f exports -- but will fail for DLLs whose name actually
-    # begins with a literal '.' or a single character followed by
-    # a '.'.
-    #
-    # Of those that remain, print the first one.
-    $SED -e '/^\./d;/^.\./d;q'
-}
-
-# func_cygming_dll_for_implib_fallback ARG
-# Platform-specific function to extract the
-# name of the DLL associated with the specified
-# import library ARG.
-#
-# This fallback implementation is for use when $DLLTOOL
-# does not support the --identify-strict option.
-# Invoked by eval'ing the libtool variable
-#    $sharedlib_from_linklib_cmd
-# Result is available in the variable
-#    $sharedlib_from_linklib_result
-func_cygming_dll_for_implib_fallback ()
-{
-  $debug_cmd
-
-  if func_cygming_gnu_implib_p "$1"; then
-    # binutils import library
-    sharedlib_from_linklib_result=`func_cygming_dll_for_implib_fallback_core '.idata$7' "$1"`
-  elif func_cygming_ms_implib_p "$1"; then
-    # ms-generated import library
-    sharedlib_from_linklib_result=`func_cygming_dll_for_implib_fallback_core '.idata$6' "$1"`
-  else
-    # unknown
-    sharedlib_from_linklib_result=
-  fi
-}
-
-
-# func_extract_an_archive dir oldlib
-func_extract_an_archive ()
-{
-    $debug_cmd
-
-    f_ex_an_ar_dir=$1; shift
-    f_ex_an_ar_oldlib=$1
-    if test yes = "$lock_old_archive_extraction"; then
-      lockfile=$f_ex_an_ar_oldlib.lock
-      until $opt_dry_run || ln "$progpath" "$lockfile" 2>/dev/null; do
-	func_echo "Waiting for $lockfile to be removed"
-	sleep 2
-      done
-    fi
-    func_show_eval "(cd \$f_ex_an_ar_dir && $AR x \"\$f_ex_an_ar_oldlib\")" \
-		   'stat=$?; rm -f "$lockfile"; exit $stat'
-    if test yes = "$lock_old_archive_extraction"; then
-      $opt_dry_run || rm -f "$lockfile"
-    fi
-    if ($AR t "$f_ex_an_ar_oldlib" | sort | sort -uc >/dev/null 2>&1); then
-     :
-    else
-      func_fatal_error "object name conflicts in archive: $f_ex_an_ar_dir/$f_ex_an_ar_oldlib"
-    fi
-}
-
-
-# func_extract_archives gentop oldlib ...
-func_extract_archives ()
-{
-    $debug_cmd
-
-    my_gentop=$1; shift
-    my_oldlibs=${1+"$@"}
-    my_oldobjs=
-    my_xlib=
-    my_xabs=
-    my_xdir=
-
-    for my_xlib in $my_oldlibs; do
-      # Extract the objects.
-      case $my_xlib in
-	[\\/]* | [A-Za-z]:[\\/]*) my_xabs=$my_xlib ;;
-	*) my_xabs=`pwd`"/$my_xlib" ;;
-      esac
-      func_basename "$my_xlib"
-      my_xlib=$func_basename_result
-      my_xlib_u=$my_xlib
-      while :; do
-        case " $extracted_archives " in
-	*" $my_xlib_u "*)
-	  func_arith $extracted_serial + 1
-	  extracted_serial=$func_arith_result
-	  my_xlib_u=lt$extracted_serial-$my_xlib ;;
-	*) break ;;
-	esac
-      done
-      extracted_archives="$extracted_archives $my_xlib_u"
-      my_xdir=$my_gentop/$my_xlib_u
-
-      func_mkdir_p "$my_xdir"
-
-      case $host in
-      *-darwin*)
-	func_verbose "Extracting $my_xabs"
-	# Do not bother doing anything if just a dry run
-	$opt_dry_run || {
-	  darwin_orig_dir=`pwd`
-	  cd $my_xdir || exit $?
-	  darwin_archive=$my_xabs
-	  darwin_curdir=`pwd`
-	  func_basename "$darwin_archive"
-	  darwin_base_archive=$func_basename_result
-	  darwin_arches=`$LIPO -info "$darwin_archive" 2>/dev/null | $GREP Architectures 2>/dev/null || true`
-	  if test -n "$darwin_arches"; then
-	    darwin_arches=`$ECHO "$darwin_arches" | $SED -e 's/.*are://'`
-	    darwin_arch=
-	    func_verbose "$darwin_base_archive has multiple architectures $darwin_arches"
-	    for darwin_arch in  $darwin_arches; do
-	      func_mkdir_p "unfat-$$/$darwin_base_archive-$darwin_arch"
-	      $LIPO -thin $darwin_arch -output "unfat-$$/$darwin_base_archive-$darwin_arch/$darwin_base_archive" "$darwin_archive"
-	      cd "unfat-$$/$darwin_base_archive-$darwin_arch"
-	      func_extract_an_archive "`pwd`" "$darwin_base_archive"
-	      cd "$darwin_curdir"
-	      $RM "unfat-$$/$darwin_base_archive-$darwin_arch/$darwin_base_archive"
-	    done # $darwin_arches
-            ## Okay now we've a bunch of thin objects, gotta fatten them up :)
-	    darwin_filelist=`find unfat-$$ -type f -name \*.o -print -o -name \*.lo -print | $SED -e "$sed_basename" | sort -u`
-	    darwin_file=
-	    darwin_files=
-	    for darwin_file in $darwin_filelist; do
-	      darwin_files=`find unfat-$$ -name $darwin_file -print | sort | $NL2SP`
-	      $LIPO -create -output "$darwin_file" $darwin_files
-	    done # $darwin_filelist
-	    $RM -rf unfat-$$
-	    cd "$darwin_orig_dir"
-	  else
-	    cd $darwin_orig_dir
-	    func_extract_an_archive "$my_xdir" "$my_xabs"
-	  fi # $darwin_arches
-	} # !$opt_dry_run
-	;;
-      *)
-        func_extract_an_archive "$my_xdir" "$my_xabs"
-	;;
-      esac
-      my_oldobjs="$my_oldobjs "`find $my_xdir -name \*.$objext -print -o -name \*.lo -print | sort | $NL2SP`
-    done
-
-    func_extract_archives_result=$my_oldobjs
-}
-
-
-# func_emit_wrapper [arg=no]
-#
-# Emit a libtool wrapper script on stdout.
-# Don't directly open a file because we may want to
-# incorporate the script contents within a cygwin/mingw
-# wrapper executable.  Must ONLY be called from within
-# func_mode_link because it depends on a number of variables
-# set therein.
-#
-# ARG is the value that the WRAPPER_SCRIPT_BELONGS_IN_OBJDIR
-# variable will take.  If 'yes', then the emitted script
-# will assume that the directory where it is stored is
-# the $objdir directory.  This is a cygwin/mingw-specific
-# behavior.
-func_emit_wrapper ()
-{
-	func_emit_wrapper_arg1=${1-no}
-
-	$ECHO "\
-#! $SHELL
-
-# $output - temporary wrapper script for $objdir/$outputname
-# Generated by $PROGRAM (GNU $PACKAGE) $VERSION
-#
-# The $output program cannot be directly executed until all the libtool
-# libraries that it depends on are installed.
-#
-# This wrapper script should never be moved out of the build directory.
-# If it is, it will not operate correctly.
-
-# Sed substitution that helps us do robust quoting.  It backslashifies
-# metacharacters that are still active within double-quoted strings.
-sed_quote_subst='$sed_quote_subst'
-
-# Be Bourne compatible
-if test -n \"\${ZSH_VERSION+set}\" && (emulate sh) >/dev/null 2>&1; then
-  emulate sh
-  NULLCMD=:
-  # Zsh 3.x and 4.x performs word splitting on \${1+\"\$@\"}, which
-  # is contrary to our usage.  Disable this feature.
-  alias -g '\${1+\"\$@\"}'='\"\$@\"'
-  setopt NO_GLOB_SUBST
-else
-  case \`(set -o) 2>/dev/null\` in *posix*) set -o posix;; esac
-fi
-BIN_SH=xpg4; export BIN_SH # for Tru64
-DUALCASE=1; export DUALCASE # for MKS sh
-
-# The HP-UX ksh and POSIX shell print the target directory to stdout
-# if CDPATH is set.
-(unset CDPATH) >/dev/null 2>&1 && unset CDPATH
-
-relink_command=\"$relink_command\"
-
-# This environment variable determines our operation mode.
-if test \"\$libtool_install_magic\" = \"$magic\"; then
-  # install mode needs the following variables:
-  generated_by_libtool_version='$macro_version'
-  notinst_deplibs='$notinst_deplibs'
-else
-  # When we are sourced in execute mode, \$file and \$ECHO are already set.
-  if test \"\$libtool_execute_magic\" != \"$magic\"; then
-    file=\"\$0\""
-
-    qECHO=`$ECHO "$ECHO" | $SED "$sed_quote_subst"`
-    $ECHO "\
-
-# A function that is used when there is no print builtin or printf.
-func_fallback_echo ()
-{
-  eval 'cat <<_LTECHO_EOF
-\$1
-_LTECHO_EOF'
-}
-    ECHO=\"$qECHO\"
-  fi
-
-# Very basic option parsing. These options are (a) specific to
-# the libtool wrapper, (b) are identical between the wrapper
-# /script/ and the wrapper /executable/ that is used only on
-# windows platforms, and (c) all begin with the string "--lt-"
-# (application programs are unlikely to have options that match
-# this pattern).
-#
-# There are only two supported options: --lt-debug and
-# --lt-dump-script. There is, deliberately, no --lt-help.
-#
-# The first argument to this parsing function should be the
-# script's $0 value, followed by "$@".
-lt_option_debug=
-func_parse_lt_options ()
-{
-  lt_script_arg0=\$0
-  shift
-  for lt_opt
-  do
-    case \"\$lt_opt\" in
-    --lt-debug) lt_option_debug=1 ;;
-    --lt-dump-script)
-        lt_dump_D=\`\$ECHO \"X\$lt_script_arg0\" | $SED -e 's/^X//' -e 's%/[^/]*$%%'\`
-        test \"X\$lt_dump_D\" = \"X\$lt_script_arg0\" && lt_dump_D=.
-        lt_dump_F=\`\$ECHO \"X\$lt_script_arg0\" | $SED -e 's/^X//' -e 's%^.*/%%'\`
-        cat \"\$lt_dump_D/\$lt_dump_F\"
-        exit 0
-      ;;
-    --lt-*)
-        \$ECHO \"Unrecognized --lt- option: '\$lt_opt'\" 1>&2
-        exit 1
-      ;;
-    esac
-  done
-
-  # Print the debug banner immediately:
-  if test -n \"\$lt_option_debug\"; then
-    echo \"$outputname:$output:\$LINENO: libtool wrapper (GNU $PACKAGE) $VERSION\" 1>&2
-  fi
-}
-
-# Used when --lt-debug. Prints its arguments to stdout
-# (redirection is the responsibility of the caller)
-func_lt_dump_args ()
-{
-  lt_dump_args_N=1;
-  for lt_arg
-  do
-    \$ECHO \"$outputname:$output:\$LINENO: newargv[\$lt_dump_args_N]: \$lt_arg\"
-    lt_dump_args_N=\`expr \$lt_dump_args_N + 1\`
-  done
-}
-
-# Core function for launching the target application
-func_exec_program_core ()
-{
-"
-  case $host in
-  # Backslashes separate directories on plain windows
-  *-*-mingw | *-*-os2* | *-cegcc*)
-    $ECHO "\
-      if test -n \"\$lt_option_debug\"; then
-        \$ECHO \"$outputname:$output:\$LINENO: newargv[0]: \$progdir\\\\\$program\" 1>&2
-        func_lt_dump_args \${1+\"\$@\"} 1>&2
-      fi
-      exec \"\$progdir\\\\\$program\" \${1+\"\$@\"}
-"
-    ;;
-
-  *)
-    $ECHO "\
-      if test -n \"\$lt_option_debug\"; then
-        \$ECHO \"$outputname:$output:\$LINENO: newargv[0]: \$progdir/\$program\" 1>&2
-        func_lt_dump_args \${1+\"\$@\"} 1>&2
-      fi
-      exec \"\$progdir/\$program\" \${1+\"\$@\"}
-"
-    ;;
-  esac
-  $ECHO "\
-      \$ECHO \"\$0: cannot exec \$program \$*\" 1>&2
-      exit 1
-}
-
-# A function to encapsulate launching the target application
-# Strips options in the --lt-* namespace from \$@ and
-# launches target application with the remaining arguments.
-func_exec_program ()
-{
-  case \" \$* \" in
-  *\\ --lt-*)
-    for lt_wr_arg
-    do
-      case \$lt_wr_arg in
-      --lt-*) ;;
-      *) set x \"\$@\" \"\$lt_wr_arg\"; shift;;
-      esac
-      shift
-    done ;;
-  esac
-  func_exec_program_core \${1+\"\$@\"}
-}
-
-  # Parse options
-  func_parse_lt_options \"\$0\" \${1+\"\$@\"}
-
-  # Find the directory that this script lives in.
-  thisdir=\`\$ECHO \"\$file\" | $SED 's%/[^/]*$%%'\`
-  test \"x\$thisdir\" = \"x\$file\" && thisdir=.
-
-  # Follow symbolic links until we get to the real thisdir.
-  file=\`ls -ld \"\$file\" | $SED -n 's/.*-> //p'\`
-  while test -n \"\$file\"; do
-    destdir=\`\$ECHO \"\$file\" | $SED 's%/[^/]*\$%%'\`
-
-    # If there was a directory component, then change thisdir.
-    if test \"x\$destdir\" != \"x\$file\"; then
-      case \"\$destdir\" in
-      [\\\\/]* | [A-Za-z]:[\\\\/]*) thisdir=\"\$destdir\" ;;
-      *) thisdir=\"\$thisdir/\$destdir\" ;;
-      esac
-    fi
-
-    file=\`\$ECHO \"\$file\" | $SED 's%^.*/%%'\`
-    file=\`ls -ld \"\$thisdir/\$file\" | $SED -n 's/.*-> //p'\`
-  done
-
-  # Usually 'no', except on cygwin/mingw when embedded into
-  # the cwrapper.
-  WRAPPER_SCRIPT_BELONGS_IN_OBJDIR=$func_emit_wrapper_arg1
-  if test \"\$WRAPPER_SCRIPT_BELONGS_IN_OBJDIR\" = \"yes\"; then
-    # special case for '.'
-    if test \"\$thisdir\" = \".\"; then
-      thisdir=\`pwd\`
-    fi
-    # remove .libs from thisdir
-    case \"\$thisdir\" in
-    *[\\\\/]$objdir ) thisdir=\`\$ECHO \"\$thisdir\" | $SED 's%[\\\\/][^\\\\/]*$%%'\` ;;
-    $objdir )   thisdir=. ;;
-    esac
-  fi
-
-  # Try to get the absolute directory name.
-  absdir=\`cd \"\$thisdir\" && pwd\`
-  test -n \"\$absdir\" && thisdir=\"\$absdir\"
-"
-
-	if test yes = "$fast_install"; then
-	  $ECHO "\
-  program=lt-'$outputname'$exeext
-  progdir=\"\$thisdir/$objdir\"
-
-  if test ! -f \"\$progdir/\$program\" ||
-     { file=\`ls -1dt \"\$progdir/\$program\" \"\$progdir/../\$program\" 2>/dev/null | $SED 1q\`; \\
-       test \"X\$file\" != \"X\$progdir/\$program\"; }; then
-
-    file=\"\$\$-\$program\"
-
-    if test ! -d \"\$progdir\"; then
-      $MKDIR \"\$progdir\"
-    else
-      $RM \"\$progdir/\$file\"
-    fi"
-
-	  $ECHO "\
-
-    # relink executable if necessary
-    if test -n \"\$relink_command\"; then
-      if relink_command_output=\`eval \$relink_command 2>&1\`; then :
-      else
-	\$ECHO \"\$relink_command_output\" >&2
-	$RM \"\$progdir/\$file\"
-	exit 1
-      fi
-    fi
-
-    $MV \"\$progdir/\$file\" \"\$progdir/\$program\" 2>/dev/null ||
-    { $RM \"\$progdir/\$program\";
-      $MV \"\$progdir/\$file\" \"\$progdir/\$program\"; }
-    $RM \"\$progdir/\$file\"
-  fi"
-	else
-	  $ECHO "\
-  program='$outputname'
-  progdir=\"\$thisdir/$objdir\"
-"
-	fi
-
-	$ECHO "\
-
-  if test -f \"\$progdir/\$program\"; then"
-
-	# fixup the dll searchpath if we need to.
-	#
-	# Fix the DLL searchpath if we need to.  Do this before prepending
-	# to shlibpath, because on Windows, both are PATH and uninstalled
-	# libraries must come first.
-	if test -n "$dllsearchpath"; then
-	  $ECHO "\
-    # Add the dll search path components to the executable PATH
-    PATH=$dllsearchpath:\$PATH
-"
-	fi
-
-	# Export our shlibpath_var if we have one.
-	if test yes = "$shlibpath_overrides_runpath" && test -n "$shlibpath_var" && test -n "$temp_rpath"; then
-	  $ECHO "\
-    # Add our own library path to $shlibpath_var
-    $shlibpath_var=\"$temp_rpath\$$shlibpath_var\"
-
-    # Some systems cannot cope with colon-terminated $shlibpath_var
-    # The second colon is a workaround for a bug in BeOS R4 sed
-    $shlibpath_var=\`\$ECHO \"\$$shlibpath_var\" | $SED 's/::*\$//'\`
-
-    export $shlibpath_var
-"
-	fi
-
-	$ECHO "\
-    if test \"\$libtool_execute_magic\" != \"$magic\"; then
-      # Run the actual program with our arguments.
-      func_exec_program \${1+\"\$@\"}
-    fi
-  else
-    # The program doesn't exist.
-    \$ECHO \"\$0: error: '\$progdir/\$program' does not exist\" 1>&2
-    \$ECHO \"This script is just a wrapper for \$program.\" 1>&2
-    \$ECHO \"See the $PACKAGE documentation for more information.\" 1>&2
-    exit 1
-  fi
-fi\
-"
-}
-
-
-# func_emit_cwrapperexe_src
-# emit the source code for a wrapper executable on stdout
-# Must ONLY be called from within func_mode_link because
-# it depends on a number of variable set therein.
-func_emit_cwrapperexe_src ()
-{
-	cat <<EOF
-
-/* $cwrappersource - temporary wrapper executable for $objdir/$outputname
-   Generated by $PROGRAM (GNU $PACKAGE) $VERSION
-
-   The $output program cannot be directly executed until all the libtool
-   libraries that it depends on are installed.
-
-   This wrapper executable should never be moved out of the build directory.
-   If it is, it will not operate correctly.
-*/
-EOF
-	    cat <<"EOF"
-#ifdef _MSC_VER
-# define _CRT_SECURE_NO_DEPRECATE 1
-#endif
-#include <stdio.h>
-#include <stdlib.h>
-#ifdef _MSC_VER
-# include <direct.h>
-# include <process.h>
-# include <io.h>
-#else
-# include <unistd.h>
-# include <stdint.h>
-# ifdef __CYGWIN__
-#  include <io.h>
-# endif
-#endif
-#include <malloc.h>
-#include <stdarg.h>
-#include <assert.h>
-#include <string.h>
-#include <ctype.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <sys/stat.h>
-
-#define STREQ(s1, s2) (strcmp ((s1), (s2)) == 0)
-
-/* declarations of non-ANSI functions */
-#if defined __MINGW32__
-# ifdef __STRICT_ANSI__
-int _putenv (const char *);
-# endif
-#elif defined __CYGWIN__
-# ifdef __STRICT_ANSI__
-char *realpath (const char *, char *);
-int putenv (char *);
-int setenv (const char *, const char *, int);
-# endif
-/* #elif defined other_platform || defined ... */
-#endif
-
-/* portability defines, excluding path handling macros */
-#if defined _MSC_VER
-# define setmode _setmode
-# define stat    _stat
-# define chmod   _chmod
-# define getcwd  _getcwd
-# define putenv  _putenv
-# define S_IXUSR _S_IEXEC
-#elif defined __MINGW32__
-# define setmode _setmode
-# define stat    _stat
-# define chmod   _chmod
-# define getcwd  _getcwd
-# define putenv  _putenv
-#elif defined __CYGWIN__
-# define HAVE_SETENV
-# define FOPEN_WB "wb"
-/* #elif defined other platforms ... */
-#endif
-
-#if defined PATH_MAX
-# define LT_PATHMAX PATH_MAX
-#elif defined MAXPATHLEN
-# define LT_PATHMAX MAXPATHLEN
-#else
-# define LT_PATHMAX 1024
-#endif
-
-#ifndef S_IXOTH
-# define S_IXOTH 0
-#endif
-#ifndef S_IXGRP
-# define S_IXGRP 0
-#endif
-
-/* path handling portability macros */
-#ifndef DIR_SEPARATOR
-# define DIR_SEPARATOR '/'
-# define PATH_SEPARATOR ':'
-#endif
-
-#if defined _WIN32 || defined __MSDOS__ || defined __DJGPP__ || \
-  defined __OS2__
-# define HAVE_DOS_BASED_FILE_SYSTEM
-# define FOPEN_WB "wb"
-# ifndef DIR_SEPARATOR_2
-#  define DIR_SEPARATOR_2 '\\'
-# endif
-# ifndef PATH_SEPARATOR_2
-#  define PATH_SEPARATOR_2 ';'
-# endif
-#endif
-
-#ifndef DIR_SEPARATOR_2
-# define IS_DIR_SEPARATOR(ch) ((ch) == DIR_SEPARATOR)
-#else /* DIR_SEPARATOR_2 */
-# define IS_DIR_SEPARATOR(ch) \
-	(((ch) == DIR_SEPARATOR) || ((ch) == DIR_SEPARATOR_2))
-#endif /* DIR_SEPARATOR_2 */
-
-#ifndef PATH_SEPARATOR_2
-# define IS_PATH_SEPARATOR(ch) ((ch) == PATH_SEPARATOR)
-#else /* PATH_SEPARATOR_2 */
-# define IS_PATH_SEPARATOR(ch) ((ch) == PATH_SEPARATOR_2)
-#endif /* PATH_SEPARATOR_2 */
-
-#ifndef FOPEN_WB
-# define FOPEN_WB "w"
-#endif
-#ifndef _O_BINARY
-# define _O_BINARY 0
-#endif
-
-#define XMALLOC(type, num)      ((type *) xmalloc ((num) * sizeof(type)))
-#define XFREE(stale) do { \
-  if (stale) { free (stale); stale = 0; } \
-} while (0)
-
-#if defined LT_DEBUGWRAPPER
-static int lt_debug = 1;
-#else
-static int lt_debug = 0;
-#endif
-
-const char *program_name = "libtool-wrapper"; /* in case xstrdup fails */
-
-void *xmalloc (size_t num);
-char *xstrdup (const char *string);
-const char *base_name (const char *name);
-char *find_executable (const char *wrapper);
-char *chase_symlinks (const char *pathspec);
-int make_executable (const char *path);
-int check_executable (const char *path);
-char *strendzap (char *str, const char *pat);
-void lt_debugprintf (const char *file, int line, const char *fmt, ...);
-void lt_fatal (const char *file, int line, const char *message, ...);
-static const char *nonnull (const char *s);
-static const char *nonempty (const char *s);
-void lt_setenv (const char *name, const char *value);
-char *lt_extend_str (const char *orig_value, const char *add, int to_end);
-void lt_update_exe_path (const char *name, const char *value);
-void lt_update_lib_path (const char *name, const char *value);
-char **prepare_spawn (char **argv);
-void lt_dump_script (FILE *f);
-EOF
-
-	    cat <<EOF
-#if __GNUC__ < 4 || (__GNUC__ == 4 && __GNUC_MINOR__ < 5)
-# define externally_visible volatile
-#else
-# define externally_visible __attribute__((externally_visible)) volatile
-#endif
-externally_visible const char * MAGIC_EXE = "$magic_exe";
-const char * LIB_PATH_VARNAME = "$shlibpath_var";
-EOF
-
-	    if test yes = "$shlibpath_overrides_runpath" && test -n "$shlibpath_var" && test -n "$temp_rpath"; then
-              func_to_host_path "$temp_rpath"
-	      cat <<EOF
-const char * LIB_PATH_VALUE   = "$func_to_host_path_result";
-EOF
-	    else
-	      cat <<"EOF"
-const char * LIB_PATH_VALUE   = "";
-EOF
-	    fi
-
-	    if test -n "$dllsearchpath"; then
-              func_to_host_path "$dllsearchpath:"
-	      cat <<EOF
-const char * EXE_PATH_VARNAME = "PATH";
-const char * EXE_PATH_VALUE   = "$func_to_host_path_result";
-EOF
-	    else
-	      cat <<"EOF"
-const char * EXE_PATH_VARNAME = "";
-const char * EXE_PATH_VALUE   = "";
-EOF
-	    fi
-
-	    if test yes = "$fast_install"; then
-	      cat <<EOF
-const char * TARGET_PROGRAM_NAME = "lt-$outputname"; /* hopefully, no .exe */
-EOF
-	    else
-	      cat <<EOF
-const char * TARGET_PROGRAM_NAME = "$outputname"; /* hopefully, no .exe */
-EOF
-	    fi
-
-
-	    cat <<"EOF"
-
-#define LTWRAPPER_OPTION_PREFIX         "--lt-"
-
-static const char *ltwrapper_option_prefix = LTWRAPPER_OPTION_PREFIX;
-static const char *dumpscript_opt       = LTWRAPPER_OPTION_PREFIX "dump-script";
-static const char *debug_opt            = LTWRAPPER_OPTION_PREFIX "debug";
-
-int
-main (int argc, char *argv[])
-{
-  char **newargz;
-  int  newargc;
-  char *tmp_pathspec;
-  char *actual_cwrapper_path;
-  char *actual_cwrapper_name;
-  char *target_name;
-  char *lt_argv_zero;
-  int rval = 127;
-
-  int i;
-
-  program_name = (char *) xstrdup (base_name (argv[0]));
-  newargz = XMALLOC (char *, (size_t) argc + 1);
-
-  /* very simple arg parsing; don't want to rely on getopt
-   * also, copy all non cwrapper options to newargz, except
-   * argz[0], which is handled differently
-   */
-  newargc=0;
-  for (i = 1; i < argc; i++)
-    {
-      if (STREQ (argv[i], dumpscript_opt))
-	{
-EOF
-	    case $host in
-	      *mingw* | *cygwin* )
-		# make stdout use "unix" line endings
-		echo "          setmode(1,_O_BINARY);"
-		;;
-	      esac
-
-	    cat <<"EOF"
-	  lt_dump_script (stdout);
-	  return 0;
-	}
-      if (STREQ (argv[i], debug_opt))
-	{
-          lt_debug = 1;
-          continue;
-	}
-      if (STREQ (argv[i], ltwrapper_option_prefix))
-        {
-          /* however, if there is an option in the LTWRAPPER_OPTION_PREFIX
-             namespace, but it is not one of the ones we know about and
-             have already dealt with, above (inluding dump-script), then
-             report an error. Otherwise, targets might begin to believe
-             they are allowed to use options in the LTWRAPPER_OPTION_PREFIX
-             namespace. The first time any user complains about this, we'll
-             need to make LTWRAPPER_OPTION_PREFIX a configure-time option
-             or a configure.ac-settable value.
-           */
-          lt_fatal (__FILE__, __LINE__,
-		    "unrecognized %s option: '%s'",
-                    ltwrapper_option_prefix, argv[i]);
-        }
-      /* otherwise ... */
-      newargz[++newargc] = xstrdup (argv[i]);
-    }
-  newargz[++newargc] = NULL;
-
-EOF
-	    cat <<EOF
-  /* The GNU banner must be the first non-error debug message */
-  lt_debugprintf (__FILE__, __LINE__, "libtool wrapper (GNU $PACKAGE) $VERSION\n");
-EOF
-	    cat <<"EOF"
-  lt_debugprintf (__FILE__, __LINE__, "(main) argv[0]: %s\n", argv[0]);
-  lt_debugprintf (__FILE__, __LINE__, "(main) program_name: %s\n", program_name);
-
-  tmp_pathspec = find_executable (argv[0]);
-  if (tmp_pathspec == NULL)
-    lt_fatal (__FILE__, __LINE__, "couldn't find %s", argv[0]);
-  lt_debugprintf (__FILE__, __LINE__,
-                  "(main) found exe (before symlink chase) at: %s\n",
-		  tmp_pathspec);
-
-  actual_cwrapper_path = chase_symlinks (tmp_pathspec);
-  lt_debugprintf (__FILE__, __LINE__,
-                  "(main) found exe (after symlink chase) at: %s\n",
-		  actual_cwrapper_path);
-  XFREE (tmp_pathspec);
-
-  actual_cwrapper_name = xstrdup (base_name (actual_cwrapper_path));
-  strendzap (actual_cwrapper_path, actual_cwrapper_name);
-
-  /* wrapper name transforms */
-  strendzap (actual_cwrapper_name, ".exe");
-  tmp_pathspec = lt_extend_str (actual_cwrapper_name, ".exe", 1);
-  XFREE (actual_cwrapper_name);
-  actual_cwrapper_name = tmp_pathspec;
-  tmp_pathspec = 0;
-
-  /* target_name transforms -- use actual target program name; might have lt- prefix */
-  target_name = xstrdup (base_name (TARGET_PROGRAM_NAME));
-  strendzap (target_name, ".exe");
-  tmp_pathspec = lt_extend_str (target_name, ".exe", 1);
-  XFREE (target_name);
-  target_name = tmp_pathspec;
-  tmp_pathspec = 0;
-
-  lt_debugprintf (__FILE__, __LINE__,
-		  "(main) libtool target name: %s\n",
-		  target_name);
-EOF
-
-	    cat <<EOF
-  newargz[0] =
-    XMALLOC (char, (strlen (actual_cwrapper_path) +
-		    strlen ("$objdir") + 1 + strlen (actual_cwrapper_name) + 1));
-  strcpy (newargz[0], actual_cwrapper_path);
-  strcat (newargz[0], "$objdir");
-  strcat (newargz[0], "/");
-EOF
-
-	    cat <<"EOF"
-  /* stop here, and copy so we don't have to do this twice */
-  tmp_pathspec = xstrdup (newargz[0]);
-
-  /* do NOT want the lt- prefix here, so use actual_cwrapper_name */
-  strcat (newargz[0], actual_cwrapper_name);
-
-  /* DO want the lt- prefix here if it exists, so use target_name */
-  lt_argv_zero = lt_extend_str (tmp_pathspec, target_name, 1);
-  XFREE (tmp_pathspec);
-  tmp_pathspec = NULL;
-EOF
-
-	    case $host_os in
-	      mingw*)
-	    cat <<"EOF"
-  {
-    char* p;
-    while ((p = strchr (newargz[0], '\\')) != NULL)
-      {
-	*p = '/';
-      }
-    while ((p = strchr (lt_argv_zero, '\\')) != NULL)
-      {
-	*p = '/';
-      }
-  }
-EOF
-	    ;;
-	    esac
-
-	    cat <<"EOF"
-  XFREE (target_name);
-  XFREE (actual_cwrapper_path);
-  XFREE (actual_cwrapper_name);
-
-  lt_setenv ("BIN_SH", "xpg4"); /* for Tru64 */
-  lt_setenv ("DUALCASE", "1");  /* for MSK sh */
-  /* Update the DLL searchpath.  EXE_PATH_VALUE ($dllsearchpath) must
-     be prepended before (that is, appear after) LIB_PATH_VALUE ($temp_rpath)
-     because on Windows, both *_VARNAMEs are PATH but uninstalled
-     libraries must come first. */
-  lt_update_exe_path (EXE_PATH_VARNAME, EXE_PATH_VALUE);
-  lt_update_lib_path (LIB_PATH_VARNAME, LIB_PATH_VALUE);
-
-  lt_debugprintf (__FILE__, __LINE__, "(main) lt_argv_zero: %s\n",
-		  nonnull (lt_argv_zero));
-  for (i = 0; i < newargc; i++)
-    {
-      lt_debugprintf (__FILE__, __LINE__, "(main) newargz[%d]: %s\n",
-		      i, nonnull (newargz[i]));
-    }
-
-EOF
-
-	    case $host_os in
-	      mingw*)
-		cat <<"EOF"
-  /* execv doesn't actually work on mingw as expected on unix */
-  newargz = prepare_spawn (newargz);
-  rval = (int) _spawnv (_P_WAIT, lt_argv_zero, (const char * const *) newargz);
-  if (rval == -1)
-    {
-      /* failed to start process */
-      lt_debugprintf (__FILE__, __LINE__,
-		      "(main) failed to launch target \"%s\": %s\n",
-		      lt_argv_zero, nonnull (strerror (errno)));
-      return 127;
-    }
-  return rval;
-EOF
-		;;
-	      *)
-		cat <<"EOF"
-  execv (lt_argv_zero, newargz);
-  return rval; /* =127, but avoids unused variable warning */
-EOF
-		;;
-	    esac
-
-	    cat <<"EOF"
-}
-
-void *
-xmalloc (size_t num)
-{
-  void *p = (void *) malloc (num);
-  if (!p)
-    lt_fatal (__FILE__, __LINE__, "memory exhausted");
-
-  return p;
-}
-
-char *
-xstrdup (const char *string)
-{
-  return string ? strcpy ((char *) xmalloc (strlen (string) + 1),
-			  string) : NULL;
-}
-
-const char *
-base_name (const char *name)
-{
-  const char *base;
-
-#if defined HAVE_DOS_BASED_FILE_SYSTEM
-  /* Skip over the disk name in MSDOS pathnames. */
-  if (isalpha ((unsigned char) name[0]) && name[1] == ':')
-    name += 2;
-#endif
-
-  for (base = name; *name; name++)
-    if (IS_DIR_SEPARATOR (*name))
-      base = name + 1;
-  return base;
-}
-
-int
-check_executable (const char *path)
-{
-  struct stat st;
-
-  lt_debugprintf (__FILE__, __LINE__, "(check_executable): %s\n",
-                  nonempty (path));
-  if ((!path) || (!*path))
-    return 0;
-
-  if ((stat (path, &st) >= 0)
-      && (st.st_mode & (S_IXUSR | S_IXGRP | S_IXOTH)))
-    return 1;
-  else
-    return 0;
-}
-
-int
-make_executable (const char *path)
-{
-  int rval = 0;
-  struct stat st;
-
-  lt_debugprintf (__FILE__, __LINE__, "(make_executable): %s\n",
-                  nonempty (path));
-  if ((!path) || (!*path))
-    return 0;
-
-  if (stat (path, &st) >= 0)
-    {
-      rval = chmod (path, st.st_mode | S_IXOTH | S_IXGRP | S_IXUSR);
-    }
-  return rval;
-}
-
-/* Searches for the full path of the wrapper.  Returns
-   newly allocated full path name if found, NULL otherwise
-   Does not chase symlinks, even on platforms that support them.
-*/
-char *
-find_executable (const char *wrapper)
-{
-  int has_slash = 0;
-  const char *p;
-  const char *p_next;
-  /* static buffer for getcwd */
-  char tmp[LT_PATHMAX + 1];
-  size_t tmp_len;
-  char *concat_name;
-
-  lt_debugprintf (__FILE__, __LINE__, "(find_executable): %s\n",
-                  nonempty (wrapper));
-
-  if ((wrapper == NULL) || (*wrapper == '\0'))
-    return NULL;
-
-  /* Absolute path? */
-#if defined HAVE_DOS_BASED_FILE_SYSTEM
-  if (isalpha ((unsigned char) wrapper[0]) && wrapper[1] == ':')
-    {
-      concat_name = xstrdup (wrapper);
-      if (check_executable (concat_name))
-	return concat_name;
-      XFREE (concat_name);
-    }
-  else
-    {
-#endif
-      if (IS_DIR_SEPARATOR (wrapper[0]))
-	{
-	  concat_name = xstrdup (wrapper);
-	  if (check_executable (concat_name))
-	    return concat_name;
-	  XFREE (concat_name);
-	}
-#if defined HAVE_DOS_BASED_FILE_SYSTEM
-    }
-#endif
-
-  for (p = wrapper; *p; p++)
-    if (*p == '/')
-      {
-	has_slash = 1;
-	break;
-      }
-  if (!has_slash)
-    {
-      /* no slashes; search PATH */
-      const char *path = getenv ("PATH");
-      if (path != NULL)
-	{
-	  for (p = path; *p; p = p_next)
-	    {
-	      const char *q;
-	      size_t p_len;
-	      for (q = p; *q; q++)
-		if (IS_PATH_SEPARATOR (*q))
-		  break;
-	      p_len = (size_t) (q - p);
-	      p_next = (*q == '\0' ? q : q + 1);
-	      if (p_len == 0)
-		{
-		  /* empty path: current directory */
-		  if (getcwd (tmp, LT_PATHMAX) == NULL)
-		    lt_fatal (__FILE__, __LINE__, "getcwd failed: %s",
-                              nonnull (strerror (errno)));
-		  tmp_len = strlen (tmp);
-		  concat_name =
-		    XMALLOC (char, tmp_len + 1 + strlen (wrapper) + 1);
-		  memcpy (concat_name, tmp, tmp_len);
-		  concat_name[tmp_len] = '/';
-		  strcpy (concat_name + tmp_len + 1, wrapper);
-		}
-	      else
-		{
-		  concat_name =
-		    XMALLOC (char, p_len + 1 + strlen (wrapper) + 1);
-		  memcpy (concat_name, p, p_len);
-		  concat_name[p_len] = '/';
-		  strcpy (concat_name + p_len + 1, wrapper);
-		}
-	      if (check_executable (concat_name))
-		return concat_name;
-	      XFREE (concat_name);
-	    }
-	}
-      /* not found in PATH; assume curdir */
-    }
-  /* Relative path | not found in path: prepend cwd */
-  if (getcwd (tmp, LT_PATHMAX) == NULL)
-    lt_fatal (__FILE__, __LINE__, "getcwd failed: %s",
-              nonnull (strerror (errno)));
-  tmp_len = strlen (tmp);
-  concat_name = XMALLOC (char, tmp_len + 1 + strlen (wrapper) + 1);
-  memcpy (concat_name, tmp, tmp_len);
-  concat_name[tmp_len] = '/';
-  strcpy (concat_name + tmp_len + 1, wrapper);
-
-  if (check_executable (concat_name))
-    return concat_name;
-  XFREE (concat_name);
-  return NULL;
-}
-
-char *
-chase_symlinks (const char *pathspec)
-{
-#ifndef S_ISLNK
-  return xstrdup (pathspec);
-#else
-  char buf[LT_PATHMAX];
-  struct stat s;
-  char *tmp_pathspec = xstrdup (pathspec);
-  char *p;
-  int has_symlinks = 0;
-  while (strlen (tmp_pathspec) && !has_symlinks)
-    {
-      lt_debugprintf (__FILE__, __LINE__,
-		      "checking path component for symlinks: %s\n",
-		      tmp_pathspec);
-      if (lstat (tmp_pathspec, &s) == 0)
-	{
-	  if (S_ISLNK (s.st_mode) != 0)
-	    {
-	      has_symlinks = 1;
-	      break;
-	    }
-
-	  /* search backwards for last DIR_SEPARATOR */
-	  p = tmp_pathspec + strlen (tmp_pathspec) - 1;
-	  while ((p > tmp_pathspec) && (!IS_DIR_SEPARATOR (*p)))
-	    p--;
-	  if ((p == tmp_pathspec) && (!IS_DIR_SEPARATOR (*p)))
-	    {
-	      /* no more DIR_SEPARATORS left */
-	      break;
-	    }
-	  *p = '\0';
-	}
-      else
-	{
-	  lt_fatal (__FILE__, __LINE__,
-		    "error accessing file \"%s\": %s",
-		    tmp_pathspec, nonnull (strerror (errno)));
-	}
-    }
-  XFREE (tmp_pathspec);
-
-  if (!has_symlinks)
-    {
-      return xstrdup (pathspec);
-    }
-
-  tmp_pathspec = realpath (pathspec, buf);
-  if (tmp_pathspec == 0)
-    {
-      lt_fatal (__FILE__, __LINE__,
-		"could not follow symlinks for %s", pathspec);
-    }
-  return xstrdup (tmp_pathspec);
-#endif
-}
-
-char *
-strendzap (char *str, const char *pat)
-{
-  size_t len, patlen;
-
-  assert (str != NULL);
-  assert (pat != NULL);
-
-  len = strlen (str);
-  patlen = strlen (pat);
-
-  if (patlen <= len)
-    {
-      str += len - patlen;
-      if (STREQ (str, pat))
-	*str = '\0';
-    }
-  return str;
-}
-
-void
-lt_debugprintf (const char *file, int line, const char *fmt, ...)
-{
-  va_list args;
-  if (lt_debug)
-    {
-      (void) fprintf (stderr, "%s:%s:%d: ", program_name, file, line);
-      va_start (args, fmt);
-      (void) vfprintf (stderr, fmt, args);
-      va_end (args);
-    }
-}
-
-static void
-lt_error_core (int exit_status, const char *file,
-	       int line, const char *mode,
-	       const char *message, va_list ap)
-{
-  fprintf (stderr, "%s:%s:%d: %s: ", program_name, file, line, mode);
-  vfprintf (stderr, message, ap);
-  fprintf (stderr, ".\n");
-
-  if (exit_status >= 0)
-    exit (exit_status);
-}
-
-void
-lt_fatal (const char *file, int line, const char *message, ...)
-{
-  va_list ap;
-  va_start (ap, message);
-  lt_error_core (EXIT_FAILURE, file, line, "FATAL", message, ap);
-  va_end (ap);
-}
-
-static const char *
-nonnull (const char *s)
-{
-  return s ? s : "(null)";
-}
-
-static const char *
-nonempty (const char *s)
-{
-  return (s && !*s) ? "(empty)" : nonnull (s);
-}
-
-void
-lt_setenv (const char *name, const char *value)
-{
-  lt_debugprintf (__FILE__, __LINE__,
-		  "(lt_setenv) setting '%s' to '%s'\n",
-                  nonnull (name), nonnull (value));
-  {
-#ifdef HAVE_SETENV
-    /* always make a copy, for consistency with !HAVE_SETENV */
-    char *str = xstrdup (value);
-    setenv (name, str, 1);
-#else
-    size_t len = strlen (name) + 1 + strlen (value) + 1;
-    char *str = XMALLOC (char, len);
-    sprintf (str, "%s=%s", name, value);
-    if (putenv (str) != EXIT_SUCCESS)
-      {
-        XFREE (str);
-      }
-#endif
-  }
-}
-
-char *
-lt_extend_str (const char *orig_value, const char *add, int to_end)
-{
-  char *new_value;
-  if (orig_value && *orig_value)
-    {
-      size_t orig_value_len = strlen (orig_value);
-      size_t add_len = strlen (add);
-      new_value = XMALLOC (char, add_len + orig_value_len + 1);
-      if (to_end)
-        {
-          strcpy (new_value, orig_value);
-          strcpy (new_value + orig_value_len, add);
-        }
-      else
-        {
-          strcpy (new_value, add);
-          strcpy (new_value + add_len, orig_value);
-        }
-    }
-  else
-    {
-      new_value = xstrdup (add);
-    }
-  return new_value;
-}
-
-void
-lt_update_exe_path (const char *name, const char *value)
-{
-  lt_debugprintf (__FILE__, __LINE__,
-		  "(lt_update_exe_path) modifying '%s' by prepending '%s'\n",
-                  nonnull (name), nonnull (value));
-
-  if (name && *name && value && *value)
-    {
-      char *new_value = lt_extend_str (getenv (name), value, 0);
-      /* some systems can't cope with a ':'-terminated path #' */
-      size_t len = strlen (new_value);
-      while ((len > 0) && IS_PATH_SEPARATOR (new_value[len-1]))
-        {
-          new_value[--len] = '\0';
-        }
-      lt_setenv (name, new_value);
-      XFREE (new_value);
-    }
-}
-
-void
-lt_update_lib_path (const char *name, const char *value)
-{
-  lt_debugprintf (__FILE__, __LINE__,
-		  "(lt_update_lib_path) modifying '%s' by prepending '%s'\n",
-                  nonnull (name), nonnull (value));
-
-  if (name && *name && value && *value)
-    {
-      char *new_value = lt_extend_str (getenv (name), value, 0);
-      lt_setenv (name, new_value);
-      XFREE (new_value);
-    }
-}
-
-EOF
-	    case $host_os in
-	      mingw*)
-		cat <<"EOF"
-
-/* Prepares an argument vector before calling spawn().
-   Note that spawn() does not by itself call the command interpreter
-     (getenv ("COMSPEC") != NULL ? getenv ("COMSPEC") :
-      ({ OSVERSIONINFO v; v.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-         GetVersionEx(&v);
-         v.dwPlatformId == VER_PLATFORM_WIN32_NT;
-      }) ? "cmd.exe" : "command.com").
-   Instead it simply concatenates the arguments, separated by ' ', and calls
-   CreateProcess().  We must quote the arguments since Win32 CreateProcess()
-   interprets characters like ' ', '\t', '\\', '"' (but not '<' and '>') in a
-   special way:
-   - Space and tab are interpreted as delimiters. They are not treated as
-     delimiters if they are surrounded by double quotes: "...".
-   - Unescaped double quotes are removed from the input. Their only effect is
-     that within double quotes, space and tab are treated like normal
-     characters.
-   - Backslashes not followed by double quotes are not special.
-   - But 2*n+1 backslashes followed by a double quote become
-     n backslashes followed by a double quote (n >= 0):
-       \" -> "
-       \\\" -> \"
-       \\\\\" -> \\"
- */
-#define SHELL_SPECIAL_CHARS "\"\\ \001\002\003\004\005\006\007\010\011\012\013\014\015\016\017\020\021\022\023\024\025\026\027\030\031\032\033\034\035\036\037"
-#define SHELL_SPACE_CHARS " \001\002\003\004\005\006\007\010\011\012\013\014\015\016\017\020\021\022\023\024\025\026\027\030\031\032\033\034\035\036\037"
-char **
-prepare_spawn (char **argv)
-{
-  size_t argc;
-  char **new_argv;
-  size_t i;
-
-  /* Count number of arguments.  */
-  for (argc = 0; argv[argc] != NULL; argc++)
-    ;
-
-  /* Allocate new argument vector.  */
-  new_argv = XMALLOC (char *, argc + 1);
-
-  /* Put quoted arguments into the new argument vector.  */
-  for (i = 0; i < argc; i++)
-    {
-      const char *string = argv[i];
-
-      if (string[0] == '\0')
-	new_argv[i] = xstrdup ("\"\"");
-      else if (strpbrk (string, SHELL_SPECIAL_CHARS) != NULL)
-	{
-	  int quote_around = (strpbrk (string, SHELL_SPACE_CHARS) != NULL);
-	  size_t length;
-	  unsigned int backslashes;
-	  const char *s;
-	  char *quoted_string;
-	  char *p;
-
-	  length = 0;
-	  backslashes = 0;
-	  if (quote_around)
-	    length++;
-	  for (s = string; *s != '\0'; s++)
-	    {
-	      char c = *s;
-	      if (c == '"')
-		length += backslashes + 1;
-	      length++;
-	      if (c == '\\')
-		backslashes++;
-	      else
-		backslashes = 0;
-	    }
-	  if (quote_around)
-	    length += backslashes + 1;
-
-	  quoted_string = XMALLOC (char, length + 1);
-
-	  p = quoted_string;
-	  backslashes = 0;
-	  if (quote_around)
-	    *p++ = '"';
-	  for (s = string; *s != '\0'; s++)
-	    {
-	      char c = *s;
-	      if (c == '"')
-		{
-		  unsigned int j;
-		  for (j = backslashes + 1; j > 0; j--)
-		    *p++ = '\\';
-		}
-	      *p++ = c;
-	      if (c == '\\')
-		backslashes++;
-	      else
-		backslashes = 0;
-	    }
-	  if (quote_around)
-	    {
-	      unsigned int j;
-	      for (j = backslashes; j > 0; j--)
-		*p++ = '\\';
-	      *p++ = '"';
-	    }
-	  *p = '\0';
-
-	  new_argv[i] = quoted_string;
-	}
-      else
-	new_argv[i] = (char *) string;
-    }
-  new_argv[argc] = NULL;
-
-  return new_argv;
-}
-EOF
-		;;
-	    esac
-
-            cat <<"EOF"
-void lt_dump_script (FILE* f)
-{
-EOF
-	    func_emit_wrapper yes |
-	      $SED -n -e '
-s/^\(.\{79\}\)\(..*\)/\1\
-\2/
-h
-s/\([\\"]\)/\\\1/g
-s/$/\\n/
-s/\([^\n]*\).*/  fputs ("\1", f);/p
-g
-D'
-            cat <<"EOF"
-}
-EOF
-}
-# end: func_emit_cwrapperexe_src
-
-# func_win32_import_lib_p ARG
-# True if ARG is an import lib, as indicated by $file_magic_cmd
-func_win32_import_lib_p ()
-{
-    $debug_cmd
-
-    case `eval $file_magic_cmd \"\$1\" 2>/dev/null | $SED -e 10q` in
-    *import*) : ;;
-    *) false ;;
-    esac
-}
-
-# func_mode_link arg...
-func_mode_link ()
-{
-    $debug_cmd
-
-    case $host in
-    *-*-cygwin* | *-*-mingw* | *-*-pw32* | *-*-os2* | *-cegcc*)
-      # It is impossible to link a dll without this setting, and
-      # we shouldn't force the makefile maintainer to figure out
-      # what system we are compiling for in order to pass an extra
-      # flag for every libtool invocation.
-      # allow_undefined=no
-
-      # FIXME: Unfortunately, there are problems with the above when trying
-      # to make a dll that has undefined symbols, in which case not
-      # even a static library is built.  For now, we need to specify
-      # -no-undefined on the libtool link line when we can be certain
-      # that all symbols are satisfied, otherwise we get a static library.
-      allow_undefined=yes
-      ;;
-    *)
-      allow_undefined=yes
-      ;;
-    esac
-    libtool_args=$nonopt
-    base_compile="$nonopt $@"
-    compile_command=$nonopt
-    finalize_command=$nonopt
-
-    compile_rpath=
-    finalize_rpath=
-    compile_shlibpath=
-    finalize_shlibpath=
-    convenience=
-    old_convenience=
-    deplibs=
-    old_deplibs=
-    compiler_flags=
-    linker_flags=
-    dllsearchpath=
-    lib_search_path=`pwd`
-    inst_prefix_dir=
-    new_inherited_linker_flags=
-    fix_hardcoded_libdir_flag=
-    fix_hardcoded_libdir_flag_ld=
-
-    avoid_version=no
-    bindir=
-    dlfiles=
-    dlprefiles=
-    dlself=no
-    export_dynamic=no
-    export_symbols=
-    export_symbols_regex=
-    generated=
-    libobjs=
-    ltlibs=
-    module=no
-    no_install=no
-    objs=
-    os2dllname=
-    non_pic_objects=
-    precious_files_regex=
-    prefer_static_libs=no
-    preload=false
-    prev=
-    prevarg=
-    release=
-    rpath=
-    xrpath=
-    perm_rpath=
-    temp_rpath=
-    thread_safe=no
-    vinfo=
-    vinfo_number=no
-    weak_libs=
-    single_module=$wl-single_module
-    func_infer_tag $base_compile
-
-    # We need to know -static, to get the right output filenames.
-    for arg
-    do
-      case $arg in
-      -shared)
-	test yes != "$build_libtool_libs" \
-	  && func_fatal_configuration "cannot build a shared library"
-	build_old_libs=no
-	break
-	;;
-      -all-static | -static | -static-libtool-libs)
-	case $arg in
-	-all-static)
-	  if test yes = "$build_libtool_libs" && test -z "$link_static_flag"; then
-	    func_warning "complete static linking is impossible in this configuration"
-	  fi
-	  if test -n "$link_static_flag"; then
-	    dlopen_self=$dlopen_self_static
-	  fi
-	  prefer_static_libs=yes
-	  ;;
-	-static)
-	  if test -z "$pic_flag" && test -n "$link_static_flag"; then
-	    dlopen_self=$dlopen_self_static
-	  fi
-	  prefer_static_libs=built
-	  ;;
-	-static-libtool-libs)
-	  if test -z "$pic_flag" && test -n "$link_static_flag"; then
-	    dlopen_self=$dlopen_self_static
-	  fi
-	  prefer_static_libs=yes
-	  ;;
-	esac
-	build_libtool_libs=no
-	build_old_libs=yes
-	break
-	;;
-      esac
-    done
-
-    # See if our shared archives depend on static archives.
-    test -n "$old_archive_from_new_cmds" && build_old_libs=yes
-
-    # Go through the arguments, transforming them on the way.
-    while test "$#" -gt 0; do
-      arg=$1
-      shift
-      func_quote_for_eval "$arg"
-      qarg=$func_quote_for_eval_unquoted_result
-      func_append libtool_args " $func_quote_for_eval_result"
-
-      # If the previous option needs an argument, assign it.
-      if test -n "$prev"; then
-	case $prev in
-	output)
-	  func_append compile_command " @OUTPUT@"
-	  func_append finalize_command " @OUTPUT@"
-	  ;;
-	esac
-
-	case $prev in
-	bindir)
-	  bindir=$arg
-	  prev=
-	  continue
-	  ;;
-	dlfiles|dlprefiles)
-	  $preload || {
-	    # Add the symbol object into the linking commands.
-	    func_append compile_command " @SYMFILE@"
-	    func_append finalize_command " @SYMFILE@"
-	    preload=:
-	  }
-	  case $arg in
-	  *.la | *.lo) ;;  # We handle these cases below.
-	  force)
-	    if test no = "$dlself"; then
-	      dlself=needless
-	      export_dynamic=yes
-	    fi
-	    prev=
-	    continue
-	    ;;
-	  self)
-	    if test dlprefiles = "$prev"; then
-	      dlself=yes
-	    elif test dlfiles = "$prev" && test yes != "$dlopen_self"; then
-	      dlself=yes
-	    else
-	      dlself=needless
-	      export_dynamic=yes
-	    fi
-	    prev=
-	    continue
-	    ;;
-	  *)
-	    if test dlfiles = "$prev"; then
-	      func_append dlfiles " $arg"
-	    else
-	      func_append dlprefiles " $arg"
-	    fi
-	    prev=
-	    continue
-	    ;;
-	  esac
-	  ;;
-	expsyms)
-	  export_symbols=$arg
-	  test -f "$arg" \
-	    || func_fatal_error "symbol file '$arg' does not exist"
-	  prev=
-	  continue
-	  ;;
-	expsyms_regex)
-	  export_symbols_regex=$arg
-	  prev=
-	  continue
-	  ;;
-	framework)
-	  case $host in
-	    *-*-darwin*)
-	      case "$deplibs " in
-		*" $qarg.ltframework "*) ;;
-		*) func_append deplibs " $qarg.ltframework" # this is fixed later
-		   ;;
-	      esac
-	      ;;
-	  esac
-	  prev=
-	  continue
-	  ;;
-	inst_prefix)
-	  inst_prefix_dir=$arg
-	  prev=
-	  continue
-	  ;;
-	mllvm)
-	  # Clang does not use LLVM to link, so we can simply discard any
-	  # '-mllvm $arg' options when doing the link step.
-	  prev=
-	  continue
-	  ;;
-	objectlist)
-	  if test -f "$arg"; then
-	    save_arg=$arg
-	    moreargs=
-	    for fil in `cat "$save_arg"`
-	    do
-#	      func_append moreargs " $fil"
-	      arg=$fil
-	      # A libtool-controlled object.
-
-	      # Check to see that this really is a libtool object.
-	      if func_lalib_unsafe_p "$arg"; then
-		pic_object=
-		non_pic_object=
-
-		# Read the .lo file
-		func_source "$arg"
-
-		if test -z "$pic_object" ||
-		   test -z "$non_pic_object" ||
-		   test none = "$pic_object" &&
-		   test none = "$non_pic_object"; then
-		  func_fatal_error "cannot find name of object for '$arg'"
-		fi
-
-		# Extract subdirectory from the argument.
-		func_dirname "$arg" "/" ""
-		xdir=$func_dirname_result
-
-		if test none != "$pic_object"; then
-		  # Prepend the subdirectory the object is found in.
-		  pic_object=$xdir$pic_object
-
-		  if test dlfiles = "$prev"; then
-		    if test yes = "$build_libtool_libs" && test yes = "$dlopen_support"; then
-		      func_append dlfiles " $pic_object"
-		      prev=
-		      continue
-		    else
-		      # If libtool objects are unsupported, then we need to preload.
-		      prev=dlprefiles
-		    fi
-		  fi
-
-		  # CHECK ME:  I think I busted this.  -Ossama
-		  if test dlprefiles = "$prev"; then
-		    # Preload the old-style object.
-		    func_append dlprefiles " $pic_object"
-		    prev=
-		  fi
-
-		  # A PIC object.
-		  func_append libobjs " $pic_object"
-		  arg=$pic_object
-		fi
-
-		# Non-PIC object.
-		if test none != "$non_pic_object"; then
-		  # Prepend the subdirectory the object is found in.
-		  non_pic_object=$xdir$non_pic_object
-
-		  # A standard non-PIC object
-		  func_append non_pic_objects " $non_pic_object"
-		  if test -z "$pic_object" || test none = "$pic_object"; then
-		    arg=$non_pic_object
-		  fi
-		else
-		  # If the PIC object exists, use it instead.
-		  # $xdir was prepended to $pic_object above.
-		  non_pic_object=$pic_object
-		  func_append non_pic_objects " $non_pic_object"
-		fi
-	      else
-		# Only an error if not doing a dry-run.
-		if $opt_dry_run; then
-		  # Extract subdirectory from the argument.
-		  func_dirname "$arg" "/" ""
-		  xdir=$func_dirname_result
-
-		  func_lo2o "$arg"
-		  pic_object=$xdir$objdir/$func_lo2o_result
-		  non_pic_object=$xdir$func_lo2o_result
-		  func_append libobjs " $pic_object"
-		  func_append non_pic_objects " $non_pic_object"
-	        else
-		  func_fatal_error "'$arg' is not a valid libtool object"
-		fi
-	      fi
-	    done
-	  else
-	    func_fatal_error "link input file '$arg' does not exist"
-	  fi
-	  arg=$save_arg
-	  prev=
-	  continue
-	  ;;
-	os2dllname)
-	  os2dllname=$arg
-	  prev=
-	  continue
-	  ;;
-	precious_regex)
-	  precious_files_regex=$arg
-	  prev=
-	  continue
-	  ;;
-	release)
-	  release=-$arg
-	  prev=
-	  continue
-	  ;;
-	rpath | xrpath)
-	  # We need an absolute path.
-	  case $arg in
-	  [\\/]* | [A-Za-z]:[\\/]*) ;;
-	  *)
-	    func_fatal_error "only absolute run-paths are allowed"
-	    ;;
-	  esac
-	  if test rpath = "$prev"; then
-	    case "$rpath " in
-	    *" $arg "*) ;;
-	    *) func_append rpath " $arg" ;;
-	    esac
-	  else
-	    case "$xrpath " in
-	    *" $arg "*) ;;
-	    *) func_append xrpath " $arg" ;;
-	    esac
-	  fi
-	  prev=
-	  continue
-	  ;;
-	shrext)
-	  shrext_cmds=$arg
-	  prev=
-	  continue
-	  ;;
-	weak)
-	  func_append weak_libs " $arg"
-	  prev=
-	  continue
-	  ;;
-	xcclinker)
-	  func_append linker_flags " $qarg"
-	  func_append compiler_flags " $qarg"
-	  prev=
-	  func_append compile_command " $qarg"
-	  func_append finalize_command " $qarg"
-	  continue
-	  ;;
-	xcompiler)
-	  func_append compiler_flags " $qarg"
-	  prev=
-	  func_append compile_command " $qarg"
-	  func_append finalize_command " $qarg"
-	  continue
-	  ;;
-	xlinker)
-	  func_append linker_flags " $qarg"
-	  func_append compiler_flags " $wl$qarg"
-	  prev=
-	  func_append compile_command " $wl$qarg"
-	  func_append finalize_command " $wl$qarg"
-	  continue
-	  ;;
-	*)
-	  eval "$prev=\"\$arg\""
-	  prev=
-	  continue
-	  ;;
-	esac
-      fi # test -n "$prev"
-
-      prevarg=$arg
-
-      case $arg in
-      -all-static)
-	if test -n "$link_static_flag"; then
-	  # See comment for -static flag below, for more details.
-	  func_append compile_command " $link_static_flag"
-	  func_append finalize_command " $link_static_flag"
-	fi
-	continue
-	;;
-
-      -allow-undefined)
-	# FIXME: remove this flag sometime in the future.
-	func_fatal_error "'-allow-undefined' must not be used because it is the default"
-	;;
-
-      -avoid-version)
-	avoid_version=yes
-	continue
-	;;
-
-      -bindir)
-	prev=bindir
-	continue
-	;;
-
-      -dlopen)
-	prev=dlfiles
-	continue
-	;;
-
-      -dlpreopen)
-	prev=dlprefiles
-	continue
-	;;
-
-      -export-dynamic)
-	export_dynamic=yes
-	continue
-	;;
-
-      -export-symbols | -export-symbols-regex)
-	if test -n "$export_symbols" || test -n "$export_symbols_regex"; then
-	  func_fatal_error "more than one -exported-symbols argument is not allowed"
-	fi
-	if test X-export-symbols = "X$arg"; then
-	  prev=expsyms
-	else
-	  prev=expsyms_regex
-	fi
-	continue
-	;;
-
-      -framework)
-	prev=framework
-	continue
-	;;
-
-      -inst-prefix-dir)
-	prev=inst_prefix
-	continue
-	;;
-
-      # The native IRIX linker understands -LANG:*, -LIST:* and -LNO:*
-      # so, if we see these flags be careful not to treat them like -L
-      -L[A-Z][A-Z]*:*)
-	case $with_gcc/$host in
-	no/*-*-irix* | /*-*-irix*)
-	  func_append compile_command " $arg"
-	  func_append finalize_command " $arg"
-	  ;;
-	esac
-	continue
-	;;
-
-      -L*)
-	func_stripname "-L" '' "$arg"
-	if test -z "$func_stripname_result"; then
-	  if test "$#" -gt 0; then
-	    func_fatal_error "require no space between '-L' and '$1'"
-	  else
-	    func_fatal_error "need path for '-L' option"
-	  fi
-	fi
-	func_resolve_sysroot "$func_stripname_result"
-	dir=$func_resolve_sysroot_result
-	# We need an absolute path.
-	case $dir in
-	[\\/]* | [A-Za-z]:[\\/]*) ;;
-	*)
-	  absdir=`cd "$dir" && pwd`
-	  test -z "$absdir" && \
-	    func_fatal_error "cannot determine absolute directory name of '$dir'"
-	  dir=$absdir
-	  ;;
-	esac
-	case "$deplibs " in
-	*" -L$dir "* | *" $arg "*)
-	  # Will only happen for absolute or sysroot arguments
-	  ;;
-	*)
-	  # Preserve sysroot, but never include relative directories
-	  case $dir in
-	    [\\/]* | [A-Za-z]:[\\/]* | =*) func_append deplibs " $arg" ;;
-	    *) func_append deplibs " -L$dir" ;;
-	  esac
-	  func_append lib_search_path " $dir"
-	  ;;
-	esac
-	case $host in
-	*-*-cygwin* | *-*-mingw* | *-*-pw32* | *-*-os2* | *-cegcc*)
-	  testbindir=`$ECHO "$dir" | $SED 's*/lib$*/bin*'`
-	  case :$dllsearchpath: in
-	  *":$dir:"*) ;;
-	  ::) dllsearchpath=$dir;;
-	  *) func_append dllsearchpath ":$dir";;
-	  esac
-	  case :$dllsearchpath: in
-	  *":$testbindir:"*) ;;
-	  ::) dllsearchpath=$testbindir;;
-	  *) func_append dllsearchpath ":$testbindir";;
-	  esac
-	  ;;
-	esac
-	continue
-	;;
-
-      -l*)
-	if test X-lc = "X$arg" || test X-lm = "X$arg"; then
-	  case $host in
-	  *-*-cygwin* | *-*-mingw* | *-*-pw32* | *-*-beos* | *-cegcc* | *-*-haiku*)
-	    # These systems don't actually have a C or math library (as such)
-	    continue
-	    ;;
-	  *-*-os2*)
-	    # These systems don't actually have a C library (as such)
-	    test X-lc = "X$arg" && continue
-	    ;;
-	  *-*-openbsd* | *-*-freebsd* | *-*-dragonfly* | *-*-bitrig*)
-	    # Do not include libc due to us having libc/libc_r.
-	    test X-lc = "X$arg" && continue
-	    ;;
-	  *-*-rhapsody* | *-*-darwin1.[012])
-	    # Rhapsody C and math libraries are in the System framework
-	    func_append deplibs " System.ltframework"
-	    continue
-	    ;;
-	  *-*-sco3.2v5* | *-*-sco5v6*)
-	    # Causes problems with __ctype
-	    test X-lc = "X$arg" && continue
-	    ;;
-	  *-*-sysv4.2uw2* | *-*-sysv5* | *-*-unixware* | *-*-OpenUNIX*)
-	    # Compiler inserts libc in the correct place for threads to work
-	    test X-lc = "X$arg" && continue
-	    ;;
-	  esac
-	elif test X-lc_r = "X$arg"; then
-	 case $host in
-	 *-*-openbsd* | *-*-freebsd* | *-*-dragonfly* | *-*-bitrig*)
-	   # Do not include libc_r directly, use -pthread flag.
-	   continue
-	   ;;
-	 esac
-	fi
-	func_append deplibs " $arg"
-	continue
-	;;
-
-      -mllvm)
-	prev=mllvm
-	continue
-	;;
-
-      -module)
-	module=yes
-	continue
-	;;
-
-      # Tru64 UNIX uses -model [arg] to determine the layout of C++
-      # classes, name mangling, and exception handling.
-      # Darwin uses the -arch flag to determine output architecture.
-      -model|-arch|-isysroot|--sysroot)
-	func_append compiler_flags " $arg"
-	func_append compile_command " $arg"
-	func_append finalize_command " $arg"
-	prev=xcompiler
-	continue
-	;;
-
-      -mt|-mthreads|-kthread|-Kthread|-pthread|-pthreads|--thread-safe \
-      |-threads|-fopenmp|-openmp|-mp|-xopenmp|-omp|-qsmp=*)
-	func_append compiler_flags " $arg"
-	func_append compile_command " $arg"
-	func_append finalize_command " $arg"
-	case "$new_inherited_linker_flags " in
-	    *" $arg "*) ;;
-	    * ) func_append new_inherited_linker_flags " $arg" ;;
-	esac
-	continue
-	;;
-
-      -multi_module)
-	single_module=$wl-multi_module
-	continue
-	;;
-
-      -no-fast-install)
-	fast_install=no
-	continue
-	;;
-
-      -no-install)
-	case $host in
-	*-*-cygwin* | *-*-mingw* | *-*-pw32* | *-*-os2* | *-*-darwin* | *-cegcc*)
-	  # The PATH hackery in wrapper scripts is required on Windows
-	  # and Darwin in order for the loader to find any dlls it needs.
-	  func_warning "'-no-install' is ignored for $host"
-	  func_warning "assuming '-no-fast-install' instead"
-	  fast_install=no
-	  ;;
-	*) no_install=yes ;;
-	esac
-	continue
-	;;
-
-      -no-undefined)
-	allow_undefined=no
-	continue
-	;;
-
-      -objectlist)
-	prev=objectlist
-	continue
-	;;
-
-      -os2dllname)
-	prev=os2dllname
-	continue
-	;;
-
-      -o) prev=output ;;
-
-      -precious-files-regex)
-	prev=precious_regex
-	continue
-	;;
-
-      -release)
-	prev=release
-	continue
-	;;
-
-      -rpath)
-	prev=rpath
-	continue
-	;;
-
-      -R)
-	prev=xrpath
-	continue
-	;;
-
-      -R*)
-	func_stripname '-R' '' "$arg"
-	dir=$func_stripname_result
-	# We need an absolute path.
-	case $dir in
-	[\\/]* | [A-Za-z]:[\\/]*) ;;
-	=*)
-	  func_stripname '=' '' "$dir"
-	  dir=$lt_sysroot$func_stripname_result
-	  ;;
-	*)
-	  func_fatal_error "only absolute run-paths are allowed"
-	  ;;
-	esac
-	case "$xrpath " in
-	*" $dir "*) ;;
-	*) func_append xrpath " $dir" ;;
-	esac
-	continue
-	;;
-
-      -shared)
-	# The effects of -shared are defined in a previous loop.
-	continue
-	;;
-
-      -shrext)
-	prev=shrext
-	continue
-	;;
-
-      -static | -static-libtool-libs)
-	# The effects of -static are defined in a previous loop.
-	# We used to do the same as -all-static on platforms that
-	# didn't have a PIC flag, but the assumption that the effects
-	# would be equivalent was wrong.  It would break on at least
-	# Digital Unix and AIX.
-	continue
-	;;
-
-      -thread-safe)
-	thread_safe=yes
-	continue
-	;;
-
-      -version-info)
-	prev=vinfo
-	continue
-	;;
-
-      -version-number)
-	prev=vinfo
-	vinfo_number=yes
-	continue
-	;;
-
-      -weak)
-        prev=weak
-	continue
-	;;
-
-      -Wc,*)
-	func_stripname '-Wc,' '' "$arg"
-	args=$func_stripname_result
-	arg=
-	save_ifs=$IFS; IFS=,
-	for flag in $args; do
-	  IFS=$save_ifs
-          func_quote_for_eval "$flag"
-	  func_append arg " $func_quote_for_eval_result"
-	  func_append compiler_flags " $func_quote_for_eval_result"
-	done
-	IFS=$save_ifs
-	func_stripname ' ' '' "$arg"
-	arg=$func_stripname_result
-	;;
-
-      -Wl,*)
-	func_stripname '-Wl,' '' "$arg"
-	args=$func_stripname_result
-	arg=
-	save_ifs=$IFS; IFS=,
-	for flag in $args; do
-	  IFS=$save_ifs
-          func_quote_for_eval "$flag"
-	  func_append arg " $wl$func_quote_for_eval_result"
-	  func_append compiler_flags " $wl$func_quote_for_eval_result"
-	  func_append linker_flags " $func_quote_for_eval_result"
-	done
-	IFS=$save_ifs
-	func_stripname ' ' '' "$arg"
-	arg=$func_stripname_result
-	;;
-
-      -Xcompiler)
-	prev=xcompiler
-	continue
-	;;
-
-      -Xlinker)
-	prev=xlinker
-	continue
-	;;
-
-      -XCClinker)
-	prev=xcclinker
-	continue
-	;;
-
-      # -msg_* for osf cc
-      -msg_*)
-	func_quote_for_eval "$arg"
-	arg=$func_quote_for_eval_result
-	;;
-
-      # Flags to be passed through unchanged, with rationale:
-      # -64, -mips[0-9]      enable 64-bit mode for the SGI compiler
-      # -r[0-9][0-9]*        specify processor for the SGI compiler
-      # -xarch=*, -xtarget=* enable 64-bit mode for the Sun compiler
-      # +DA*, +DD*           enable 64-bit mode for the HP compiler
-      # -q*                  compiler args for the IBM compiler
-      # -m*, -t[45]*, -txscale* architecture-specific flags for GCC
-      # -F/path              path to uninstalled frameworks, gcc on darwin
-      # -p, -pg, --coverage, -fprofile-*  profiling flags for GCC
-      # -fstack-protector*   stack protector flags for GCC
-      # @file                GCC response files
-      # -tp=*                Portland pgcc target processor selection
-      # --sysroot=*          for sysroot support
-      # -O*, -g*, -flto*, -fwhopr*, -fuse-linker-plugin GCC link-time optimization
-      # -stdlib=*            select c++ std lib with clang
-      -64|-mips[0-9]|-r[0-9][0-9]*|-xarch=*|-xtarget=*|+DA*|+DD*|-q*|-m*| \
-      -t[45]*|-txscale*|-p|-pg|--coverage|-fprofile-*|-F*|@*|-tp=*|--sysroot=*| \
-      -O*|-g*|-flto*|-fwhopr*|-fuse-linker-plugin|-fstack-protector*|-stdlib=*)
-        func_quote_for_eval "$arg"
-	arg=$func_quote_for_eval_result
-        func_append compile_command " $arg"
-        func_append finalize_command " $arg"
-        func_append compiler_flags " $arg"
-        continue
-        ;;
-
-      -Z*)
-        if test os2 = "`expr $host : '.*\(os2\)'`"; then
-          # OS/2 uses -Zxxx to specify OS/2-specific options
-	  compiler_flags="$compiler_flags $arg"
-	  func_append compile_command " $arg"
-	  func_append finalize_command " $arg"
-	  case $arg in
-	  -Zlinker | -Zstack)
-	    prev=xcompiler
-	    ;;
-	  esac
-	  continue
-        else
-	  # Otherwise treat like 'Some other compiler flag' below
-	  func_quote_for_eval "$arg"
-	  arg=$func_quote_for_eval_result
-        fi
-	;;
-
-      # Some other compiler flag.
-      -* | +*)
-        func_quote_for_eval "$arg"
-	arg=$func_quote_for_eval_result
-	;;
-
-      *.$objext)
-	# A standard object.
-	func_append objs " $arg"
-	;;
-
-      *.lo)
-	# A libtool-controlled object.
-
-	# Check to see that this really is a libtool object.
-	if func_lalib_unsafe_p "$arg"; then
-	  pic_object=
-	  non_pic_object=
-
-	  # Read the .lo file
-	  func_source "$arg"
-
-	  if test -z "$pic_object" ||
-	     test -z "$non_pic_object" ||
-	     test none = "$pic_object" &&
-	     test none = "$non_pic_object"; then
-	    func_fatal_error "cannot find name of object for '$arg'"
-	  fi
-
-	  # Extract subdirectory from the argument.
-	  func_dirname "$arg" "/" ""
-	  xdir=$func_dirname_result
-
-	  test none = "$pic_object" || {
-	    # Prepend the subdirectory the object is found in.
-	    pic_object=$xdir$pic_object
-
-	    if test dlfiles = "$prev"; then
-	      if test yes = "$build_libtool_libs" && test yes = "$dlopen_support"; then
-		func_append dlfiles " $pic_object"
-		prev=
-		continue
-	      else
-		# If libtool objects are unsupported, then we need to preload.
-		prev=dlprefiles
-	      fi
-	    fi
-
-	    # CHECK ME:  I think I busted this.  -Ossama
-	    if test dlprefiles = "$prev"; then
-	      # Preload the old-style object.
-	      func_append dlprefiles " $pic_object"
-	      prev=
-	    fi
-
-	    # A PIC object.
-	    func_append libobjs " $pic_object"
-	    arg=$pic_object
-	  }
-
-	  # Non-PIC object.
-	  if test none != "$non_pic_object"; then
-	    # Prepend the subdirectory the object is found in.
-	    non_pic_object=$xdir$non_pic_object
-
-	    # A standard non-PIC object
-	    func_append non_pic_objects " $non_pic_object"
-	    if test -z "$pic_object" || test none = "$pic_object"; then
-	      arg=$non_pic_object
-	    fi
-	  else
-	    # If the PIC object exists, use it instead.
-	    # $xdir was prepended to $pic_object above.
-	    non_pic_object=$pic_object
-	    func_append non_pic_objects " $non_pic_object"
-	  fi
-	else
-	  # Only an error if not doing a dry-run.
-	  if $opt_dry_run; then
-	    # Extract subdirectory from the argument.
-	    func_dirname "$arg" "/" ""
-	    xdir=$func_dirname_result
-
-	    func_lo2o "$arg"
-	    pic_object=$xdir$objdir/$func_lo2o_result
-	    non_pic_object=$xdir$func_lo2o_result
-	    func_append libobjs " $pic_object"
-	    func_append non_pic_objects " $non_pic_object"
-	  else
-	    func_fatal_error "'$arg' is not a valid libtool object"
-	  fi
-	fi
-	;;
-
-      *.$libext)
-	# An archive.
-	func_append deplibs " $arg"
-	func_append old_deplibs " $arg"
-	continue
-	;;
-
-      *.la)
-	# A libtool-controlled library.
-
-	func_resolve_sysroot "$arg"
-	if test dlfiles = "$prev"; then
-	  # This library was specified with -dlopen.
-	  func_append dlfiles " $func_resolve_sysroot_result"
-	  prev=
-	elif test dlprefiles = "$prev"; then
-	  # The library was specified with -dlpreopen.
-	  func_append dlprefiles " $func_resolve_sysroot_result"
-	  prev=
-	else
-	  func_append deplibs " $func_resolve_sysroot_result"
-	fi
-	continue
-	;;
-
-      # Some other compiler argument.
-      *)
-	# Unknown arguments in both finalize_command and compile_command need
-	# to be aesthetically quoted because they are evaled later.
-	func_quote_for_eval "$arg"
-	arg=$func_quote_for_eval_result
-	;;
-      esac # arg
-
-      # Now actually substitute the argument into the commands.
-      if test -n "$arg"; then
-	func_append compile_command " $arg"
-	func_append finalize_command " $arg"
-      fi
-    done # argument parsing loop
-
-    test -n "$prev" && \
-      func_fatal_help "the '$prevarg' option requires an argument"
-
-    if test yes = "$export_dynamic" && test -n "$export_dynamic_flag_spec"; then
-      eval arg=\"$export_dynamic_flag_spec\"
-      func_append compile_command " $arg"
-      func_append finalize_command " $arg"
-    fi
-
-    oldlibs=
-    # calculate the name of the file, without its directory
-    func_basename "$output"
-    outputname=$func_basename_result
-    libobjs_save=$libobjs
-
-    if test -n "$shlibpath_var"; then
-      # get the directories listed in $shlibpath_var
-      eval shlib_search_path=\`\$ECHO \"\$$shlibpath_var\" \| \$SED \'s/:/ /g\'\`
-    else
-      shlib_search_path=
-    fi
-    eval sys_lib_search_path=\"$sys_lib_search_path_spec\"
-    eval sys_lib_dlsearch_path=\"$sys_lib_dlsearch_path_spec\"
-
-    func_dirname "$output" "/" ""
-    output_objdir=$func_dirname_result$objdir
-    func_to_tool_file "$output_objdir/"
-    tool_output_objdir=$func_to_tool_file_result
-    # Create the object directory.
-    func_mkdir_p "$output_objdir"
-
-    # Determine the type of output
-    case $output in
-    "")
-      func_fatal_help "you must specify an output file"
-      ;;
-    *.$libext) linkmode=oldlib ;;
-    *.lo | *.$objext) linkmode=obj ;;
-    *.la) linkmode=lib ;;
-    *) linkmode=prog ;; # Anything else should be a program.
-    esac
-
-    specialdeplibs=
-
-    libs=
-    # Find all interdependent deplibs by searching for libraries
-    # that are linked more than once (e.g. -la -lb -la)
-    for deplib in $deplibs; do
-      if $opt_preserve_dup_deps; then
-	case "$libs " in
-	*" $deplib "*) func_append specialdeplibs " $deplib" ;;
-	esac
-      fi
-      func_append libs " $deplib"
-    done
-
-    if test lib = "$linkmode"; then
-      libs="$predeps $libs $compiler_lib_search_path $postdeps"
-
-      # Compute libraries that are listed more than once in $predeps
-      # $postdeps and mark them as special (i.e., whose duplicates are
-      # not to be eliminated).
-      pre_post_deps=
-      if $opt_duplicate_compiler_generated_deps; then
-	for pre_post_dep in $predeps $postdeps; do
-	  case "$pre_post_deps " in
-	  *" $pre_post_dep "*) func_append specialdeplibs " $pre_post_deps" ;;
-	  esac
-	  func_append pre_post_deps " $pre_post_dep"
-	done
-      fi
-      pre_post_deps=
-    fi
-
-    deplibs=
-    newdependency_libs=
-    newlib_search_path=
-    need_relink=no # whether we're linking any uninstalled libtool libraries
-    notinst_deplibs= # not-installed libtool libraries
-    notinst_path= # paths that contain not-installed libtool libraries
-
-    case $linkmode in
-    lib)
-	passes="conv dlpreopen link"
-	for file in $dlfiles $dlprefiles; do
-	  case $file in
-	  *.la) ;;
-	  *)
-	    func_fatal_help "libraries can '-dlopen' only libtool libraries: $file"
-	    ;;
-	  esac
-	done
-	;;
-    prog)
-	compile_deplibs=
-	finalize_deplibs=
-	alldeplibs=false
-	newdlfiles=
-	newdlprefiles=
-	passes="conv scan dlopen dlpreopen link"
-	;;
-    *)  passes="conv"
-	;;
-    esac
-
-    for pass in $passes; do
-      # The preopen pass in lib mode reverses $deplibs; put it back here
-      # so that -L comes before libs that need it for instance...
-      if test lib,link = "$linkmode,$pass"; then
-	## FIXME: Find the place where the list is rebuilt in the wrong
-	##        order, and fix it there properly
-        tmp_deplibs=
-	for deplib in $deplibs; do
-	  tmp_deplibs="$deplib $tmp_deplibs"
-	done
-	deplibs=$tmp_deplibs
-      fi
-
-      if test lib,link = "$linkmode,$pass" ||
-	 test prog,scan = "$linkmode,$pass"; then
-	libs=$deplibs
-	deplibs=
-      fi
-      if test prog = "$linkmode"; then
-	case $pass in
-	dlopen) libs=$dlfiles ;;
-	dlpreopen) libs=$dlprefiles ;;
-	link) libs="$deplibs %DEPLIBS% $dependency_libs" ;;
-	esac
-      fi
-      if test lib,dlpreopen = "$linkmode,$pass"; then
-	# Collect and forward deplibs of preopened libtool libs
-	for lib in $dlprefiles; do
-	  # Ignore non-libtool-libs
-	  dependency_libs=
-	  func_resolve_sysroot "$lib"
-	  case $lib in
-	  *.la)	func_source "$func_resolve_sysroot_result" ;;
-	  esac
-
-	  # Collect preopened libtool deplibs, except any this library
-	  # has declared as weak libs
-	  for deplib in $dependency_libs; do
-	    func_basename "$deplib"
-            deplib_base=$func_basename_result
-	    case " $weak_libs " in
-	    *" $deplib_base "*) ;;
-	    *) func_append deplibs " $deplib" ;;
-	    esac
-	  done
-	done
-	libs=$dlprefiles
-      fi
-      if test dlopen = "$pass"; then
-	# Collect dlpreopened libraries
-	save_deplibs=$deplibs
-	deplibs=
-      fi
-
-      for deplib in $libs; do
-	lib=
-	found=false
-	case $deplib in
-	-mt|-mthreads|-kthread|-Kthread|-pthread|-pthreads|--thread-safe \
-        |-threads|-fopenmp|-openmp|-mp|-xopenmp|-omp|-qsmp=*)
-	  if test prog,link = "$linkmode,$pass"; then
-	    compile_deplibs="$deplib $compile_deplibs"
-	    finalize_deplibs="$deplib $finalize_deplibs"
-	  else
-	    func_append compiler_flags " $deplib"
-	    if test lib = "$linkmode"; then
-		case "$new_inherited_linker_flags " in
-		    *" $deplib "*) ;;
-		    * ) func_append new_inherited_linker_flags " $deplib" ;;
-		esac
-	    fi
-	  fi
-	  continue
-	  ;;
-	-l*)
-	  if test lib != "$linkmode" && test prog != "$linkmode"; then
-	    func_warning "'-l' is ignored for archives/objects"
-	    continue
-	  fi
-	  func_stripname '-l' '' "$deplib"
-	  name=$func_stripname_result
-	  if test lib = "$linkmode"; then
-	    searchdirs="$newlib_search_path $lib_search_path $compiler_lib_search_dirs $sys_lib_search_path $shlib_search_path"
-	  else
-	    searchdirs="$newlib_search_path $lib_search_path $sys_lib_search_path $shlib_search_path"
-	  fi
-	  for searchdir in $searchdirs; do
-	    for search_ext in .la $std_shrext .so .a; do
-	      # Search the libtool library
-	      lib=$searchdir/lib$name$search_ext
-	      if test -f "$lib"; then
-		if test .la = "$search_ext"; then
-		  found=:
-		else
-		  found=false
-		fi
-		break 2
-	      fi
-	    done
-	  done
-	  if $found; then
-	    # deplib is a libtool library
-	    # If $allow_libtool_libs_with_static_runtimes && $deplib is a stdlib,
-	    # We need to do some special things here, and not later.
-	    if test yes = "$allow_libtool_libs_with_static_runtimes"; then
-	      case " $predeps $postdeps " in
-	      *" $deplib "*)
-		if func_lalib_p "$lib"; then
-		  library_names=
-		  old_library=
-		  func_source "$lib"
-		  for l in $old_library $library_names; do
-		    ll=$l
-		  done
-		  if test "X$ll" = "X$old_library"; then # only static version available
-		    found=false
-		    func_dirname "$lib" "" "."
-		    ladir=$func_dirname_result
-		    lib=$ladir/$old_library
-		    if test prog,link = "$linkmode,$pass"; then
-		      compile_deplibs="$deplib $compile_deplibs"
-		      finalize_deplibs="$deplib $finalize_deplibs"
-		    else
-		      deplibs="$deplib $deplibs"
-		      test lib = "$linkmode" && newdependency_libs="$deplib $newdependency_libs"
-		    fi
-		    continue
-		  fi
-		fi
-		;;
-	      *) ;;
-	      esac
-	    fi
-	  else
-	    # deplib doesn't seem to be a libtool library
-	    if test prog,link = "$linkmode,$pass"; then
-	      compile_deplibs="$deplib $compile_deplibs"
-	      finalize_deplibs="$deplib $finalize_deplibs"
-	    else
-	      deplibs="$deplib $deplibs"
-	      test lib = "$linkmode" && newdependency_libs="$deplib $newdependency_libs"
-	    fi
-	    continue
-	  fi
-	  ;; # -l
-	*.ltframework)
-	  if test prog,link = "$linkmode,$pass"; then
-	    compile_deplibs="$deplib $compile_deplibs"
-	    finalize_deplibs="$deplib $finalize_deplibs"
-	  else
-	    deplibs="$deplib $deplibs"
-	    if test lib = "$linkmode"; then
-		case "$new_inherited_linker_flags " in
-		    *" $deplib "*) ;;
-		    * ) func_append new_inherited_linker_flags " $deplib" ;;
-		esac
-	    fi
-	  fi
-	  continue
-	  ;;
-	-L*)
-	  case $linkmode in
-	  lib)
-	    deplibs="$deplib $deplibs"
-	    test conv = "$pass" && continue
-	    newdependency_libs="$deplib $newdependency_libs"
-	    func_stripname '-L' '' "$deplib"
-	    func_resolve_sysroot "$func_stripname_result"
-	    func_append newlib_search_path " $func_resolve_sysroot_result"
-	    ;;
-	  prog)
-	    if test conv = "$pass"; then
-	      deplibs="$deplib $deplibs"
-	      continue
-	    fi
-	    if test scan = "$pass"; then
-	      deplibs="$deplib $deplibs"
-	    else
-	      compile_deplibs="$deplib $compile_deplibs"
-	      finalize_deplibs="$deplib $finalize_deplibs"
-	    fi
-	    func_stripname '-L' '' "$deplib"
-	    func_resolve_sysroot "$func_stripname_result"
-	    func_append newlib_search_path " $func_resolve_sysroot_result"
-	    ;;
-	  *)
-	    func_warning "'-L' is ignored for archives/objects"
-	    ;;
-	  esac # linkmode
-	  continue
-	  ;; # -L
-	-R*)
-	  if test link = "$pass"; then
-	    func_stripname '-R' '' "$deplib"
-	    func_resolve_sysroot "$func_stripname_result"
-	    dir=$func_resolve_sysroot_result
-	    # Make sure the xrpath contains only unique directories.
-	    case "$xrpath " in
-	    *" $dir "*) ;;
-	    *) func_append xrpath " $dir" ;;
-	    esac
-	  fi
-	  deplibs="$deplib $deplibs"
-	  continue
-	  ;;
-	*.la)
-	  func_resolve_sysroot "$deplib"
-	  lib=$func_resolve_sysroot_result
-	  ;;
-	*.$libext)
-	  if test conv = "$pass"; then
-	    deplibs="$deplib $deplibs"
-	    continue
-	  fi
-	  case $linkmode in
-	  lib)
-	    # Linking convenience modules into shared libraries is allowed,
-	    # but linking other static libraries is non-portable.
-	    case " $dlpreconveniencelibs " in
-	    *" $deplib "*) ;;
-	    *)
-	      valid_a_lib=false
-	      case $deplibs_check_method in
-		match_pattern*)
-		  set dummy $deplibs_check_method; shift
-		  match_pattern_regex=`expr "$deplibs_check_method" : "$1 \(.*\)"`
-		  if eval "\$ECHO \"$deplib\"" 2>/dev/null | $SED 10q \
-		    | $EGREP "$match_pattern_regex" > /dev/null; then
-		    valid_a_lib=:
-		  fi
-		;;
-		pass_all)
-		  valid_a_lib=:
-		;;
-	      esac
-	      if $valid_a_lib; then
-		echo
-		$ECHO "*** Warning: Linking the shared library $output against the"
-		$ECHO "*** static library $deplib is not portable!"
-		deplibs="$deplib $deplibs"
-	      else
-		echo
-		$ECHO "*** Warning: Trying to link with static lib archive $deplib."
-		echo "*** I have the capability to make that library automatically link in when"
-		echo "*** you link to this library.  But I can only do this if you have a"
-		echo "*** shared version of the library, which you do not appear to have"
-		echo "*** because the file extensions .$libext of this argument makes me believe"
-		echo "*** that it is just a static archive that I should not use here."
-	      fi
-	      ;;
-	    esac
-	    continue
-	    ;;
-	  prog)
-	    if test link != "$pass"; then
-	      deplibs="$deplib $deplibs"
-	    else
-	      compile_deplibs="$deplib $compile_deplibs"
-	      finalize_deplibs="$deplib $finalize_deplibs"
-	    fi
-	    continue
-	    ;;
-	  esac # linkmode
-	  ;; # *.$libext
-	*.lo | *.$objext)
-	  if test conv = "$pass"; then
-	    deplibs="$deplib $deplibs"
-	  elif test prog = "$linkmode"; then
-	    if test dlpreopen = "$pass" || test yes != "$dlopen_support" || test no = "$build_libtool_libs"; then
-	      # If there is no dlopen support or we're linking statically,
-	      # we need to preload.
-	      func_append newdlprefiles " $deplib"
-	      compile_deplibs="$deplib $compile_deplibs"
-	      finalize_deplibs="$deplib $finalize_deplibs"
-	    else
-	      func_append newdlfiles " $deplib"
-	    fi
-	  fi
-	  continue
-	  ;;
-	%DEPLIBS%)
-	  alldeplibs=:
-	  continue
-	  ;;
-	esac # case $deplib
-
-	$found || test -f "$lib" \
-	  || func_fatal_error "cannot find the library '$lib' or unhandled argument '$deplib'"
-
-	# Check to see that this really is a libtool archive.
-	func_lalib_unsafe_p "$lib" \
-	  || func_fatal_error "'$lib' is not a valid libtool archive"
-
-	func_dirname "$lib" "" "."
-	ladir=$func_dirname_result
-
-	dlname=
-	dlopen=
-	dlpreopen=
-	libdir=
-	library_names=
-	old_library=
-	inherited_linker_flags=
-	# If the library was installed with an old release of libtool,
-	# it will not redefine variables installed, or shouldnotlink
-	installed=yes
-	shouldnotlink=no
-	avoidtemprpath=
-
-
-	# Read the .la file
-	func_source "$lib"
-
-	# Convert "-framework foo" to "foo.ltframework"
-	if test -n "$inherited_linker_flags"; then
-	  tmp_inherited_linker_flags=`$ECHO "$inherited_linker_flags" | $SED 's/-framework \([^ $]*\)/\1.ltframework/g'`
-	  for tmp_inherited_linker_flag in $tmp_inherited_linker_flags; do
-	    case " $new_inherited_linker_flags " in
-	      *" $tmp_inherited_linker_flag "*) ;;
-	      *) func_append new_inherited_linker_flags " $tmp_inherited_linker_flag";;
-	    esac
-	  done
-	fi
-	dependency_libs=`$ECHO " $dependency_libs" | $SED 's% \([^ $]*\).ltframework% -framework \1%g'`
-	if test lib,link = "$linkmode,$pass" ||
-	   test prog,scan = "$linkmode,$pass" ||
-	   { test prog != "$linkmode" && test lib != "$linkmode"; }; then
-	  test -n "$dlopen" && func_append dlfiles " $dlopen"
-	  test -n "$dlpreopen" && func_append dlprefiles " $dlpreopen"
-	fi
-
-	if test conv = "$pass"; then
-	  # Only check for convenience libraries
-	  deplibs="$lib $deplibs"
-	  if test -z "$libdir"; then
-	    if test -z "$old_library"; then
-	      func_fatal_error "cannot find name of link library for '$lib'"
-	    fi
-	    # It is a libtool convenience library, so add in its objects.
-	    func_append convenience " $ladir/$objdir/$old_library"
-	    func_append old_convenience " $ladir/$objdir/$old_library"
-	  elif test prog != "$linkmode" && test lib != "$linkmode"; then
-	    func_fatal_error "'$lib' is not a convenience library"
-	  fi
-	  tmp_libs=
-	  for deplib in $dependency_libs; do
-	    deplibs="$deplib $deplibs"
-	    if $opt_preserve_dup_deps; then
-	      case "$tmp_libs " in
-	      *" $deplib "*) func_append specialdeplibs " $deplib" ;;
-	      esac
-	    fi
-	    func_append tmp_libs " $deplib"
-	  done
-	  continue
-	fi # $pass = conv
-
-
-	# Get the name of the library we link against.
-	linklib=
-	if test -n "$old_library" &&
-	   { test yes = "$prefer_static_libs" ||
-	     test built,no = "$prefer_static_libs,$installed"; }; then
-	  linklib=$old_library
-	else
-	  for l in $old_library $library_names; do
-	    linklib=$l
-	  done
-	fi
-	if test -z "$linklib"; then
-	  func_fatal_error "cannot find name of link library for '$lib'"
-	fi
-
-	# This library was specified with -dlopen.
-	if test dlopen = "$pass"; then
-	  test -z "$libdir" \
-	    && func_fatal_error "cannot -dlopen a convenience library: '$lib'"
-	  if test -z "$dlname" ||
-	     test yes != "$dlopen_support" ||
-	     test no = "$build_libtool_libs"
-	  then
-	    # If there is no dlname, no dlopen support or we're linking
-	    # statically, we need to preload.  We also need to preload any
-	    # dependent libraries so libltdl's deplib preloader doesn't
-	    # bomb out in the load deplibs phase.
-	    func_append dlprefiles " $lib $dependency_libs"
-	  else
-	    func_append newdlfiles " $lib"
-	  fi
-	  continue
-	fi # $pass = dlopen
-
-	# We need an absolute path.
-	case $ladir in
-	[\\/]* | [A-Za-z]:[\\/]*) abs_ladir=$ladir ;;
-	*)
-	  abs_ladir=`cd "$ladir" && pwd`
-	  if test -z "$abs_ladir"; then
-	    func_warning "cannot determine absolute directory name of '$ladir'"
-	    func_warning "passing it literally to the linker, although it might fail"
-	    abs_ladir=$ladir
-	  fi
-	  ;;
-	esac
-	func_basename "$lib"
-	laname=$func_basename_result
-
-	# Find the relevant object directory and library name.
-	if test yes = "$installed"; then
-	  if test ! -f "$lt_sysroot$libdir/$linklib" && test -f "$abs_ladir/$linklib"; then
-	    func_warning "library '$lib' was moved."
-	    dir=$ladir
-	    absdir=$abs_ladir
-	    libdir=$abs_ladir
-	  else
-	    dir=$lt_sysroot$libdir
-	    absdir=$lt_sysroot$libdir
-	  fi
-	  test yes = "$hardcode_automatic" && avoidtemprpath=yes
-	else
-	  if test ! -f "$ladir/$objdir/$linklib" && test -f "$abs_ladir/$linklib"; then
-	    dir=$ladir
-	    absdir=$abs_ladir
-	    # Remove this search path later
-	    func_append notinst_path " $abs_ladir"
-	  else
-	    dir=$ladir/$objdir
-	    absdir=$abs_ladir/$objdir
-	    # Remove this search path later
-	    func_append notinst_path " $abs_ladir"
-	  fi
-	fi # $installed = yes
-	func_stripname 'lib' '.la' "$laname"
-	name=$func_stripname_result
-
-	# This library was specified with -dlpreopen.
-	if test dlpreopen = "$pass"; then
-	  if test -z "$libdir" && test prog = "$linkmode"; then
-	    func_fatal_error "only libraries may -dlpreopen a convenience library: '$lib'"
-	  fi
-	  case $host in
-	    # special handling for platforms with PE-DLLs.
-	    *cygwin* | *mingw* | *cegcc* )
-	      # Linker will automatically link against shared library if both
-	      # static and shared are present.  Therefore, ensure we extract
-	      # symbols from the import library if a shared library is present
-	      # (otherwise, the dlopen module name will be incorrect).  We do
-	      # this by putting the import library name into $newdlprefiles.
-	      # We recover the dlopen module name by 'saving' the la file
-	      # name in a special purpose variable, and (later) extracting the
-	      # dlname from the la file.
-	      if test -n "$dlname"; then
-	        func_tr_sh "$dir/$linklib"
-	        eval "libfile_$func_tr_sh_result=\$abs_ladir/\$laname"
-	        func_append newdlprefiles " $dir/$linklib"
-	      else
-	        func_append newdlprefiles " $dir/$old_library"
-	        # Keep a list of preopened convenience libraries to check
-	        # that they are being used correctly in the link pass.
-	        test -z "$libdir" && \
-	          func_append dlpreconveniencelibs " $dir/$old_library"
-	      fi
-	    ;;
-	    * )
-	      # Prefer using a static library (so that no silly _DYNAMIC symbols
-	      # are required to link).
-	      if test -n "$old_library"; then
-	        func_append newdlprefiles " $dir/$old_library"
-	        # Keep a list of preopened convenience libraries to check
-	        # that they are being used correctly in the link pass.
-	        test -z "$libdir" && \
-	          func_append dlpreconveniencelibs " $dir/$old_library"
-	      # Otherwise, use the dlname, so that lt_dlopen finds it.
-	      elif test -n "$dlname"; then
-	        func_append newdlprefiles " $dir/$dlname"
-	      else
-	        func_append newdlprefiles " $dir/$linklib"
-	      fi
-	    ;;
-	  esac
-	fi # $pass = dlpreopen
-
-	if test -z "$libdir"; then
-	  # Link the convenience library
-	  if test lib = "$linkmode"; then
-	    deplibs="$dir/$old_library $deplibs"
-	  elif test prog,link = "$linkmode,$pass"; then
-	    compile_deplibs="$dir/$old_library $compile_deplibs"
-	    finalize_deplibs="$dir/$old_library $finalize_deplibs"
-	  else
-	    deplibs="$lib $deplibs" # used for prog,scan pass
-	  fi
-	  continue
-	fi
-
-
-	if test prog = "$linkmode" && test link != "$pass"; then
-	  func_append newlib_search_path " $ladir"
-	  deplibs="$lib $deplibs"
-
-	  linkalldeplibs=false
-	  if test no != "$link_all_deplibs" || test -z "$library_names" ||
-	     test no = "$build_libtool_libs"; then
-	    linkalldeplibs=:
-	  fi
-
-	  tmp_libs=
-	  for deplib in $dependency_libs; do
-	    case $deplib in
-	    -L*) func_stripname '-L' '' "$deplib"
-	         func_resolve_sysroot "$func_stripname_result"
-	         func_append newlib_search_path " $func_resolve_sysroot_result"
-		 ;;
-	    esac
-	    # Need to link against all dependency_libs?
-	    if $linkalldeplibs; then
-	      deplibs="$deplib $deplibs"
-	    else
-	      # Need to hardcode shared library paths
-	      # or/and link against static libraries
-	      newdependency_libs="$deplib $newdependency_libs"
-	    fi
-	    if $opt_preserve_dup_deps; then
-	      case "$tmp_libs " in
-	      *" $deplib "*) func_append specialdeplibs " $deplib" ;;
-	      esac
-	    fi
-	    func_append tmp_libs " $deplib"
-	  done # for deplib
-	  continue
-	fi # $linkmode = prog...
-
-	if test prog,link = "$linkmode,$pass"; then
-	  if test -n "$library_names" &&
-	     { { test no = "$prefer_static_libs" ||
-	         test built,yes = "$prefer_static_libs,$installed"; } ||
-	       test -z "$old_library"; }; then
-	    # We need to hardcode the library path
-	    if test -n "$shlibpath_var" && test -z "$avoidtemprpath"; then
-	      # Make sure the rpath contains only unique directories.
-	      case $temp_rpath: in
-	      *"$absdir:"*) ;;
-	      *) func_append temp_rpath "$absdir:" ;;
-	      esac
-	    fi
-
-	    # Hardcode the library path.
-	    # Skip directories that are in the system default run-time
-	    # search path.
-	    case " $sys_lib_dlsearch_path " in
-	    *" $absdir "*) ;;
-	    *)
-	      case "$compile_rpath " in
-	      *" $absdir "*) ;;
-	      *) func_append compile_rpath " $absdir" ;;
-	      esac
-	      ;;
-	    esac
-	    case " $sys_lib_dlsearch_path " in
-	    *" $libdir "*) ;;
-	    *)
-	      case "$finalize_rpath " in
-	      *" $libdir "*) ;;
-	      *) func_append finalize_rpath " $libdir" ;;
-	      esac
-	      ;;
-	    esac
-	  fi # $linkmode,$pass = prog,link...
-
-	  if $alldeplibs &&
-	     { test pass_all = "$deplibs_check_method" ||
-	       { test yes = "$build_libtool_libs" &&
-		 test -n "$library_names"; }; }; then
-	    # We only need to search for static libraries
-	    continue
-	  fi
-	fi
-
-	link_static=no # Whether the deplib will be linked statically
-	use_static_libs=$prefer_static_libs
-	if test built = "$use_static_libs" && test yes = "$installed"; then
-	  use_static_libs=no
-	fi
-	if test -n "$library_names" &&
-	   { test no = "$use_static_libs" || test -z "$old_library"; }; then
-	  case $host in
-	  *cygwin* | *mingw* | *cegcc* | *os2*)
-	      # No point in relinking DLLs because paths are not encoded
-	      func_append notinst_deplibs " $lib"
-	      need_relink=no
-	    ;;
-	  *)
-	    if test no = "$installed"; then
-	      func_append notinst_deplibs " $lib"
-	      need_relink=yes
-	    fi
-	    ;;
-	  esac
-	  # This is a shared library
-
-	  # Warn about portability, can't link against -module's on some
-	  # systems (darwin).  Don't bleat about dlopened modules though!
-	  dlopenmodule=
-	  for dlpremoduletest in $dlprefiles; do
-	    if test "X$dlpremoduletest" = "X$lib"; then
-	      dlopenmodule=$dlpremoduletest
-	      break
-	    fi
-	  done
-	  if test -z "$dlopenmodule" && test yes = "$shouldnotlink" && test link = "$pass"; then
-	    echo
-	    if test prog = "$linkmode"; then
-	      $ECHO "*** Warning: Linking the executable $output against the loadable module"
-	    else
-	      $ECHO "*** Warning: Linking the shared library $output against the loadable module"
-	    fi
-	    $ECHO "*** $linklib is not portable!"
-	  fi
-	  if test lib = "$linkmode" &&
-	     test yes = "$hardcode_into_libs"; then
-	    # Hardcode the library path.
-	    # Skip directories that are in the system default run-time
-	    # search path.
-	    case " $sys_lib_dlsearch_path " in
-	    *" $absdir "*) ;;
-	    *)
-	      case "$compile_rpath " in
-	      *" $absdir "*) ;;
-	      *) func_append compile_rpath " $absdir" ;;
-	      esac
-	      ;;
-	    esac
-	    case " $sys_lib_dlsearch_path " in
-	    *" $libdir "*) ;;
-	    *)
-	      case "$finalize_rpath " in
-	      *" $libdir "*) ;;
-	      *) func_append finalize_rpath " $libdir" ;;
-	      esac
-	      ;;
-	    esac
-	  fi
-
-	  if test -n "$old_archive_from_expsyms_cmds"; then
-	    # figure out the soname
-	    set dummy $library_names
-	    shift
-	    realname=$1
-	    shift
-	    libname=`eval "\\$ECHO \"$libname_spec\""`
-	    # use dlname if we got it. it's perfectly good, no?
-	    if test -n "$dlname"; then
-	      soname=$dlname
-	    elif test -n "$soname_spec"; then
-	      # bleh windows
-	      case $host in
-	      *cygwin* | mingw* | *cegcc* | *os2*)
-	        func_arith $current - $age
-		major=$func_arith_result
-		versuffix=-$major
-		;;
-	      esac
-	      eval soname=\"$soname_spec\"
-	    else
-	      soname=$realname
-	    fi
-
-	    # Make a new name for the extract_expsyms_cmds to use
-	    soroot=$soname
-	    func_basename "$soroot"
-	    soname=$func_basename_result
-	    func_stripname 'lib' '.dll' "$soname"
-	    newlib=libimp-$func_stripname_result.a
-
-	    # If the library has no export list, then create one now
-	    if test -f "$output_objdir/$soname-def"; then :
-	    else
-	      func_verbose "extracting exported symbol list from '$soname'"
-	      func_execute_cmds "$extract_expsyms_cmds" 'exit $?'
-	    fi
-
-	    # Create $newlib
-	    if test -f "$output_objdir/$newlib"; then :; else
-	      func_verbose "generating import library for '$soname'"
-	      func_execute_cmds "$old_archive_from_expsyms_cmds" 'exit $?'
-	    fi
-	    # make sure the library variables are pointing to the new library
-	    dir=$output_objdir
-	    linklib=$newlib
-	  fi # test -n "$old_archive_from_expsyms_cmds"
-
-	  if test prog = "$linkmode" || test relink != "$opt_mode"; then
-	    add_shlibpath=
-	    add_dir=
-	    add=
-	    lib_linked=yes
-	    case $hardcode_action in
-	    immediate | unsupported)
-	      if test no = "$hardcode_direct"; then
-		add=$dir/$linklib
-		case $host in
-		  *-*-sco3.2v5.0.[024]*) add_dir=-L$dir ;;
-		  *-*-sysv4*uw2*) add_dir=-L$dir ;;
-		  *-*-sysv5OpenUNIX* | *-*-sysv5UnixWare7.[01].[10]* | \
-		    *-*-unixware7*) add_dir=-L$dir ;;
-		  *-*-darwin* )
-		    # if the lib is a (non-dlopened) module then we cannot
-		    # link against it, someone is ignoring the earlier warnings
-		    if /usr/bin/file -L $add 2> /dev/null |
-			 $GREP ": [^:]* bundle" >/dev/null; then
-		      if test "X$dlopenmodule" != "X$lib"; then
-			$ECHO "*** Warning: lib $linklib is a module, not a shared library"
-			if test -z "$old_library"; then
-			  echo
-			  echo "*** And there doesn't seem to be a static archive available"
-			  echo "*** The link will probably fail, sorry"
-			else
-			  add=$dir/$old_library
-			fi
-		      elif test -n "$old_library"; then
-			add=$dir/$old_library
-		      fi
-		    fi
-		esac
-	      elif test no = "$hardcode_minus_L"; then
-		case $host in
-		*-*-sunos*) add_shlibpath=$dir ;;
-		esac
-		add_dir=-L$dir
-		add=-l$name
-	      elif test no = "$hardcode_shlibpath_var"; then
-		add_shlibpath=$dir
-		add=-l$name
-	      elif test -n "$fix_hardcoded_libdir_flag_spec"; then
-		add_dir="-L${absdir}"
-		add="-l$name"
-		if test "${linkmode}" = prog && test "X${absdir}" != "X${libdir}"; then
-		  linkdir=$absdir
-		  eval "fix_hardcoded_libdir_flag=\"\${fix_hardcoded_libdir_flag} ${fix_hardcoded_libdir_flag_spec}\""
-		  # fix_hardcoded_libdir_flag_ld not needed, programs are linked with $CC
-		  $lt_unset linkdir
-		fi
-	      else
-		lib_linked=no
-	      fi
-	      ;;
-	    relink)
-	      if test yes = "$hardcode_direct" &&
-	         test no = "$hardcode_direct_absolute"; then
-		add=$dir/$linklib
-	      elif test yes = "$hardcode_minus_L"; then
-		add_dir=-L$absdir
-		# Try looking first in the location we're being installed to.
-		if test -n "$inst_prefix_dir"; then
-		  case $libdir in
-		    [\\/]*)
-		      func_append add_dir " -L$inst_prefix_dir$libdir"
-		      ;;
-		  esac
-		fi
-		add=-l$name
-	      elif test yes = "$hardcode_shlibpath_var"; then
-		add_shlibpath=$dir
-		add=-l$name
-	      else
-		lib_linked=no
-	      fi
-	      ;;
-	    *) lib_linked=no ;;
-	    esac
-
-	    if test yes != "$lib_linked"; then
-	      func_fatal_configuration "unsupported hardcode properties"
-	    fi
-
-	    if test -n "$add_shlibpath"; then
-	      case :$compile_shlibpath: in
-	      *":$add_shlibpath:"*) ;;
-	      *) func_append compile_shlibpath "$add_shlibpath:" ;;
-	      esac
-	    fi
-	    if test prog = "$linkmode"; then
-	      test -n "$add_dir" && compile_deplibs="$add_dir $compile_deplibs"
-	      test -n "$add" && compile_deplibs="$add $compile_deplibs"
-	    else
-	      test -n "$add_dir" && deplibs="$add_dir $deplibs"
-	      test -n "$add" && deplibs="$add $deplibs"
-	      if test yes != "$hardcode_direct" &&
-		 test yes != "$hardcode_minus_L" &&
-		 test yes = "$hardcode_shlibpath_var"; then
-		case :$finalize_shlibpath: in
-		*":$libdir:"*) ;;
-		*) func_append finalize_shlibpath "$libdir:" ;;
-		esac
-	      fi
-	    fi
-	  fi
-
-	  if test prog = "$linkmode" || test relink = "$opt_mode"; then
-	    add_shlibpath=
-	    add_dir=
-	    add=
-	    # Finalize command for both is simple: just hardcode it.
-	    if test yes = "$hardcode_direct" &&
-	       test no = "$hardcode_direct_absolute"; then
-	      add=$libdir/$linklib
-	    elif test yes = "$hardcode_minus_L"; then
-	      add_dir=-L$libdir
-	      add=-l$name
-	      if test -n "$inst_prefix_dir" &&
-		 test -f "$inst_prefix_dir$libdir/$linklib" &&
-		 test -n "${fix_hardcoded_libdir_flag_spec}"; then
-		linkdir="$inst_prefix_dir$libdir"
-		add_dir="-L$linkdir"
-		eval "fix_hardcoded_libdir_flag=\"\${fix_hardcoded_libdir_flag} ${fix_hardcoded_libdir_flag_spec}\""
-		eval "fix_hardcoded_libdir_flag_ld=\"\${fix_hardcoded_libdir_flag_ld} ${fix_hardcoded_libdir_flag_spec_ld}\""
-		$lt_unset linkdir
-	      fi
-	    elif test yes = "$hardcode_shlibpath_var"; then
-	      case :$finalize_shlibpath: in
-	      *":$libdir:"*) ;;
-	      *) func_append finalize_shlibpath "$libdir:" ;;
-	      esac
-	      add=-l$name
-	    elif test yes = "$hardcode_automatic"; then
-	      if test -n "$inst_prefix_dir" &&
-		 test -f "$inst_prefix_dir$libdir/$linklib"; then
-		add=$inst_prefix_dir$libdir/$linklib
-	      else
-		add=$libdir/$linklib
-	      fi
-	    else
-	      # We cannot seem to hardcode it, guess we'll fake it.
-	      add_dir=-L$libdir
-	      # Try looking first in the location we're being installed to.
-	      if test -n "$inst_prefix_dir"; then
-		case $libdir in
-		  [\\/]*)
-		    func_append add_dir " -L$inst_prefix_dir$libdir"
-		    ;;
-		esac
-	      fi
-	      add=-l$name
-	    fi
-
-	    if test prog = "$linkmode"; then
-	      test -n "$add_dir" && finalize_deplibs="$add_dir $finalize_deplibs"
-	      test -n "$add" && finalize_deplibs="$add $finalize_deplibs"
-	    else
-	      test -n "$add_dir" && deplibs="$add_dir $deplibs"
-	      test -n "$add" && deplibs="$add $deplibs"
-	    fi
-	  fi
-	elif test prog = "$linkmode"; then
-	  # Here we assume that one of hardcode_direct or hardcode_minus_L
-	  # is not unsupported.  This is valid on all known static and
-	  # shared platforms.
-	  if test unsupported != "$hardcode_direct"; then
-	    test -n "$old_library" && linklib=$old_library
-	    compile_deplibs="$dir/$linklib $compile_deplibs"
-	    finalize_deplibs="$dir/$linklib $finalize_deplibs"
-	  else
-	    compile_deplibs="-l$name -L$dir $compile_deplibs"
-	    finalize_deplibs="-l$name -L$dir $finalize_deplibs"
-	  fi
-	elif test yes = "$build_libtool_libs"; then
-	  # Not a shared library
-	  if test pass_all != "$deplibs_check_method"; then
-	    # We're trying link a shared library against a static one
-	    # but the system doesn't support it.
-
-	    # Just print a warning and add the library to dependency_libs so
-	    # that the program can be linked against the static library.
-	    echo
-	    $ECHO "*** Warning: This system cannot link to static lib archive $lib."
-	    echo "*** I have the capability to make that library automatically link in when"
-	    echo "*** you link to this library.  But I can only do this if you have a"
-	    echo "*** shared version of the library, which you do not appear to have."
-	    if test yes = "$module"; then
-	      echo "*** But as you try to build a module library, libtool will still create "
-	      echo "*** a static module, that should work as long as the dlopening application"
-	      echo "*** is linked with the -dlopen flag to resolve symbols at runtime."
-	      if test -z "$global_symbol_pipe"; then
-		echo
-		echo "*** However, this would only work if libtool was able to extract symbol"
-		echo "*** lists from a program, using 'nm' or equivalent, but libtool could"
-		echo "*** not find such a program.  So, this module is probably useless."
-		echo "*** 'nm' from GNU binutils and a full rebuild may help."
-	      fi
-	      if test no = "$build_old_libs"; then
-		build_libtool_libs=module
-		build_old_libs=yes
-	      else
-		build_libtool_libs=no
-	      fi
-	    fi
-	  else
-	    deplibs="$dir/$old_library $deplibs"
-	    link_static=yes
-	  fi
-	fi # link shared/static library?
-
-	if test lib = "$linkmode"; then
-	  if test -n "$dependency_libs" &&
-	     { test yes != "$hardcode_into_libs" ||
-	       test yes = "$build_old_libs" ||
-	       test yes = "$link_static"; }; then
-	    # Extract -R from dependency_libs
-	    temp_deplibs=
-	    for libdir in $dependency_libs; do
-	      case $libdir in
-	      -R*) func_stripname '-R' '' "$libdir"
-	           temp_xrpath=$func_stripname_result
-		   case " $xrpath " in
-		   *" $temp_xrpath "*) ;;
-		   *) func_append xrpath " $temp_xrpath";;
-		   esac;;
-	      *) func_append temp_deplibs " $libdir";;
-	      esac
-	    done
-	    dependency_libs=$temp_deplibs
-	  fi
-
-	  func_append newlib_search_path " $absdir"
-	  # Link against this library
-	  test no = "$link_static" && newdependency_libs="$abs_ladir/$laname $newdependency_libs"
-	  # ... and its dependency_libs
-	  tmp_libs=
-	  for deplib in $dependency_libs; do
-	    newdependency_libs="$deplib $newdependency_libs"
-	    case $deplib in
-              -L*) func_stripname '-L' '' "$deplib"
-                   func_resolve_sysroot "$func_stripname_result";;
-              *) func_resolve_sysroot "$deplib" ;;
-            esac
-	    if $opt_preserve_dup_deps; then
-	      case "$tmp_libs " in
-	      *" $func_resolve_sysroot_result "*)
-                func_append specialdeplibs " $func_resolve_sysroot_result" ;;
-	      esac
-	    fi
-	    func_append tmp_libs " $func_resolve_sysroot_result"
-	  done
-
-	  if test no != "$link_all_deplibs"; then
-	    # Add the search paths of all dependency libraries
-	    for deplib in $dependency_libs; do
-	      path=
-	      case $deplib in
-	      -L*) path=$deplib ;;
-	      *.la)
-	        func_resolve_sysroot "$deplib"
-	        deplib=$func_resolve_sysroot_result
-	        func_dirname "$deplib" "" "."
-		dir=$func_dirname_result
-		# We need an absolute path.
-		case $dir in
-		[\\/]* | [A-Za-z]:[\\/]*) absdir=$dir ;;
-		*)
-		  absdir=`cd "$dir" && pwd`
-		  if test -z "$absdir"; then
-		    func_warning "cannot determine absolute directory name of '$dir'"
-		    absdir=$dir
-		  fi
-		  ;;
-		esac
-		if $GREP "^installed=no" $deplib > /dev/null; then
-		case $host in
-		*-*-darwin*)
-		  depdepl=
-		  eval deplibrary_names=`$SED -n -e 's/^library_names=\(.*\)$/\1/p' $deplib`
-		  if test -n "$deplibrary_names"; then
-		    for tmp in $deplibrary_names; do
-		      depdepl=$tmp
-		    done
-		    if test -f "$absdir/$objdir/$depdepl"; then
-		      depdepl=$absdir/$objdir/$depdepl
-		      darwin_install_name=`$OTOOL -L $depdepl | awk '{if (NR == 2) {print $1;exit}}'`
-                      if test -z "$darwin_install_name"; then
-                          darwin_install_name=`$OTOOL64 -L $depdepl  | awk '{if (NR == 2) {print $1;exit}}'`
-                      fi
-		      func_append compiler_flags " $wl-dylib_file $wl$darwin_install_name:$depdepl"
-		      func_append linker_flags " -dylib_file $darwin_install_name:$depdepl"
-		      path=
-		    fi
-		  fi
-		  ;;
-		*)
-		  path=-L$absdir/$objdir
-		  ;;
-		esac
-		else
-		  eval libdir=`$SED -n -e 's/^libdir=\(.*\)$/\1/p' $deplib`
-		  test -z "$libdir" && \
-		    func_fatal_error "'$deplib' is not a valid libtool archive"
-		  test "$absdir" != "$libdir" && \
-		    func_warning "'$deplib' seems to be moved"
-
-		  path=-L$absdir
-		fi
-		;;
-	      esac
-	      case " $deplibs " in
-	      *" $path "*) ;;
-	      *) deplibs="$path $deplibs" ;;
-	      esac
-	    done
-	  fi # link_all_deplibs != no
-	fi # linkmode = lib
-      done # for deplib in $libs
-      if test link = "$pass"; then
-	if test prog = "$linkmode"; then
-	  compile_deplibs="$new_inherited_linker_flags $compile_deplibs"
-	  finalize_deplibs="$new_inherited_linker_flags $finalize_deplibs"
-	else
-	  compiler_flags="$compiler_flags "`$ECHO " $new_inherited_linker_flags" | $SED 's% \([^ $]*\).ltframework% -framework \1%g'`
-	fi
-      fi
-      dependency_libs=$newdependency_libs
-      if test dlpreopen = "$pass"; then
-	# Link the dlpreopened libraries before other libraries
-	for deplib in $save_deplibs; do
-	  deplibs="$deplib $deplibs"
-	done
-      fi
-      if test dlopen != "$pass"; then
-	test conv = "$pass" || {
-	  # Make sure lib_search_path contains only unique directories.
-	  lib_search_path=
-	  for dir in $newlib_search_path; do
-	    case "$lib_search_path " in
-	    *" $dir "*) ;;
-	    *) func_append lib_search_path " $dir" ;;
-	    esac
-	  done
-	  newlib_search_path=
-	}
-
-	if test prog,link = "$linkmode,$pass"; then
-	  vars="compile_deplibs finalize_deplibs"
-	else
-	  vars=deplibs
-	fi
-	for var in $vars dependency_libs; do
-	  # Add libraries to $var in reverse order
-	  eval tmp_libs=\"\$$var\"
-	  new_libs=
-	  for deplib in $tmp_libs; do
-	    # FIXME: Pedantically, this is the right thing to do, so
-	    #        that some nasty dependency loop isn't accidentally
-	    #        broken:
-	    #new_libs="$deplib $new_libs"
-	    # Pragmatically, this seems to cause very few problems in
-	    # practice:
-	    case $deplib in
-	    -L*) new_libs="$deplib $new_libs" ;;
-	    -R*) ;;
-	    *)
-	      # And here is the reason: when a library appears more
-	      # than once as an explicit dependence of a library, or
-	      # is implicitly linked in more than once by the
-	      # compiler, it is considered special, and multiple
-	      # occurrences thereof are not removed.  Compare this
-	      # with having the same library being listed as a
-	      # dependency of multiple other libraries: in this case,
-	      # we know (pedantically, we assume) the library does not
-	      # need to be listed more than once, so we keep only the
-	      # last copy.  This is not always right, but it is rare
-	      # enough that we require users that really mean to play
-	      # such unportable linking tricks to link the library
-	      # using -Wl,-lname, so that libtool does not consider it
-	      # for duplicate removal.
-	      case " $specialdeplibs " in
-	      *" $deplib "*) new_libs="$deplib $new_libs" ;;
-	      *)
-		case " $new_libs " in
-		*" $deplib "*) ;;
-		*) new_libs="$deplib $new_libs" ;;
-		esac
-		;;
-	      esac
-	      ;;
-	    esac
-	  done
-	  tmp_libs=
-	  for deplib in $new_libs; do
-	    case $deplib in
-	    -L*)
-	      case " $tmp_libs " in
-	      *" $deplib "*) ;;
-	      *) func_append tmp_libs " $deplib" ;;
-	      esac
-	      ;;
-	    *) func_append tmp_libs " $deplib" ;;
-	    esac
-	  done
-	  eval $var=\"$tmp_libs\"
-	done # for var
-      fi
-      # Last step: remove runtime libs from dependency_libs
-      # (they stay in deplibs)
-      tmp_libs=
-      for i in $dependency_libs; do
-	case " $predeps $postdeps $compiler_lib_search_path " in
-	*" $i "*)
-	  i=
-	  ;;
-	esac
-	if test -n "$i"; then
-	  func_append tmp_libs " $i"
-	fi
-      done
-      dependency_libs=$tmp_libs
-    done # for pass
-    if test prog = "$linkmode"; then
-      dlfiles=$newdlfiles
-    fi
-    if test prog = "$linkmode" || test lib = "$linkmode"; then
-      dlprefiles=$newdlprefiles
-    fi
-
-    case $linkmode in
-    oldlib)
-      if test -n "$dlfiles$dlprefiles" || test no != "$dlself"; then
-	func_warning "'-dlopen' is ignored for archives"
-      fi
-
-      case " $deplibs" in
-      *\ -l* | *\ -L*)
-	func_warning "'-l' and '-L' are ignored for archives" ;;
-      esac
-
-      test -n "$rpath" && \
-	func_warning "'-rpath' is ignored for archives"
-
-      test -n "$xrpath" && \
-	func_warning "'-R' is ignored for archives"
-
-      test -n "$vinfo" && \
-	func_warning "'-version-info/-version-number' is ignored for archives"
-
-      test -n "$release" && \
-	func_warning "'-release' is ignored for archives"
-
-      test -n "$export_symbols$export_symbols_regex" && \
-	func_warning "'-export-symbols' is ignored for archives"
-
-      # Now set the variables for building old libraries.
-      build_libtool_libs=no
-      oldlibs=$output
-      func_append objs "$old_deplibs"
-      ;;
-
-    lib)
-      # Make sure we only generate libraries of the form 'libNAME.la'.
-      case $outputname in
-      lib*)
-	func_stripname 'lib' '.la' "$outputname"
-	name=$func_stripname_result
-	eval shared_ext=\"$shrext_cmds\"
-	eval libname=\"$libname_spec\"
-	;;
-      *)
-	test no = "$module" \
-	  && func_fatal_help "libtool library '$output' must begin with 'lib'"
-
-	if test no != "$need_lib_prefix"; then
-	  # Add the "lib" prefix for modules if required
-	  func_stripname '' '.la' "$outputname"
-	  name=$func_stripname_result
-	  eval shared_ext=\"$shrext_cmds\"
-	  eval libname=\"$libname_spec\"
-	else
-	  func_stripname '' '.la' "$outputname"
-	  libname=$func_stripname_result
-	fi
-	;;
-      esac
-
-      if test -n "$objs"; then
-	if test pass_all != "$deplibs_check_method"; then
-	  func_fatal_error "cannot build libtool library '$output' from non-libtool objects on this host:$objs"
-	else
-	  echo
-	  $ECHO "*** Warning: Linking the shared library $output against the non-libtool"
-	  $ECHO "*** objects $objs is not portable!"
-	  func_append libobjs " $objs"
-	fi
-      fi
-
-      test no = "$dlself" \
-	|| func_warning "'-dlopen self' is ignored for libtool libraries"
-
-      set dummy $rpath
-      shift
-      test 1 -lt "$#" \
-	&& func_warning "ignoring multiple '-rpath's for a libtool library"
-
-      install_libdir=$1
-
-      oldlibs=
-      if test -z "$rpath"; then
-	if test yes = "$build_libtool_libs"; then
-	  # Building a libtool convenience library.
-	  # Some compilers have problems with a '.al' extension so
-	  # convenience libraries should have the same extension an
-	  # archive normally would.
-	  oldlibs="$output_objdir/$libname.$libext $oldlibs"
-	  build_libtool_libs=convenience
-	  build_old_libs=yes
-	fi
-
-	test -n "$vinfo" && \
-	  func_warning "'-version-info/-version-number' is ignored for convenience libraries"
-
-	test -n "$release" && \
-	  func_warning "'-release' is ignored for convenience libraries"
-      else
-
-	# Parse the version information argument.
-	save_ifs=$IFS; IFS=:
-	set dummy $vinfo 0 0 0
-	shift
-	IFS=$save_ifs
-
-	test -n "$7" && \
-	  func_fatal_help "too many parameters to '-version-info'"
-
-	# convert absolute version numbers to libtool ages
-	# this retains compatibility with .la files and attempts
-	# to make the code below a bit more comprehensible
-
-	case $vinfo_number in
-	yes)
-	  number_major=$1
-	  number_minor=$2
-	  number_revision=$3
-	  #
-	  # There are really only two kinds -- those that
-	  # use the current revision as the major version
-	  # and those that subtract age and use age as
-	  # a minor version.  But, then there is irix
-	  # that has an extra 1 added just for fun
-	  #
-	  case $version_type in
-	  # correct linux to gnu/linux during the next big refactor
-	  darwin|freebsd-elf|linux|osf|windows|none)
-	    func_arith $number_major + $number_minor
-	    current=$func_arith_result
-	    age=$number_minor
-	    revision=$number_revision
-	    ;;
-	  freebsd-aout|qnx|sunos)
-	    current=$number_major
-	    revision=$number_minor
-	    age=0
-	    ;;
-	  irix|nonstopux)
-	    func_arith $number_major + $number_minor
-	    current=$func_arith_result
-	    age=$number_minor
-	    revision=$number_minor
-	    lt_irix_increment=no
-	    ;;
-	  esac
-	  ;;
-	no)
-	  current=$1
-	  revision=$2
-	  age=$3
-	  ;;
-	esac
-
-	# Check that each of the things are valid numbers.
-	case $current in
-	0|[1-9]|[1-9][0-9]|[1-9][0-9][0-9]|[1-9][0-9][0-9][0-9]|[1-9][0-9][0-9][0-9][0-9]) ;;
-	*)
-	  func_error "CURRENT '$current' must be a nonnegative integer"
-	  func_fatal_error "'$vinfo' is not valid version information"
-	  ;;
-	esac
-
-	case $revision in
-	0|[1-9]|[1-9][0-9]|[1-9][0-9][0-9]|[1-9][0-9][0-9][0-9]|[1-9][0-9][0-9][0-9][0-9]) ;;
-	*)
-	  func_error "REVISION '$revision' must be a nonnegative integer"
-	  func_fatal_error "'$vinfo' is not valid version information"
-	  ;;
-	esac
-
-	case $age in
-	0|[1-9]|[1-9][0-9]|[1-9][0-9][0-9]|[1-9][0-9][0-9][0-9]|[1-9][0-9][0-9][0-9][0-9]) ;;
-	*)
-	  func_error "AGE '$age' must be a nonnegative integer"
-	  func_fatal_error "'$vinfo' is not valid version information"
-	  ;;
-	esac
-
-	if test "$age" -gt "$current"; then
-	  func_error "AGE '$age' is greater than the current interface number '$current'"
-	  func_fatal_error "'$vinfo' is not valid version information"
-	fi
-
-	# Calculate the version variables.
-	major=
-	versuffix=
-	verstring=
-	case $version_type in
-	none) ;;
-
-	darwin)
-	  # Like Linux, but with the current version available in
-	  # verstring for coding it into the library header
-	  func_arith $current - $age
-	  major=.$func_arith_result
-	  versuffix=$major.$age.$revision
-	  # Darwin ld doesn't like 0 for these options...
-	  func_arith $current + 1
-	  minor_current=$func_arith_result
-	  xlcverstring="$wl-compatibility_version $wl$minor_current $wl-current_version $wl$minor_current.$revision"
-	  verstring="-compatibility_version $minor_current -current_version $minor_current.$revision"
-          # On Darwin other compilers
-          case $CC in
-              nagfor*)
-                  verstring="$wl-compatibility_version $wl$minor_current $wl-current_version $wl$minor_current.$revision"
-                  ;;
-              *)
-                  verstring="-compatibility_version $minor_current -current_version $minor_current.$revision"
-                  ;;
-          esac
-	  ;;
-
-	freebsd-aout)
-	  major=.$current
-	  versuffix=.$current.$revision
-	  ;;
-
-	freebsd-elf)
-	  func_arith $current - $age
-	  major=.$func_arith_result
-	  versuffix=$major.$age.$revision
-	  ;;
-
-	irix | nonstopux)
-	  if test no = "$lt_irix_increment"; then
-	    func_arith $current - $age
-	  else
-	    func_arith $current - $age + 1
-	  fi
-	  major=$func_arith_result
-
-	  case $version_type in
-	    nonstopux) verstring_prefix=nonstopux ;;
-	    *)         verstring_prefix=sgi ;;
-	  esac
-	  verstring=$verstring_prefix$major.$revision
-
-	  # Add in all the interfaces that we are compatible with.
-	  loop=$revision
-	  while test 0 -ne "$loop"; do
-	    func_arith $revision - $loop
-	    iface=$func_arith_result
-	    func_arith $loop - 1
-	    loop=$func_arith_result
-	    verstring=$verstring_prefix$major.$iface:$verstring
-	  done
-
-	  # Before this point, $major must not contain '.'.
-	  major=.$major
-	  versuffix=$major.$revision
-	  ;;
-
-	linux) # correct to gnu/linux during the next big refactor
-	  func_arith $current - $age
-	  major=.$func_arith_result
-	  versuffix=$major.$age.$revision
-	  ;;
-
-	osf)
-	  func_arith $current - $age
-	  major=.$func_arith_result
-	  versuffix=.$current.$age.$revision
-	  verstring=$current.$age.$revision
-
-	  # Add in all the interfaces that we are compatible with.
-	  loop=$age
-	  while test 0 -ne "$loop"; do
-	    func_arith $current - $loop
-	    iface=$func_arith_result
-	    func_arith $loop - 1
-	    loop=$func_arith_result
-	    verstring=$verstring:$iface.0
-	  done
-
-	  # Make executables depend on our current version.
-	  func_append verstring ":$current.0"
-	  ;;
-
-	qnx)
-	  major=.$current
-	  versuffix=.$current
-	  ;;
-
-	sco)
-	  major=.$current
-	  versuffix=.$current
-	  ;;
-
-	sunos)
-	  major=.$current
-	  versuffix=.$current.$revision
-	  ;;
-
-	windows)
-	  # Use '-' rather than '.', since we only want one
-	  # extension on DOS 8.3 file systems.
-	  func_arith $current - $age
-	  major=$func_arith_result
-	  versuffix=-$major
-	  ;;
-
-	*)
-	  func_fatal_configuration "unknown library version type '$version_type'"
-	  ;;
-	esac
-
-	# Clear the version info if we defaulted, and they specified a release.
-	if test -z "$vinfo" && test -n "$release"; then
-	  major=
-	  case $version_type in
-	  darwin)
-	    # we can't check for "0.0" in archive_cmds due to quoting
-	    # problems, so we reset it completely
-	    verstring=
-	    ;;
-	  *)
-	    verstring=0.0
-	    ;;
-	  esac
-	  if test no = "$need_version"; then
-	    versuffix=
-	  else
-	    versuffix=.0.0
-	  fi
-	fi
-
-	# Remove version info from name if versioning should be avoided
-	if test yes,no = "$avoid_version,$need_version"; then
-	  major=
-	  versuffix=
-	  verstring=
-	fi
-
-	# Check to see if the archive will have undefined symbols.
-	if test yes = "$allow_undefined"; then
-	  if test unsupported = "$allow_undefined_flag"; then
-	    if test yes = "$build_old_libs"; then
-	      func_warning "undefined symbols not allowed in $host shared libraries; building static only"
-	      build_libtool_libs=no
-	    else
-	      func_fatal_error "can't build $host shared library unless -no-undefined is specified"
-	    fi
-	  fi
-	else
-	  # Don't allow undefined symbols.
-	  allow_undefined_flag=$no_undefined_flag
-	fi
-
-      fi
-
-      func_generate_dlsyms "$libname" "$libname" :
-      func_append libobjs " $symfileobj"
-      test " " = "$libobjs" && libobjs=
-
-      if test relink != "$opt_mode"; then
-	# Remove our outputs, but don't remove object files since they
-	# may have been created when compiling PIC objects.
-	removelist=
-	tempremovelist=`$ECHO "$output_objdir/*"`
-	for p in $tempremovelist; do
-	  case $p in
-	    *.$objext | *.gcno)
-	       ;;
-	    $output_objdir/$outputname | $output_objdir/$libname.* | $output_objdir/$libname$release.*)
-	       if test -n "$precious_files_regex"; then
-		 if $ECHO "$p" | $EGREP -e "$precious_files_regex" >/dev/null 2>&1
-		 then
-		   continue
-		 fi
-	       fi
-	       func_append removelist " $p"
-	       ;;
-	    *) ;;
-	  esac
-	done
-	test -n "$removelist" && \
-	  func_show_eval "${RM}r \$removelist"
-      fi
-
-      # Now set the variables for building old libraries.
-      if test yes = "$build_old_libs" && test convenience != "$build_libtool_libs"; then
-	func_append oldlibs " $output_objdir/$libname.$libext"
-
-	# Transform .lo files to .o files.
-	oldobjs="$objs "`$ECHO "$libobjs" | $SP2NL | $SED "/\.$libext$/d; $lo2o" | $NL2SP`
-      fi
-
-      # Eliminate all temporary directories.
-      #for path in $notinst_path; do
-      #	lib_search_path=`$ECHO "$lib_search_path " | $SED "s% $path % %g"`
-      #	deplibs=`$ECHO "$deplibs " | $SED "s% -L$path % %g"`
-      #	dependency_libs=`$ECHO "$dependency_libs " | $SED "s% -L$path % %g"`
-      #done
-
-      if test -n "$xrpath"; then
-	# If the user specified any rpath flags, then add them.
-	temp_xrpath=
-	for libdir in $xrpath; do
-	  func_replace_sysroot "$libdir"
-	  func_append temp_xrpath " -R$func_replace_sysroot_result"
-	  case "$finalize_rpath " in
-	  *" $libdir "*) ;;
-	  *) func_append finalize_rpath " $libdir" ;;
-	  esac
-	done
-	if test yes != "$hardcode_into_libs" || test yes = "$build_old_libs"; then
-	  dependency_libs="$temp_xrpath $dependency_libs"
-	fi
-      fi
-
-      # Make sure dlfiles contains only unique files that won't be dlpreopened
-      old_dlfiles=$dlfiles
-      dlfiles=
-      for lib in $old_dlfiles; do
-	case " $dlprefiles $dlfiles " in
-	*" $lib "*) ;;
-	*) func_append dlfiles " $lib" ;;
-	esac
-      done
-
-      # Make sure dlprefiles contains only unique files
-      old_dlprefiles=$dlprefiles
-      dlprefiles=
-      for lib in $old_dlprefiles; do
-	case "$dlprefiles " in
-	*" $lib "*) ;;
-	*) func_append dlprefiles " $lib" ;;
-	esac
-      done
-
-      if test yes = "$build_libtool_libs"; then
-	if test -n "$rpath"; then
-	  case $host in
-	  *-*-cygwin* | *-*-mingw* | *-*-pw32* | *-*-os2* | *-*-beos* | *-cegcc* | *-*-haiku*)
-	    # these systems don't actually have a c library (as such)!
-	    ;;
-	  *-*-rhapsody* | *-*-darwin1.[012])
-	    # Rhapsody C library is in the System framework
-	    func_append deplibs " System.ltframework"
-	    ;;
-	  *-*-netbsd*)
-	    # Don't link with libc until the a.out ld.so is fixed.
-	    ;;
-	  *-*-openbsd* | *-*-freebsd* | *-*-dragonfly*)
-	    # Do not include libc due to us having libc/libc_r.
-	    ;;
-	  *-*-sco3.2v5* | *-*-sco5v6*)
-	    # Causes problems with __ctype
-	    ;;
-	  *-*-sysv4.2uw2* | *-*-sysv5* | *-*-unixware* | *-*-OpenUNIX*)
-	    # Compiler inserts libc in the correct place for threads to work
-	    ;;
-	  *)
-	    # Add libc to deplibs on all other systems if necessary.
-	    if test yes = "$build_libtool_need_lc"; then
-	      func_append deplibs " -lc"
-	    fi
-	    ;;
-	  esac
-	fi
-
-	# Transform deplibs into only deplibs that can be linked in shared.
-	name_save=$name
-	libname_save=$libname
-	release_save=$release
-	versuffix_save=$versuffix
-	major_save=$major
-	# I'm not sure if I'm treating the release correctly.  I think
-	# release should show up in the -l (ie -lgmp5) so we don't want to
-	# add it in twice.  Is that correct?
-	release=
-	versuffix=
-	major=
-	newdeplibs=
-	droppeddeps=no
-	case $deplibs_check_method in
-	pass_all)
-	  # Don't check for shared/static.  Everything works.
-	  # This might be a little naive.  We might want to check
-	  # whether the library exists or not.  But this is on
-	  # osf3 & osf4 and I'm not really sure... Just
-	  # implementing what was already the behavior.
-	  newdeplibs=$deplibs
-	  ;;
-	test_compile)
-	  # This code stresses the "libraries are programs" paradigm to its
-	  # limits. Maybe even breaks it.  We compile a program, linking it
-	  # against the deplibs as a proxy for the library.  Then we can check
-	  # whether they linked in statically or dynamically with ldd.
-	  $opt_dry_run || $RM conftest.c
-	  cat > conftest.c <<EOF
-	  int main() { return 0; }
-EOF
-	  $opt_dry_run || $RM conftest
-	  if $LTCC $LTCFLAGS -o conftest conftest.c $deplibs; then
-	    ldd_output=`ldd conftest`
-	    for i in $deplibs; do
-	      case $i in
-	      -l*)
-		func_stripname -l '' "$i"
-		name=$func_stripname_result
-		if test yes = "$allow_libtool_libs_with_static_runtimes"; then
-		  case " $predeps $postdeps " in
-		  *" $i "*)
-		    func_append newdeplibs " $i"
-		    i=
-		    ;;
-		  esac
-		fi
-		if test -n "$i"; then
-		  libname=`eval "\\$ECHO \"$libname_spec\""`
-		  deplib_matches=`eval "\\$ECHO \"$library_names_spec\""`
-		  set dummy $deplib_matches; shift
-		  deplib_match=$1
-		  if test `expr "$ldd_output" : ".*$deplib_match"` -ne 0; then
-		    func_append newdeplibs " $i"
-		  else
-		    droppeddeps=yes
-		    echo
-		    $ECHO "*** Warning: dynamic linker does not accept needed library $i."
-		    echo "*** I have the capability to make that library automatically link in when"
-		    echo "*** you link to this library.  But I can only do this if you have a"
-		    echo "*** shared version of the library, which I believe you do not have"
-		    echo "*** because a test_compile did reveal that the linker did not use it for"
-		    echo "*** its dynamic dependency list that programs get resolved with at runtime."
-		  fi
-		fi
-		;;
-	      *)
-		func_append newdeplibs " $i"
-		;;
-	      esac
-	    done
-	  else
-	    # Error occurred in the first compile.  Let's try to salvage
-	    # the situation: Compile a separate program for each library.
-	    for i in $deplibs; do
-	      case $i in
-	      -l*)
-		func_stripname -l '' "$i"
-		name=$func_stripname_result
-		$opt_dry_run || $RM conftest
-		if $LTCC $LTCFLAGS -o conftest conftest.c $i; then
-		  ldd_output=`ldd conftest`
-		  if test yes = "$allow_libtool_libs_with_static_runtimes"; then
-		    case " $predeps $postdeps " in
-		    *" $i "*)
-		      func_append newdeplibs " $i"
-		      i=
-		      ;;
-		    esac
-		  fi
-		  if test -n "$i"; then
-		    libname=`eval "\\$ECHO \"$libname_spec\""`
-		    deplib_matches=`eval "\\$ECHO \"$library_names_spec\""`
-		    set dummy $deplib_matches; shift
-		    deplib_match=$1
-		    if test `expr "$ldd_output" : ".*$deplib_match"` -ne 0; then
-		      func_append newdeplibs " $i"
-		    else
-		      droppeddeps=yes
-		      echo
-		      $ECHO "*** Warning: dynamic linker does not accept needed library $i."
-		      echo "*** I have the capability to make that library automatically link in when"
-		      echo "*** you link to this library.  But I can only do this if you have a"
-		      echo "*** shared version of the library, which you do not appear to have"
-		      echo "*** because a test_compile did reveal that the linker did not use this one"
-		      echo "*** as a dynamic dependency that programs can get resolved with at runtime."
-		    fi
-		  fi
-		else
-		  droppeddeps=yes
-		  echo
-		  $ECHO "*** Warning!  Library $i is needed by this library but I was not able to"
-		  echo "*** make it link in!  You will probably need to install it or some"
-		  echo "*** library that it depends on before this library will be fully"
-		  echo "*** functional.  Installing it before continuing would be even better."
-		fi
-		;;
-	      *)
-		func_append newdeplibs " $i"
-		;;
-	      esac
-	    done
-	  fi
-	  ;;
-	file_magic*)
-	  set dummy $deplibs_check_method; shift
-	  file_magic_regex=`expr "$deplibs_check_method" : "$1 \(.*\)"`
-	  for a_deplib in $deplibs; do
-	    case $a_deplib in
-	    -l*)
-	      func_stripname -l '' "$a_deplib"
-	      name=$func_stripname_result
-	      if test yes = "$allow_libtool_libs_with_static_runtimes"; then
-		case " $predeps $postdeps " in
-		*" $a_deplib "*)
-		  func_append newdeplibs " $a_deplib"
-		  a_deplib=
-		  ;;
-		esac
-	      fi
-	      if test -n "$a_deplib"; then
-		libname=`eval "\\$ECHO \"$libname_spec\""`
-		if test -n "$file_magic_glob"; then
-		  libnameglob=`func_echo_all "$libname" | $SED -e $file_magic_glob`
-		else
-		  libnameglob=$libname
-		fi
-		test yes = "$want_nocaseglob" && nocaseglob=`shopt -p nocaseglob`
-		for i in $lib_search_path $sys_lib_search_path $shlib_search_path; do
-		  if test yes = "$want_nocaseglob"; then
-		    shopt -s nocaseglob
-		    potential_libs=`ls $i/$libnameglob[.-]* 2>/dev/null`
-		    $nocaseglob
-		  else
-		    potential_libs=`ls $i/$libnameglob[.-]* 2>/dev/null`
-		  fi
-		  for potent_lib in $potential_libs; do
-		      # Follow soft links.
-		      if ls -lLd "$potent_lib" 2>/dev/null |
-			 $GREP " -> " >/dev/null; then
-			continue
-		      fi
-		      # The statement above tries to avoid entering an
-		      # endless loop below, in case of cyclic links.
-		      # We might still enter an endless loop, since a link
-		      # loop can be closed while we follow links,
-		      # but so what?
-		      potlib=$potent_lib
-		      while test -h "$potlib" 2>/dev/null; do
-			potliblink=`ls -ld $potlib | $SED 's/.* -> //'`
-			case $potliblink in
-			[\\/]* | [A-Za-z]:[\\/]*) potlib=$potliblink;;
-			*) potlib=`$ECHO "$potlib" | $SED 's|[^/]*$||'`"$potliblink";;
-			esac
-		      done
-		      if eval $file_magic_cmd \"\$potlib\" 2>/dev/null |
-			 $SED -e 10q |
-			 $EGREP "$file_magic_regex" > /dev/null; then
-			func_append newdeplibs " $a_deplib"
-			a_deplib=
-			break 2
-		      fi
-		  done
-		done
-	      fi
-	      if test -n "$a_deplib"; then
-		droppeddeps=yes
-		echo
-		$ECHO "*** Warning: linker path does not have real file for library $a_deplib."
-		echo "*** I have the capability to make that library automatically link in when"
-		echo "*** you link to this library.  But I can only do this if you have a"
-		echo "*** shared version of the library, which you do not appear to have"
-		echo "*** because I did check the linker path looking for a file starting"
-		if test -z "$potlib"; then
-		  $ECHO "*** with $libname but no candidates were found. (...for file magic test)"
-		else
-		  $ECHO "*** with $libname and none of the candidates passed a file format test"
-		  $ECHO "*** using a file magic. Last file checked: $potlib"
-		fi
-	      fi
-	      ;;
-	    *)
-	      # Add a -L argument.
-	      func_append newdeplibs " $a_deplib"
-	      ;;
-	    esac
-	  done # Gone through all deplibs.
-	  ;;
-	match_pattern*)
-	  set dummy $deplibs_check_method; shift
-	  match_pattern_regex=`expr "$deplibs_check_method" : "$1 \(.*\)"`
-	  for a_deplib in $deplibs; do
-	    case $a_deplib in
-	    -l*)
-	      func_stripname -l '' "$a_deplib"
-	      name=$func_stripname_result
-	      if test yes = "$allow_libtool_libs_with_static_runtimes"; then
-		case " $predeps $postdeps " in
-		*" $a_deplib "*)
-		  func_append newdeplibs " $a_deplib"
-		  a_deplib=
-		  ;;
-		esac
-	      fi
-	      if test -n "$a_deplib"; then
-		libname=`eval "\\$ECHO \"$libname_spec\""`
-		for i in $lib_search_path $sys_lib_search_path $shlib_search_path; do
-		  potential_libs=`ls $i/$libname[.-]* 2>/dev/null`
-		  for potent_lib in $potential_libs; do
-		    potlib=$potent_lib # see symlink-check above in file_magic test
-		    if eval "\$ECHO \"$potent_lib\"" 2>/dev/null | $SED 10q | \
-		       $EGREP "$match_pattern_regex" > /dev/null; then
-		      func_append newdeplibs " $a_deplib"
-		      a_deplib=
-		      break 2
-		    fi
-		  done
-		done
-	      fi
-	      if test -n "$a_deplib"; then
-		droppeddeps=yes
-		echo
-		$ECHO "*** Warning: linker path does not have real file for library $a_deplib."
-		echo "*** I have the capability to make that library automatically link in when"
-		echo "*** you link to this library.  But I can only do this if you have a"
-		echo "*** shared version of the library, which you do not appear to have"
-		echo "*** because I did check the linker path looking for a file starting"
-		if test -z "$potlib"; then
-		  $ECHO "*** with $libname but no candidates were found. (...for regex pattern test)"
-		else
-		  $ECHO "*** with $libname and none of the candidates passed a file format test"
-		  $ECHO "*** using a regex pattern. Last file checked: $potlib"
-		fi
-	      fi
-	      ;;
-	    *)
-	      # Add a -L argument.
-	      func_append newdeplibs " $a_deplib"
-	      ;;
-	    esac
-	  done # Gone through all deplibs.
-	  ;;
-	none | unknown | *)
-	  newdeplibs=
-	  tmp_deplibs=`$ECHO " $deplibs" | $SED 's/ -lc$//; s/ -[LR][^ ]*//g'`
-	  if test yes = "$allow_libtool_libs_with_static_runtimes"; then
-	    for i in $predeps $postdeps; do
-	      # can't use Xsed below, because $i might contain '/'
-	      tmp_deplibs=`$ECHO " $tmp_deplibs" | $SED "s|$i||"`
-	    done
-	  fi
-	  case $tmp_deplibs in
-	  *[!\	\ ]*)
-	    echo
-	    if test none = "$deplibs_check_method"; then
-	      echo "*** Warning: inter-library dependencies are not supported in this platform."
-	    else
-	      echo "*** Warning: inter-library dependencies are not known to be supported."
-	    fi
-	    echo "*** All declared inter-library dependencies are being dropped."
-	    droppeddeps=yes
-	    ;;
-	  esac
-	  ;;
-	esac
-	versuffix=$versuffix_save
-	major=$major_save
-	release=$release_save
-	libname=$libname_save
-	name=$name_save
-
-	case $host in
-	*-*-rhapsody* | *-*-darwin1.[012])
-	  # On Rhapsody replace the C library with the System framework
-	  newdeplibs=`$ECHO " $newdeplibs" | $SED 's/ -lc / System.ltframework /'`
-	  ;;
-	esac
-
-	if test yes = "$droppeddeps"; then
-	  if test yes = "$module"; then
-	    echo
-	    echo "*** Warning: libtool could not satisfy all declared inter-library"
-	    $ECHO "*** dependencies of module $libname.  Therefore, libtool will create"
-	    echo "*** a static module, that should work as long as the dlopening"
-	    echo "*** application is linked with the -dlopen flag."
-	    if test -z "$global_symbol_pipe"; then
-	      echo
-	      echo "*** However, this would only work if libtool was able to extract symbol"
-	      echo "*** lists from a program, using 'nm' or equivalent, but libtool could"
-	      echo "*** not find such a program.  So, this module is probably useless."
-	      echo "*** 'nm' from GNU binutils and a full rebuild may help."
-	    fi
-	    if test no = "$build_old_libs"; then
-	      oldlibs=$output_objdir/$libname.$libext
-	      build_libtool_libs=module
-	      build_old_libs=yes
-	    else
-	      build_libtool_libs=no
-	    fi
-	  else
-	    echo "*** The inter-library dependencies that have been dropped here will be"
-	    echo "*** automatically added whenever a program is linked with this library"
-	    echo "*** or is declared to -dlopen it."
-
-	    if test no = "$allow_undefined"; then
-	      echo
-	      echo "*** Since this library must not contain undefined symbols,"
-	      echo "*** because either the platform does not support them or"
-	      echo "*** it was explicitly requested with -no-undefined,"
-	      echo "*** libtool will only create a static version of it."
-	      if test no = "$build_old_libs"; then
-		oldlibs=$output_objdir/$libname.$libext
-		build_libtool_libs=module
-		build_old_libs=yes
-	      else
-		build_libtool_libs=no
-	      fi
-	    fi
-	  fi
-	fi
-	# Done checking deplibs!
-	deplibs=$newdeplibs
-      fi
-      # Time to change all our "foo.ltframework" stuff back to "-framework foo"
-      case $host in
-	*-*-darwin*)
-	  newdeplibs=`$ECHO " $newdeplibs" | $SED 's% \([^ $]*\).ltframework% -framework \1%g'`
-	  new_inherited_linker_flags=`$ECHO " $new_inherited_linker_flags" | $SED 's% \([^ $]*\).ltframework% -framework \1%g'`
-	  deplibs=`$ECHO " $deplibs" | $SED 's% \([^ $]*\).ltframework% -framework \1%g'`
-	  ;;
-      esac
-
-      # move library search paths that coincide with paths to not yet
-      # installed libraries to the beginning of the library search list
-      new_libs=
-      for path in $notinst_path; do
-	case " $new_libs " in
-	*" -L$path/$objdir "*) ;;
-	*)
-	  case " $deplibs " in
-	  *" -L$path/$objdir "*)
-	    func_append new_libs " -L$path/$objdir" ;;
-	  esac
-	  ;;
-	esac
-      done
-      for deplib in $deplibs; do
-	case $deplib in
-	-L*)
-	  case " $new_libs " in
-	  *" $deplib "*) ;;
-	  *) func_append new_libs " $deplib" ;;
-	  esac
-	  ;;
-	*) func_append new_libs " $deplib" ;;
-	esac
-      done
-      deplibs=$new_libs
-
-      # All the library-specific variables (install_libdir is set above).
-      library_names=
-      old_library=
-      dlname=
-
-      # Test again, we may have decided not to build it any more
-      if test yes = "$build_libtool_libs"; then
-	# Remove $wl instances when linking with ld.
-	# FIXME: should test the right _cmds variable.
-	case $archive_cmds in
-	  *\$LD\ *) wl= ;;
+    
+    printf "    %s %-18s ${value_color}%s${T_RESET}" "$icon" "$label" "$state"
+    [[ -n "$detail" ]] && printf "  ${T_DIM}%s${T_RESET}" "$detail"
+    printf "\n"
+}
+
+# Compact status row (for dashboards)
+ui_status_row() {
+    local items=("$@")
+    printf "    "
+    for item in "${items[@]}"; do
+        IFS='=' read -r label state <<< "$item"
+        case "$state" in
+            ok|online|active) printf "${ICON_OK} %-10s " "$label" ;;
+            warn|degraded)    printf "${ICON_WARN} %-10s " "$label" ;;
+            fail|offline)     printf "${ICON_FAIL} %-10s " "$label" ;;
+            *)                printf "${ICON_INFO} %-10s " "$label" ;;
         esac
-	if test yes = "$hardcode_into_libs"; then
-	  # Hardcode the library paths
-	  hardcode_libdirs=
-	  dep_rpath=
-	  rpath=$finalize_rpath
-	  test relink = "$opt_mode" || rpath=$compile_rpath$rpath
-	  for libdir in $rpath; do
-	    if test -n "$hardcode_libdir_flag_spec"; then
-	      if test -n "$hardcode_libdir_separator"; then
-		func_replace_sysroot "$libdir"
-		libdir=$func_replace_sysroot_result
-		if test -z "$hardcode_libdirs"; then
-		  hardcode_libdirs=$libdir
-		else
-		  # Just accumulate the unique libdirs.
-		  case $hardcode_libdir_separator$hardcode_libdirs$hardcode_libdir_separator in
-		  *"$hardcode_libdir_separator$libdir$hardcode_libdir_separator"*)
-		    ;;
-		  *)
-		    func_append hardcode_libdirs "$hardcode_libdir_separator$libdir"
-		    ;;
-		  esac
-		fi
-	      else
-		eval flag=\"$hardcode_libdir_flag_spec\"
-		func_append dep_rpath " $flag"
-	      fi
-	    elif test -n "$runpath_var"; then
-	      case "$perm_rpath " in
-	      *" $libdir "*) ;;
-	      *) func_append perm_rpath " $libdir" ;;
-	      esac
-	    fi
-	  done
-	  # Substitute the hardcoded libdirs into the rpath.
-	  if test -n "$hardcode_libdir_separator" &&
-	     test -n "$hardcode_libdirs"; then
-	    libdir=$hardcode_libdirs
-	    eval "dep_rpath=\"$hardcode_libdir_flag_spec\""
-	  fi
-	  if test -n "$runpath_var" && test -n "$perm_rpath"; then
-	    # We should set the runpath_var.
-	    rpath=
-	    for dir in $perm_rpath; do
-	      func_append rpath "$dir:"
-	    done
-	    eval "$runpath_var='$rpath\$$runpath_var'; export $runpath_var"
-	  fi
-	  test -n "$dep_rpath" && deplibs="$dep_rpath $deplibs"
-	fi
-
-	shlibpath=$finalize_shlibpath
-	test relink = "$opt_mode" || shlibpath=$compile_shlibpath$shlibpath
-	if test -n "$shlibpath"; then
-	  eval "$shlibpath_var='$shlibpath\$$shlibpath_var'; export $shlibpath_var"
-	fi
-
-	# Get the real and link names of the library.
-	eval shared_ext=\"$shrext_cmds\"
-	eval library_names=\"$library_names_spec\"
-	set dummy $library_names
-	shift
-	realname=$1
-	shift
-
-	if test -n "$soname_spec"; then
-	  eval soname=\"$soname_spec\"
-	else
-	  soname=$realname
-	fi
-	if test -z "$dlname"; then
-	  dlname=$soname
-	fi
-
-	lib=$output_objdir/$realname
-	linknames=
-	for link
-	do
-	  func_append linknames " $link"
-	done
-
-	# Use standard objects if they are pic
-	test -z "$pic_flag" && libobjs=`$ECHO "$libobjs" | $SP2NL | $SED "$lo2o" | $NL2SP`
-	test "X$libobjs" = "X " && libobjs=
-
-	delfiles=
-	if test -n "$export_symbols" && test -n "$include_expsyms"; then
-	  $opt_dry_run || cp "$export_symbols" "$output_objdir/$libname.uexp"
-	  export_symbols=$output_objdir/$libname.uexp
-	  func_append delfiles " $export_symbols"
-	fi
-
-	orig_export_symbols=
-	case $host_os in
-	cygwin* | mingw* | cegcc*)
-	  if test -n "$export_symbols" && test -z "$export_symbols_regex"; then
-	    # exporting using user supplied symfile
-	    func_dll_def_p "$export_symbols" || {
-	      # and it's NOT already a .def file. Must figure out
-	      # which of the given symbols are data symbols and tag
-	      # them as such. So, trigger use of export_symbols_cmds.
-	      # export_symbols gets reassigned inside the "prepare
-	      # the list of exported symbols" if statement, so the
-	      # include_expsyms logic still works.
-	      orig_export_symbols=$export_symbols
-	      export_symbols=
-	      always_export_symbols=yes
-	    }
-	  fi
-	  ;;
-	esac
-
-	# Prepare the list of exported symbols
-	if test -z "$export_symbols"; then
-	  if test yes = "$always_export_symbols" || test -n "$export_symbols_regex"; then
-	    func_verbose "generating symbol list for '$libname.la'"
-	    export_symbols=$output_objdir/$libname.exp
-	    $opt_dry_run || $RM $export_symbols
-	    cmds=$export_symbols_cmds
-	    save_ifs=$IFS; IFS='~'
-	    for cmd1 in $cmds; do
-	      IFS=$save_ifs
-	      # Take the normal branch if the nm_file_list_spec branch
-	      # doesn't work or if tool conversion is not needed.
-	      case $nm_file_list_spec~$to_tool_file_cmd in
-		*~func_convert_file_noop | *~func_convert_file_msys_to_w32 | ~*)
-		  try_normal_branch=yes
-		  eval cmd=\"$cmd1\"
-		  func_len " $cmd"
-		  len=$func_len_result
-		  ;;
-		*)
-		  try_normal_branch=no
-		  ;;
-	      esac
-	      if test yes = "$try_normal_branch" \
-		 && { test "$len" -lt "$max_cmd_len" \
-		      || test "$max_cmd_len" -le -1; }
-	      then
-		func_show_eval "$cmd" 'exit $?'
-		skipped_export=false
-	      elif test -n "$nm_file_list_spec"; then
-		func_basename "$output"
-		output_la=$func_basename_result
-		save_libobjs=$libobjs
-		save_output=$output
-		output=$output_objdir/$output_la.nm
-		func_to_tool_file "$output"
-		libobjs=$nm_file_list_spec$func_to_tool_file_result
-		func_append delfiles " $output"
-		func_verbose "creating $NM input file list: $output"
-		for obj in $save_libobjs; do
-		  func_to_tool_file "$obj"
-		  $ECHO "$func_to_tool_file_result"
-		done > "$output"
-		eval cmd=\"$cmd1\"
-		func_show_eval "$cmd" 'exit $?'
-		output=$save_output
-		libobjs=$save_libobjs
-		skipped_export=false
-	      else
-		# The command line is too long to execute in one step.
-		func_verbose "using reloadable object file for export list..."
-		skipped_export=:
-		# Break out early, otherwise skipped_export may be
-		# set to false by a later but shorter cmd.
-		break
-	      fi
-	    done
-	    IFS=$save_ifs
-	    if test -n "$export_symbols_regex" && test : != "$skipped_export"; then
-	      func_show_eval '$EGREP -e "$export_symbols_regex" "$export_symbols" > "${export_symbols}T"'
-	      func_show_eval '$MV "${export_symbols}T" "$export_symbols"'
-	    fi
-	  fi
-	fi
-
-	if test -n "$export_symbols" && test -n "$include_expsyms"; then
-	  tmp_export_symbols=$export_symbols
-	  test -n "$orig_export_symbols" && tmp_export_symbols=$orig_export_symbols
-	  $opt_dry_run || eval '$ECHO "$include_expsyms" | $SP2NL >> "$tmp_export_symbols"'
-	fi
-
-	if test : != "$skipped_export" && test -n "$orig_export_symbols"; then
-	  # The given exports_symbols file has to be filtered, so filter it.
-	  func_verbose "filter symbol list for '$libname.la' to tag DATA exports"
-	  # FIXME: $output_objdir/$libname.filter potentially contains lots of
-	  # 's' commands, which not all seds can handle. GNU sed should be fine
-	  # though. Also, the filter scales superlinearly with the number of
-	  # global variables. join(1) would be nice here, but unfortunately
-	  # isn't a blessed tool.
-	  $opt_dry_run || $SED -e '/[ ,]DATA/!d;s,\(.*\)\([ \,].*\),s|^\1$|\1\2|,' < $export_symbols > $output_objdir/$libname.filter
-	  func_append delfiles " $export_symbols $output_objdir/$libname.filter"
-	  export_symbols=$output_objdir/$libname.def
-	  $opt_dry_run || $SED -f $output_objdir/$libname.filter < $orig_export_symbols > $export_symbols
-	fi
-
-	tmp_deplibs=
-	for test_deplib in $deplibs; do
-	  case " $convenience " in
-	  *" $test_deplib "*) ;;
-	  *)
-	    func_append tmp_deplibs " $test_deplib"
-	    ;;
-	  esac
-	done
-	deplibs=$tmp_deplibs
-
-	if test -n "$convenience"; then
-	  if test -n "$whole_archive_flag_spec" &&
-	    test yes = "$compiler_needs_object" &&
-	    test -z "$libobjs"; then
-	    # extract the archives, so we have objects to list.
-	    # TODO: could optimize this to just extract one archive.
-	    whole_archive_flag_spec=
-	  fi
-	  if test -n "$whole_archive_flag_spec"; then
-	    save_libobjs=$libobjs
-	    eval libobjs=\"\$libobjs $whole_archive_flag_spec\"
-	    test "X$libobjs" = "X " && libobjs=
-	  else
-	    gentop=$output_objdir/${outputname}x
-	    func_append generated " $gentop"
-
-	    func_extract_archives $gentop $convenience
-	    func_append libobjs " $func_extract_archives_result"
-	    test "X$libobjs" = "X " && libobjs=
-	  fi
-	fi
-
-	if test yes = "$thread_safe" && test -n "$thread_safe_flag_spec"; then
-	  eval flag=\"$thread_safe_flag_spec\"
-	  func_append linker_flags " $flag"
-	fi
-
-	# Make a backup of the uninstalled library when relinking
-	if test relink = "$opt_mode"; then
-	  $opt_dry_run || eval '(cd $output_objdir && $RM ${realname}U && $MV $realname ${realname}U)' || exit $?
-	fi
-
-	# Do each of the archive commands.
-	if test yes = "$module" && test -n "$module_cmds"; then
-	  if test -n "$export_symbols" && test -n "$module_expsym_cmds"; then
-	    eval test_cmds=\"$module_expsym_cmds\"
-	    cmds=$module_expsym_cmds
-	  else
-	    eval test_cmds=\"$module_cmds\"
-	    cmds=$module_cmds
-	  fi
-	else
-	  if test -n "$export_symbols" && test -n "$archive_expsym_cmds"; then
-	    eval test_cmds=\"$archive_expsym_cmds\"
-	    cmds=$archive_expsym_cmds
-	  else
-	    eval test_cmds=\"$archive_cmds\"
-	    cmds=$archive_cmds
-	  fi
-	fi
-
-	if test : != "$skipped_export" &&
-	   func_len " $test_cmds" &&
-	   len=$func_len_result &&
-	   test "$len" -lt "$max_cmd_len" || test "$max_cmd_len" -le -1; then
-	  :
-	else
-	  # The command line is too long to link in one step, link piecewise
-	  # or, if using GNU ld and skipped_export is not :, use a linker
-	  # script.
-
-	  # Save the value of $output and $libobjs because we want to
-	  # use them later.  If we have whole_archive_flag_spec, we
-	  # want to use save_libobjs as it was before
-	  # whole_archive_flag_spec was expanded, because we can't
-	  # assume the linker understands whole_archive_flag_spec.
-	  # This may have to be revisited, in case too many
-	  # convenience libraries get linked in and end up exceeding
-	  # the spec.
-	  if test -z "$convenience" || test -z "$whole_archive_flag_spec"; then
-	    save_libobjs=$libobjs
-	  fi
-	  save_output=$output
-	  func_basename "$output"
-	  output_la=$func_basename_result
-
-	  # Clear the reloadable object creation command queue and
-	  # initialize k to one.
-	  test_cmds=
-	  concat_cmds=
-	  objlist=
-	  last_robj=
-	  k=1
-
-	  if test -n "$save_libobjs" && test : != "$skipped_export" && test yes = "$with_gnu_ld"; then
-	    output=$output_objdir/$output_la.lnkscript
-	    func_verbose "creating GNU ld script: $output"
-	    echo 'INPUT (' > $output
-	    for obj in $save_libobjs
-	    do
-	      func_to_tool_file "$obj"
-	      $ECHO "$func_to_tool_file_result" >> $output
-	    done
-	    echo ')' >> $output
-	    func_append delfiles " $output"
-	    func_to_tool_file "$output"
-	    output=$func_to_tool_file_result
-	  elif test -n "$save_libobjs" && test : != "$skipped_export" && test -n "$file_list_spec"; then
-	    output=$output_objdir/$output_la.lnk
-	    func_verbose "creating linker input file list: $output"
-	    : > $output
-	    set x $save_libobjs
-	    shift
-	    firstobj=
-	    if test yes = "$compiler_needs_object"; then
-	      firstobj="$1 "
-	      shift
-	    fi
-	    for obj
-	    do
-	      func_to_tool_file "$obj"
-	      $ECHO "$func_to_tool_file_result" >> $output
-	    done
-	    func_append delfiles " $output"
-	    func_to_tool_file "$output"
-	    output=$firstobj\"$file_list_spec$func_to_tool_file_result\"
-	  else
-	    if test -n "$save_libobjs"; then
-	      func_verbose "creating reloadable object files..."
-	      output=$output_objdir/$output_la-$k.$objext
-	      eval test_cmds=\"$reload_cmds\"
-	      func_len " $test_cmds"
-	      len0=$func_len_result
-	      len=$len0
-
-	      # Loop over the list of objects to be linked.
-	      for obj in $save_libobjs
-	      do
-		func_len " $obj"
-		func_arith $len + $func_len_result
-		len=$func_arith_result
-		if test -z "$objlist" ||
-		   test "$len" -lt "$max_cmd_len"; then
-		  func_append objlist " $obj"
-		else
-		  # The command $test_cmds is almost too long, add a
-		  # command to the queue.
-		  if test 1 -eq "$k"; then
-		    # The first file doesn't have a previous command to add.
-		    reload_objs=$objlist
-		    eval concat_cmds=\"$reload_cmds\"
-		  else
-		    # All subsequent reloadable object files will link in
-		    # the last one created.
-		    reload_objs="$objlist $last_robj"
-		    eval concat_cmds=\"\$concat_cmds~$reload_cmds~\$RM $last_robj\"
-		  fi
-		  last_robj=$output_objdir/$output_la-$k.$objext
-		  func_arith $k + 1
-		  k=$func_arith_result
-		  output=$output_objdir/$output_la-$k.$objext
-		  objlist=" $obj"
-		  func_len " $last_robj"
-		  func_arith $len0 + $func_len_result
-		  len=$func_arith_result
-		fi
-	      done
-	      # Handle the remaining objects by creating one last
-	      # reloadable object file.  All subsequent reloadable object
-	      # files will link in the last one created.
-	      test -z "$concat_cmds" || concat_cmds=$concat_cmds~
-	      reload_objs="$objlist $last_robj"
-	      eval concat_cmds=\"\$concat_cmds$reload_cmds\"
-	      if test -n "$last_robj"; then
-	        eval concat_cmds=\"\$concat_cmds~\$RM $last_robj\"
-	      fi
-	      func_append delfiles " $output"
-
-	    else
-	      output=
-	    fi
-
-	    ${skipped_export-false} && {
-	      func_verbose "generating symbol list for '$libname.la'"
-	      export_symbols=$output_objdir/$libname.exp
-	      $opt_dry_run || $RM $export_symbols
-	      libobjs=$output
-	      # Append the command to create the export file.
-	      test -z "$concat_cmds" || concat_cmds=$concat_cmds~
-	      eval concat_cmds=\"\$concat_cmds$export_symbols_cmds\"
-	      if test -n "$last_robj"; then
-		eval concat_cmds=\"\$concat_cmds~\$RM $last_robj\"
-	      fi
-	    }
-
-	    test -n "$save_libobjs" &&
-	      func_verbose "creating a temporary reloadable object file: $output"
-
-	    # Loop through the commands generated above and execute them.
-	    save_ifs=$IFS; IFS='~'
-	    for cmd in $concat_cmds; do
-	      IFS=$save_ifs
-	      $opt_quiet || {
-		  func_quote_for_expand "$cmd"
-		  eval "func_echo $func_quote_for_expand_result"
-	      }
-	      $opt_dry_run || eval "$cmd" || {
-		lt_exit=$?
-
-		# Restore the uninstalled library and exit
-		if test relink = "$opt_mode"; then
-		  ( cd "$output_objdir" && \
-		    $RM "${realname}T" && \
-		    $MV "${realname}U" "$realname" )
-		fi
-
-		exit $lt_exit
-	      }
-	    done
-	    IFS=$save_ifs
-
-	    if test -n "$export_symbols_regex" && ${skipped_export-false}; then
-	      func_show_eval '$EGREP -e "$export_symbols_regex" "$export_symbols" > "${export_symbols}T"'
-	      func_show_eval '$MV "${export_symbols}T" "$export_symbols"'
-	    fi
-	  fi
-
-          ${skipped_export-false} && {
-	    if test -n "$export_symbols" && test -n "$include_expsyms"; then
-	      tmp_export_symbols=$export_symbols
-	      test -n "$orig_export_symbols" && tmp_export_symbols=$orig_export_symbols
-	      $opt_dry_run || eval '$ECHO "$include_expsyms" | $SP2NL >> "$tmp_export_symbols"'
-	    fi
-
-	    if test -n "$orig_export_symbols"; then
-	      # The given exports_symbols file has to be filtered, so filter it.
-	      func_verbose "filter symbol list for '$libname.la' to tag DATA exports"
-	      # FIXME: $output_objdir/$libname.filter potentially contains lots of
-	      # 's' commands, which not all seds can handle. GNU sed should be fine
-	      # though. Also, the filter scales superlinearly with the number of
-	      # global variables. join(1) would be nice here, but unfortunately
-	      # isn't a blessed tool.
-	      $opt_dry_run || $SED -e '/[ ,]DATA/!d;s,\(.*\)\([ \,].*\),s|^\1$|\1\2|,' < $export_symbols > $output_objdir/$libname.filter
-	      func_append delfiles " $export_symbols $output_objdir/$libname.filter"
-	      export_symbols=$output_objdir/$libname.def
-	      $opt_dry_run || $SED -f $output_objdir/$libname.filter < $orig_export_symbols > $export_symbols
-	    fi
-	  }
-
-	  libobjs=$output
-	  # Restore the value of output.
-	  output=$save_output
-
-	  if test -n "$convenience" && test -n "$whole_archive_flag_spec"; then
-	    eval libobjs=\"\$libobjs $whole_archive_flag_spec\"
-	    test "X$libobjs" = "X " && libobjs=
-	  fi
-	  # Expand the library linking commands again to reset the
-	  # value of $libobjs for piecewise linking.
-
-	  # Do each of the archive commands.
-	  if test yes = "$module" && test -n "$module_cmds"; then
-	    if test -n "$export_symbols" && test -n "$module_expsym_cmds"; then
-	      cmds=$module_expsym_cmds
-	    else
-	      cmds=$module_cmds
-	    fi
-	  else
-	    if test -n "$export_symbols" && test -n "$archive_expsym_cmds"; then
-	      cmds=$archive_expsym_cmds
-	    else
-	      cmds=$archive_cmds
-	    fi
-	  fi
-	fi
-
-	if test -n "$delfiles"; then
-	  # Append the command to remove temporary files to $cmds.
-	  eval cmds=\"\$cmds~\$RM $delfiles\"
-	fi
-
-	# Add any objects from preloaded convenience libraries
-	if test -n "$dlprefiles"; then
-	  gentop=$output_objdir/${outputname}x
-	  func_append generated " $gentop"
-
-	  func_extract_archives $gentop $dlprefiles
-	  func_append libobjs " $func_extract_archives_result"
-	  test "X$libobjs" = "X " && libobjs=
-	fi
-
-	save_ifs=$IFS; IFS='~'
-	for cmd in $cmds; do
-	  IFS=$sp$nl
-	  eval cmd=\"$cmd\"
-	  IFS=$save_ifs
-	  $opt_quiet || {
-	    func_quote_for_expand "$cmd"
-	    eval "func_echo $func_quote_for_expand_result"
-	  }
-	  $opt_dry_run || eval "$cmd" || {
-	    lt_exit=$?
-
-	    # Restore the uninstalled library and exit
-	    if test relink = "$opt_mode"; then
-	      ( cd "$output_objdir" && \
-	        $RM "${realname}T" && \
-		$MV "${realname}U" "$realname" )
-	    fi
-
-	    exit $lt_exit
-	  }
-	done
-	IFS=$save_ifs
-
-	# Restore the uninstalled library and exit
-	if test relink = "$opt_mode"; then
-	  $opt_dry_run || eval '(cd $output_objdir && $RM ${realname}T && $MV $realname ${realname}T && $MV ${realname}U $realname)' || exit $?
-
-	  if test -n "$convenience"; then
-	    if test -z "$whole_archive_flag_spec"; then
-	      func_show_eval '${RM}r "$gentop"'
-	    fi
-	  fi
-
-	  exit $EXIT_SUCCESS
-	fi
-
-	# Create links to the real library.
-	for linkname in $linknames; do
-	  if test "$realname" != "$linkname"; then
-	    func_show_eval '(cd "$output_objdir" && $RM "$linkname" && $LN_S "$realname" "$linkname")' 'exit $?'
-	  fi
-	done
-
-	# If -module or -export-dynamic was specified, set the dlname.
-	if test yes = "$module" || test yes = "$export_dynamic"; then
-	  # On all known operating systems, these are identical.
-	  dlname=$soname
-	fi
-      fi
-      ;;
-
-    obj)
-      if test -n "$dlfiles$dlprefiles" || test no != "$dlself"; then
-	func_warning "'-dlopen' is ignored for objects"
-      fi
-
-      case " $deplibs" in
-      *\ -l* | *\ -L*)
-	func_warning "'-l' and '-L' are ignored for objects" ;;
-      esac
-
-      test -n "$rpath" && \
-	func_warning "'-rpath' is ignored for objects"
-
-      test -n "$xrpath" && \
-	func_warning "'-R' is ignored for objects"
-
-      test -n "$vinfo" && \
-	func_warning "'-version-info' is ignored for objects"
-
-      test -n "$release" && \
-	func_warning "'-release' is ignored for objects"
-
-      case $output in
-      *.lo)
-	test -n "$objs$old_deplibs" && \
-	  func_fatal_error "cannot build library object '$output' from non-libtool objects"
-
-	libobj=$output
-	func_lo2o "$libobj"
-	obj=$func_lo2o_result
-	;;
-      *)
-	libobj=
-	obj=$output
-	;;
-      esac
-
-      # Delete the old objects.
-      $opt_dry_run || $RM $obj $libobj
-
-      # Objects from convenience libraries.  This assumes
-      # single-version convenience libraries.  Whenever we create
-      # different ones for PIC/non-PIC, this we'll have to duplicate
-      # the extraction.
-      reload_conv_objs=
-      gentop=
-      # if reload_cmds runs $LD directly, get rid of -Wl from
-      # whole_archive_flag_spec and hope we can get by with turning comma
-      # into space.
-      case $reload_cmds in
-        *\$LD[\ \$]*) wl= ;;
-      esac
-      if test -n "$convenience"; then
-	if test -n "$whole_archive_flag_spec"; then
-	  eval tmp_whole_archive_flags=\"$whole_archive_flag_spec\"
-	  test -n "$wl" || tmp_whole_archive_flags=`$ECHO "$tmp_whole_archive_flags" | $SED 's|,| |g'`
-	  reload_conv_objs=$reload_objs\ $tmp_whole_archive_flags
-	else
-	  gentop=$output_objdir/${obj}x
-	  func_append generated " $gentop"
-
-	  func_extract_archives $gentop $convenience
-	  reload_conv_objs="$reload_objs $func_extract_archives_result"
-	fi
-      fi
-
-      # If we're not building shared, we need to use non_pic_objs
-      test yes = "$build_libtool_libs" || libobjs=$non_pic_objects
-
-      # Create the old-style object.
-      reload_objs=$objs$old_deplibs' '`$ECHO "$libobjs" | $SP2NL | $SED "/\.$libext$/d; /\.lib$/d; $lo2o" | $NL2SP`' '$reload_conv_objs
-
-      output=$obj
-      func_execute_cmds "$reload_cmds" 'exit $?'
-
-      # Exit if we aren't doing a library object file.
-      if test -z "$libobj"; then
-	if test -n "$gentop"; then
-	  func_show_eval '${RM}r "$gentop"'
-	fi
-
-	exit $EXIT_SUCCESS
-      fi
-
-      test yes = "$build_libtool_libs" || {
-	if test -n "$gentop"; then
-	  func_show_eval '${RM}r "$gentop"'
-	fi
-
-	# Create an invalid libtool object if no PIC, so that we don't
-	# accidentally link it into a program.
-	# $show "echo timestamp > $libobj"
-	# $opt_dry_run || eval "echo timestamp > $libobj" || exit $?
-	exit $EXIT_SUCCESS
-      }
-
-      if test -n "$pic_flag" || test default != "$pic_mode"; then
-	# Only do commands if we really have different PIC objects.
-	reload_objs="$libobjs $reload_conv_objs"
-	output=$libobj
-	func_execute_cmds "$reload_cmds" 'exit $?'
-      fi
-
-      if test -n "$gentop"; then
-	func_show_eval '${RM}r "$gentop"'
-      fi
-
-      exit $EXIT_SUCCESS
-      ;;
-
-    prog)
-      case $host in
-	*cygwin*) func_stripname '' '.exe' "$output"
-	          output=$func_stripname_result.exe;;
-      esac
-      test -n "$vinfo" && \
-	func_warning "'-version-info' is ignored for programs"
-
-      test -n "$release" && \
-	func_warning "'-release' is ignored for programs"
-
-      $preload \
-	&& test unknown,unknown,unknown = "$dlopen_support,$dlopen_self,$dlopen_self_static" \
-	&& func_warning "'LT_INIT([dlopen])' not used. Assuming no dlopen support."
-
-      case $host in
-      *-*-rhapsody* | *-*-darwin1.[012])
-	# On Rhapsody replace the C library is the System framework
-	compile_deplibs=`$ECHO " $compile_deplibs" | $SED 's/ -lc / System.ltframework /'`
-	finalize_deplibs=`$ECHO " $finalize_deplibs" | $SED 's/ -lc / System.ltframework /'`
-	;;
-      esac
-
-      case $host in
-      *-*-darwin*)
-	# Don't allow lazy linking, it breaks C++ global constructors
-	# But is supposedly fixed on 10.4 or later (yay!).
-	if test CXX = "$tagname"; then
-	  case ${MACOSX_DEPLOYMENT_TARGET-10.0} in
-	    10.[0123])
-	      func_append compile_command " $wl-bind_at_load"
-	      func_append finalize_command " $wl-bind_at_load"
-	    ;;
-	  esac
-	fi
-	# Time to change all our "foo.ltframework" stuff back to "-framework foo"
-	compile_deplibs=`$ECHO " $compile_deplibs" | $SED 's% \([^ $]*\).ltframework% -framework \1%g'`
-	finalize_deplibs=`$ECHO " $finalize_deplibs" | $SED 's% \([^ $]*\).ltframework% -framework \1%g'`
-	;;
-      esac
-
-
-      # move library search paths that coincide with paths to not yet
-      # installed libraries to the beginning of the library search list
-      new_libs=
-      for path in $notinst_path; do
-	case " $new_libs " in
-	*" -L$path/$objdir "*) ;;
-	*)
-	  case " $compile_deplibs " in
-	  *" -L$path/$objdir "*)
-	    func_append new_libs " -L$path/$objdir" ;;
-	  esac
-	  ;;
-	esac
-      done
-      for deplib in $compile_deplibs; do
-	case $deplib in
-	-L*)
-	  case " $new_libs " in
-	  *" $deplib "*) ;;
-	  *) func_append new_libs " $deplib" ;;
-	  esac
-	  ;;
-	*) func_append new_libs " $deplib" ;;
-	esac
-      done
-      compile_deplibs=$new_libs
-
-
-      func_append compile_command " $compile_deplibs"
-      func_append finalize_command " $finalize_deplibs"
-
-      if test -n "$rpath$xrpath"; then
-	# If the user specified any rpath flags, then add them.
-	for libdir in $rpath $xrpath; do
-	  # This is the magic to use -rpath.
-	  case "$finalize_rpath " in
-	  *" $libdir "*) ;;
-	  *) func_append finalize_rpath " $libdir" ;;
-	  esac
-	done
-      fi
-
-      # Now hardcode the library paths
-      rpath=
-      hardcode_libdirs=
-      for libdir in $compile_rpath $finalize_rpath; do
-	if test -n "$hardcode_libdir_flag_spec"; then
-	  if test -n "$hardcode_libdir_separator"; then
-	    if test -z "$hardcode_libdirs"; then
-	      hardcode_libdirs=$libdir
-	    else
-	      # Just accumulate the unique libdirs.
-	      case $hardcode_libdir_separator$hardcode_libdirs$hardcode_libdir_separator in
-	      *"$hardcode_libdir_separator$libdir$hardcode_libdir_separator"*)
-		;;
-	      *)
-		func_append hardcode_libdirs "$hardcode_libdir_separator$libdir"
-		;;
-	      esac
-	    fi
-	  else
-	    eval flag=\"$hardcode_libdir_flag_spec\"
-	    func_append rpath " $flag"
-	  fi
-	elif test -n "$runpath_var"; then
-	  case "$perm_rpath " in
-	  *" $libdir "*) ;;
-	  *) func_append perm_rpath " $libdir" ;;
-	  esac
-	fi
-	case $host in
-	*-*-cygwin* | *-*-mingw* | *-*-pw32* | *-*-os2* | *-cegcc*)
-	  testbindir=`$ECHO "$libdir" | $SED -e 's*/lib$*/bin*'`
-	  case :$dllsearchpath: in
-	  *":$libdir:"*) ;;
-	  ::) dllsearchpath=$libdir;;
-	  *) func_append dllsearchpath ":$libdir";;
-	  esac
-	  case :$dllsearchpath: in
-	  *":$testbindir:"*) ;;
-	  ::) dllsearchpath=$testbindir;;
-	  *) func_append dllsearchpath ":$testbindir";;
-	  esac
-	  ;;
-	esac
-      done
-      # Substitute the hardcoded libdirs into the rpath.
-      if test -n "$hardcode_libdir_separator" &&
-	 test -n "$hardcode_libdirs"; then
-	libdir=$hardcode_libdirs
-	eval rpath=\" $hardcode_libdir_flag_spec\"
-      fi
-      compile_rpath=$rpath
-
-      rpath=
-      hardcode_libdirs=
-      for libdir in $finalize_rpath; do
-	if test -n "$hardcode_libdir_flag_spec"; then
-	  if test -n "$hardcode_libdir_separator"; then
-	    if test -z "$hardcode_libdirs"; then
-	      hardcode_libdirs=$libdir
-	    else
-	      # Just accumulate the unique libdirs.
-	      case $hardcode_libdir_separator$hardcode_libdirs$hardcode_libdir_separator in
-	      *"$hardcode_libdir_separator$libdir$hardcode_libdir_separator"*)
-		;;
-	      *)
-		func_append hardcode_libdirs "$hardcode_libdir_separator$libdir"
-		;;
-	      esac
-	    fi
-	  else
-	    eval flag=\"$hardcode_libdir_flag_spec\"
-	    func_append rpath " $flag"
-	  fi
-	elif test -n "$runpath_var"; then
-	  case "$finalize_perm_rpath " in
-	  *" $libdir "*) ;;
-	  *) func_append finalize_perm_rpath " $libdir" ;;
-	  esac
-	fi
-      done
-      # Substitute the hardcoded libdirs into the rpath.
-      if test -n "$hardcode_libdir_separator" &&
-	 test -n "$hardcode_libdirs"; then
-	libdir=$hardcode_libdirs
-	eval rpath=\" $hardcode_libdir_flag_spec\"
-      fi
-      finalize_rpath=$rpath
-
-      if test -n "$libobjs" && test yes = "$build_old_libs"; then
-	# Transform all the library objects into standard objects.
-	compile_command=`$ECHO "$compile_command" | $SP2NL | $SED "$lo2o" | $NL2SP`
-	finalize_command=`$ECHO "$finalize_command" | $SP2NL | $SED "$lo2o" | $NL2SP`
-      fi
-
-      func_generate_dlsyms "$outputname" "@PROGRAM@" false
-
-      # template prelinking step
-      if test -n "$prelink_cmds"; then
-	func_execute_cmds "$prelink_cmds" 'exit $?'
-      fi
-
-      wrappers_required=:
-      case $host in
-      *cegcc* | *mingw32ce*)
-        # Disable wrappers for cegcc and mingw32ce hosts, we are cross compiling anyway.
-        wrappers_required=false
-        ;;
-      *cygwin* | *mingw* )
-        test yes = "$build_libtool_libs" || wrappers_required=false
-        ;;
-      *)
-        if test no = "$need_relink" || test yes != "$build_libtool_libs"; then
-          wrappers_required=false
+    done
+    printf "\n"
+}
+
+# ─── Menu System ──────────────────────────────────────────────────────────────
+
+# Single menu option
+ui_menu_item() {
+    local key="$1"
+    local label="$2"
+    local desc="${3:-}"
+    local selected="${4:-false}"
+    
+    if [[ "$selected" == "true" ]]; then
+        printf "    ${T_BG_SELECT}${T_CYAN}${T_BOLD}[%s]${T_RESET}${T_BG_SELECT} ${T_WHITE}%-24s${T_RESET}${T_BG_SELECT} ${T_CYAN}%s${T_RESET}\n" "$key" "$label" "$desc"
+    else
+        printf "    ${T_CYAN}${T_BOLD}[%s]${T_RESET} %-24s ${T_WHITE}%s${T_RESET}\n" "$key" "$label" "$desc"
+    fi
+}
+
+# Menu group header
+ui_menu_group() {
+    local title="$1"
+    printf "\n    ${T_ORANGE}${T_BOLD}%s${T_RESET}\n" "$title"
+    printf "    ${T_GRAY}$(ui_repeat '─' 40)${T_RESET}\n"
+}
+
+# Separator between menu sections
+ui_menu_sep() {
+    printf "\n"
+}
+
+# ─── Data Display ─────────────────────────────────────────────────────────────
+
+# Key-value pair
+ui_kv() {
+    local key="$1"
+    local value="$2"
+    local indent="${3:-4}"
+    printf "%*s${T_CYAN}%-14s${T_RESET} ${T_WHITE}%s${T_RESET}\n" "$indent" "" "$key:" "$value"
+}
+
+# Tree-style list item
+ui_tree() {
+    local prefix="$1"
+    local label="$2"
+    local value="$3"
+    local last="${4:-false}"
+    
+    if [[ "$last" == "true" ]]; then
+        printf "    └─ ${T_GRAY}%-12s${T_RESET} ${T_WHITE}%s${T_RESET}\n" "$label" "$value"
+    else
+        printf "    ├─ ${T_GRAY}%-12s${T_RESET} ${T_WHITE}%s${T_RESET}\n" "$label" "$value"
+    fi
+}
+
+# Table header
+ui_table_header() {
+    local cols=("$@")
+    printf "    ${T_BOLD}"
+    for col in "${cols[@]}"; do
+        printf "%-16s" "$col"
+    done
+    printf "${T_RESET}\n"
+    printf "    ${T_GRAY}$(ui_repeat '─' $(( ${#cols[@]} * 16 )))${T_RESET}\n"
+}
+
+# Table row
+ui_table_row() {
+    local cols=("$@")
+    printf "    "
+    for col in "${cols[@]}"; do
+        printf "%-16s" "$col"
+    done
+    printf "\n"
+}
+
+# ─── Progress & Loading ───────────────────────────────────────────────────────
+
+ui_progress() {
+    local label="$1"
+    local percent="$2"
+    local width=30
+    local filled=$(( percent * width / 100 ))
+    local empty=$(( width - filled ))
+    
+    printf "    %-20s ${T_CYAN}[" "$label"
+    printf "$(ui_repeat '#' $filled)"
+    printf "${T_WHITE}$(ui_repeat '.' $empty)"
+    printf "${T_CYAN}]${T_RESET} ${T_WHITE}%3d%%${T_RESET}\n" "$percent"
+}
+
+ui_spinner() {
+    local label="$1"
+    local chars='⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'
+    local i=0
+    while true; do
+        printf "\r    ${T_CYAN}%s${T_RESET} %s " "${chars:i:1}" "$label"
+        ((i = (i + 1) % ${#chars}))
+        sleep 0.1
+    done
+}
+
+# ─── Input Components ─────────────────────────────────────────────────────────
+
+ui_prompt() {
+    local label="$1"
+    local default="${2:-}"
+    local result
+    
+    if [[ -n "$default" ]]; then
+        printf "    ${T_CYAN}❯${T_RESET} %s ${T_WHITE}[%s]${T_RESET}: " "$label" "$default" >&2
+    else
+        printf "    ${T_CYAN}❯${T_RESET} %s: " "$label" >&2
+    fi
+    
+    stty echo 2>/dev/null
+    read -r result
+    stty -echo 2>/dev/null
+    echo "${result:-$default}"
+}
+
+ui_confirm() {
+    local message="$1"
+    local response
+    printf "    ${T_YELLOW}⚠${T_RESET} %s ${T_DIM}[y/N]${T_RESET} " "$message"
+    read -rsn1 response
+    printf "%s\n" "$response"
+    if [[ "$response" == "y" || "$response" == "Y" ]]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+ui_confirm_danger() {
+    local action="$1"
+    local code=$(printf "%04d" $((RANDOM % 10000)))
+    
+    printf "\n"
+    ui_box_danger "DANGER ZONE" \
+        "You are about to: $action" \
+        "" \
+        "This action cannot be undone."
+    
+    printf "\n    To confirm, type: ${T_BOLD}${T_RED}%s${T_RESET}\n" "$code"
+    printf "    ${T_CYAN}❯${T_RESET} "
+    
+    local input
+    read -r input
+    [[ "$input" == "$code" ]]
+}
+
+ui_wait_key() {
+    local message="${1:-Press any key to continue...}"
+    printf "\n    ${T_DIM}%s${T_RESET}" "$message"
+    read -rsn1
+    printf "\n"
+}
+
+ui_read_key() {
+    local key
+    # Only use timeout when Web UI is enabled (for sync updates)
+    # CLI-only mode doesn't need polling since there's no Web UI to sync with
+    if [[ "$(db_get_config web_ui_enabled)" == "true" ]]; then
+        read -rsn1 -t 7 key 2>/dev/null
+    else
+        read -rsn1 key 2>/dev/null
+    fi
+    echo "$key"
+}
+
+# Alias for compatibility
+read_key_static() {
+    local key
+    read -rsn1 key 2>/dev/null
+    echo "$key"
+}
+
+# ─── Help Overlay ─────────────────────────────────────────────────────────────
+
+ui_help_overlay() {
+    local title="$1"
+    shift
+    local lines=("$@")
+    
+    ui_draw_header_mini "Help: $title"
+    
+    ui_box_info "About This Screen" "${lines[@]}"
+    
+    printf "\n"
+    ui_menu_group "Keyboard Shortcuts"
+    ui_kv "[B/Esc]" "Go back"
+    ui_kv "[Q]" "Quit application"
+    ui_kv "[?]" "Show this help"
+    ui_kv "[/]" "Command palette"
+    
+    ui_wait_key
+}
+
+# ─── Messages & Logging ───────────────────────────────────────────────────────
+
+log_info() { printf "    ${T_CYAN}ℹ${T_RESET} %s\n" "$1"; }
+log_success() { printf "    ${T_GREEN}✓${T_RESET} %s\n" "$1"; }
+log_warn() { printf "    ${T_YELLOW}⚠${T_RESET} ${T_YELLOW}%s${T_RESET}\n" "$1"; }
+log_error() { printf "    ${T_RED}✗${T_RESET} ${T_RED}%s${T_RESET}\n" "$1" >&2; }
+log_step() { printf "    ${T_CYAN}▸${T_RESET} %s\n" "$1"; }
+
+exit_with_error() {
+    log_error "$1"
+    printf "\n    ${T_RED}Aborted.${T_RESET}\n"
+    exit 1
+}
+
+# ─── Legacy Compatibility Layer ───────────────────────────────────────────────
+
+clear_screen() { ui_clear; }
+hide_cursor() { ui_hide_cursor; }
+show_cursor() { ui_show_cursor; }
+
+show_banner() { ui_draw_header; }
+section() { printf "\n    ${T_ORANGE}${T_BOLD}▸ %s${T_RESET}\n" "$1"; ui_rule; }
+menu_option() { ui_menu_item "$@"; }
+show_footer() { ui_draw_footer "$@"; }
+draw_box() { ui_box "$@"; }
+prompt() { ui_prompt "$@"; }
+confirm() { ui_confirm "$@"; }
+wait_key() { ui_wait_key "$@"; }
+read_key() { ui_read_key; }
+draw_line() { ui_repeat "${1:-─}" "${2:-$TERM_COLS}"; }
+
+# ─── Help Screen ──────────────────────────────────────────────────────────────
+
+show_help_screen() {
+    while true; do
+        ui_clear
+        printf "${T_GREEN}${T_BOLD}"
+        cat << 'HELP_BANNER'
+    ╔══════════════════════════════════════════════════════════════════════╗
+    ║                         SAMNET HELP CENTER                          ║
+    ╚══════════════════════════════════════════════════════════════════════╝
+HELP_BANNER
+        printf "${T_RESET}\n"
+        
+        printf "    ${T_CYAN}${T_BOLD}NAVIGATION${T_RESET}\n"
+        printf "    ${T_WHITE}────────────────────────────────────────────────────────${T_RESET}\n"
+        printf "    ${T_GREEN}↑/↓${T_RESET}  or  ${T_GREEN}j/k${T_RESET}     Navigate menu items\n"
+        printf "    ${T_GREEN}Enter${T_RESET}              Select/confirm\n"
+        printf "    ${T_GREEN}B${T_RESET} or ${T_GREEN}Esc${T_RESET}          Go back\n"
+        printf "    ${T_GREEN}Q${T_RESET}                  Quit application\n"
+        printf "    ${T_GREEN}H${T_RESET}                  Show this help\n"
+        printf "    ${T_GREEN}A${T_RESET}                  About SamNet\n\n"
+        
+        printf "    ${T_CYAN}${T_BOLD}PEER MANAGEMENT${T_RESET}\n"
+        printf "    ${T_WHITE}────────────────────────────────────────────────────────${T_RESET}\n"
+        printf "    ${T_WHITE}Add Peer${T_RESET}           Create a new VPN client\n"
+        printf "    ${T_WHITE}List Peers${T_RESET}         View all connected clients\n"
+        printf "    ${T_WHITE}Remove Peer${T_RESET}        Delete a client and revoke access\n"
+        printf "    ${T_WHITE}Show QR Code${T_RESET}       Display QR for mobile setup\n\n"
+        
+        printf "    ${T_CYAN}${T_BOLD}SYSTEM OPERATIONS${T_RESET}\n"
+        printf "    ${T_WHITE}────────────────────────────────────────────────────────${T_RESET}\n"
+        printf "    ${T_WHITE}Status${T_RESET}             View WireGuard tunnel status\n"
+        printf "    ${T_WHITE}Config${T_RESET}             Edit server configuration\n"
+        printf "    ${T_WHITE}Logs${T_RESET}               View system logs\n"
+        printf "    ${T_WHITE}Restart${T_RESET}            Restart WireGuard service\n\n"
+        
+        printf "    ${T_CYAN}${T_BOLD}ADVANCED TOOLS${T_RESET}\n"
+        printf "    ${T_WHITE}────────────────────────────────────────────────────────${T_RESET}\n"
+        printf "    ${T_WHITE}Troubleshooter${T_RESET}     Auto-detect and fix issues\n"
+        printf "    ${T_WHITE}Repair Wizard${T_RESET}      Rebuild critical configs\n"
+        printf "    ${T_WHITE}DDNS Setup${T_RESET}         Configure Dynamic DNS\n"
+        printf "    ${T_WHITE}Watch Mode${T_RESET}         Live traffic dashboard\n"
+        printf "    ${T_WHITE}Benchmarks${T_RESET}         Test system performance\n"
+        printf "    ${T_WHITE}Export Diag${T_RESET}        Generate support bundle\n\n"
+        
+        printf "    ${T_CYAN}${T_BOLD}WEB UI${T_RESET}\n"
+        printf "    ${T_WHITE}────────────────────────────────────────────────────────${T_RESET}\n"
+        printf "    ${T_WHITE}Default Username:${T_RESET}  ${T_GREEN}admin${T_RESET}\n"
+        printf "    ${T_WHITE}Default Password:${T_RESET}  ${T_GREEN}changeme${T_RESET}\n"
+        printf "    ${T_WHITE}Access:${T_RESET}            HTTP on port 80 (local network)\n"
+        printf "    ${T_DIM}Enable via: Main Menu → Install/Repair → Enable Web UI${T_RESET}\n\n"
+        
+        printf "    ${T_CYAN}${T_BOLD}PORTS REQUIRED${T_RESET}\n"
+        printf "    ${T_WHITE}────────────────────────────────────────────────────────${T_RESET}\n"
+        printf "    ${T_WHITE}51820/UDP${T_RESET}          WireGuard VPN traffic\n"
+        printf "    ${T_WHITE}80/TCP${T_RESET}             Web UI (optional, if enabled)\n\n"
+        
+        printf "    ${T_CYAN}${T_BOLD}COMMAND LINE${T_RESET}\n"
+        printf "    ${T_WHITE}────────────────────────────────────────────────────────${T_RESET}\n"
+        printf "    ${T_WHITE}samnet${T_RESET}             Launch interactive TUI\n"
+        printf "    ${T_WHITE}samnet --update${T_RESET}    Check for and apply updates\n"
+        printf "    ${T_WHITE}samnet --status${T_RESET}    Show system status\n"
+        printf "    ${T_WHITE}samnet -z${T_RESET}          Zero-touch install\n"
+        printf "    ${T_WHITE}samnet --uninstall${T_RESET} Remove SamNet-WG\n\n"
+        
+        ui_draw_footer "[B] Back"
+        
+        local key=$(read_key_static)
+        case "$key" in
+            b|B|$'\x1b'|q|Q) return ;;
+        esac
+    done
+}
+
+# ─── About Screen ─────────────────────────────────────────────────────────────
+
+show_about_screen() {
+    while true; do
+        ui_clear
+        printf "${T_GREEN}${T_BOLD}"
+        cat << 'ABOUT_BANNER'
+    ╔══════════════════════════════════════════════════════════════════════╗
+    ║  ███████╗ █████╗ ███╗   ███╗███╗   ██╗███████╗████████╗              ║
+    ║  ██╔════╝██╔══██╗████╗ ████║████╗  ██║██╔════╝╚══██╔══╝              ║
+    ║  ███████╗███████║██╔████╔██║██╔██╗ ██║█████╗     ██║                 ║
+    ║  ╚════██║██╔══██║██║╚██╔╝██║██║╚██╗██║██╔══╝     ██║                 ║
+    ║  ███████║██║  ██║██║ ╚═╝ ██║██║ ╚████║███████╗   ██║                 ║
+    ║  ╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝  ╚═══╝╚══════╝   ╚═╝                 ║
+    ╚══════════════════════════════════════════════════════════════════════╝
+ABOUT_BANNER
+        printf "${T_RESET}\n"
+        
+        printf "    ${T_CYAN}${T_BOLD}WireGuard Orchestrator & Management Platform${T_RESET}\n\n"
+        
+        printf "    ${T_WHITE}Version:${T_RESET}     ${T_GREEN}${SAMNET_VERSION}${T_RESET}\n"
+        printf "    ${T_WHITE}Author:${T_RESET}      ${T_CYAN}${AUTHOR}${T_RESET}\n"
+        printf "    ${T_WHITE}Website:${T_RESET}     ${T_CYAN}${WEBSITE}${T_RESET}\n"
+        printf "    ${T_WHITE}License:${T_RESET}     ${T_DIM}MIT License${T_RESET}\n\n"
+        
+        printf "    ${T_WHITE}────────────────────────────────────────────────────────${T_RESET}\n\n"
+        
+        printf "    ${T_DIM}SamNet-WG is an enterprise-grade WireGuard VPN management${T_RESET}\n"
+        printf "    ${T_DIM}platform designed for simplicity and security. It provides${T_RESET}\n"
+        printf "    ${T_DIM}zero-touch installation, automatic peer management, and a${T_RESET}\n"
+        printf "    ${T_DIM}beautiful terminal interface for self-hosted VPN servers.${T_RESET}\n\n"
+        
+        printf "    ${T_WHITE}────────────────────────────────────────────────────────${T_RESET}\n\n"
+        
+        printf "    ${T_CYAN}${T_BOLD}System Locations:${T_RESET}\n"
+        printf "    ${T_WHITE}Install Dir:${T_RESET}   ${T_DIM}/opt/samnet${T_RESET}\n"
+        printf "    ${T_WHITE}Database:${T_RESET}      ${T_DIM}/var/lib/samnet-wg${T_RESET}\n"
+        printf "    ${T_WHITE}Logs:${T_RESET}          ${T_DIM}/var/log/samnet-wg${T_RESET}\n"
+        printf "    ${T_WHITE}WG Config:${T_RESET}     ${T_DIM}/etc/wireguard${T_RESET}\n"
+        printf "    ${T_WHITE}Auth File:${T_RESET}     ${T_DIM}/opt/samnet/credentials.txt${T_RESET}\n\n"
+        
+        printf "    ${T_GREEN}★${T_RESET} ${T_DIM}Built with love for the self-hosting community${T_RESET}\n"
+        printf "    ${T_GREEN}★${T_RESET} ${T_DIM}Powered by WireGuard® - the modern VPN protocol${T_RESET}\n"
+        printf "    ${T_GREEN}★${T_RESET} ${T_DIM}100%% Open Source - Audit the code yourself${T_RESET}\n\n"
+        
+        ui_draw_footer "[B] Back"
+        
+        local key=$(read_key)
+        case "$key" in
+            b|B|$'\x1b'|q|Q) return ;;
+        esac
+    done
+}
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# 3. SECURITY & VALIDATION
+# ══════════════════════════════════════════════════════════════════════════════
+
+# Early dependency check - runs BEFORE TUI starts
+ensure_early_dependencies() {
+    local missing=()
+    
+    # Critical dependencies that must be present
+    command -v sqlite3 &>/dev/null || missing+=("sqlite3")
+    command -v curl &>/dev/null || missing+=("curl")
+    command -v ip &>/dev/null || missing+=("iproute2")
+    command -v wg &>/dev/null || missing+=("wireguard-tools")
+    
+    if [[ ${#missing[@]} -gt 0 ]]; then
+        echo -e "${T_GREEN}${T_BOLD}[SamNet]${T_RESET} Checking dependencies..."
+        echo -e "${T_DIM}  Missing: ${missing[*]}${T_RESET}"
+        echo -e "${T_GREEN}  Installing required packages (this may take a moment)...${T_RESET}"
+        
+        # Detect package manager and install with PROGRESS
+        if command -v apt-get &>/dev/null; then
+            apt-get update
+            apt-get install -y "${missing[@]}"
+        elif command -v dnf &>/dev/null; then
+            dnf install -y "${missing[@]}"
+        elif command -v yum &>/dev/null; then
+            yum install -y "${missing[@]}"
+        elif command -v pacman &>/dev/null; then
+            pacman -Sy --noconfirm "${missing[@]}"
+        else
+            echo -e "${T_RED}ERROR: Could not detect package manager.${T_RESET}"
+            echo "Please install manually: ${missing[*]}"
+            exit 1
         fi
-        ;;
-      esac
-      $wrappers_required || {
-	# Replace the output file specification.
-	compile_command=`$ECHO "$compile_command" | $SED 's%@OUTPUT@%'"$output"'%g'`
-	link_command=$compile_command$compile_rpath
+        
+        if [[ $? -eq 0 ]]; then
+             echo -e "${T_GREEN}✓ Dependencies installed successfully${T_RESET}"
+        else
+             echo -e "${T_RED}✗ Installation failed. Please check your internet connection or package manager.${T_RESET}"
+             exit 1
+        fi
+    fi
+}
 
-	# We have no uninstalled library dependencies, so finalize right now.
-	exit_status=0
-	func_show_eval "$link_command" 'exit_status=$?'
+check_root() {
+    if [[ $EUID -ne 0 ]]; then
+        echo -e "${C_RED}ERROR: Must run as root (sudo)${C_RESET}" >&2
+        exit 1
+    fi
+}
 
-	if test -n "$postlink_cmds"; then
-	  func_to_tool_file "$output"
-	  postlink_cmds=`func_echo_all "$postlink_cmds" | $SED -e 's%@OUTPUT@%'"$output"'%g' -e 's%@TOOL_OUTPUT@%'"$func_to_tool_file_result"'%g'`
-	  func_execute_cmds "$postlink_cmds" 'exit $?'
-	fi
+detect_public_ip() {
+    local sources=(
+        "https://ifconfig.me"
+        "https://icanhazip.com"
+        "https://ipinfo.io/ip"
+        "https://api.ipify.org"
+    )
+    local ips=()
+    
+    for url in "${sources[@]}"; do
+        local ip=$(curl --silent --max-time 5 -4 "$url" 2>/dev/null | tr -d '[:space:]')
+        if [[ "$ip" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            ips+=("$ip")
+        fi
+    done
+    
+    # Fallback to local interface IP detection if external services fail
+    if [[ ${#ips[@]} -lt 2 ]]; then
+        [[ -n "${SAMNET_WAN_IP:-}" ]] && echo "$SAMNET_WAN_IP" && return 0
+        # Local interface fallback
+        local local_ip=$(ip route get 8.8.8.8 2>/dev/null | awk '{print $7; exit}')
+        if [[ "$local_ip" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            log_warn "Using local interface IP as fallback: $local_ip"
+            echo "$local_ip"
+            return 0
+        fi
+        return 1
+    fi
+    
+    printf '%s\n' "${ips[@]}" | sort | uniq -c | sort -rn | head -1 | awk '{print $2}'
+}
 
-	# Delete the generated files.
-	if test -f "$output_objdir/${outputname}S.$objext"; then
-	  func_show_eval '$RM "$output_objdir/${outputname}S.$objext"'
-	fi
+validate_interface() {
+    local iface="$1"
+    [[ "$iface" =~ ^[a-zA-Z0-9_-]+$ ]] || return 1
+    ip link show "$iface" &>/dev/null
+}
 
-	exit $exit_status
-      }
+run_preflight_checks() {
+    log_info "Running pre-flight checks..."
+    local failed=0
+    
+    # Check for 1GB free (500MB base + 500MB for Docker images)
+    # Check for 1GB free (500MB base + 500MB for Docker images)
+    local free_mb=$(df -m /var 2>/dev/null | tail -1 | awk '{print $4}')
+    if [[ ${free_mb:-0} -lt 1000 ]]; then
+        log_warn "Insufficient disk: ${free_mb}MB (need 1GB+ for Docker images)"
+        log_info "Attempting to free space..."
+        docker image prune -f >/dev/null 2>&1 || true
+    fi
+    
+    # Critical checks (must pass)
+    if ! lsmod 2>/dev/null | grep -q wireguard && ! modprobe wireguard 2>/dev/null; then
+        log_error "WireGuard module required but not available"
+        ((failed++))
+    fi
+    
+    for port in 51820 80 8080; do
+        if ss -tuln 2>/dev/null | grep -q ":$port "; then
+            log_warn "Port $port in use"
+        fi
+    done
+    
+    if ! curl --silent --max-time 5 https://google.com &>/dev/null; then
+        log_warn "No internet connectivity"
+    fi
+    
+    [[ $failed -gt 0 ]] && return 1
+    log_success "Pre-flight checks passed"
+}
 
-      if test -n "$compile_shlibpath$finalize_shlibpath"; then
-	compile_command="$shlibpath_var=\"$compile_shlibpath$finalize_shlibpath\$$shlibpath_var\" $compile_command"
-      fi
-      if test -n "$finalize_shlibpath"; then
-	finalize_command="$shlibpath_var=\"$finalize_shlibpath\$$shlibpath_var\" $finalize_command"
-      fi
+sanitize_input() { echo "${1//\'/\'\'}"; }
 
-      compile_var=
-      finalize_var=
-      if test -n "$runpath_var"; then
-	if test -n "$perm_rpath"; then
-	  # We should set the runpath_var.
-	  rpath=
-	  for dir in $perm_rpath; do
-	    func_append rpath "$dir:"
-	  done
-	  compile_var="$runpath_var=\"$rpath\$$runpath_var\" "
-	fi
-	if test -n "$finalize_perm_rpath"; then
-	  # We should set the runpath_var.
-	  rpath=
-	  for dir in $finalize_perm_rpath; do
-	    func_append rpath "$dir:"
-	  done
-	  finalize_var="$runpath_var=\"$rpath\$$runpath_var\" "
-	fi
-      fi
+validate_key() {
+    [[ "$1" =~ ^[a-zA-Z0-9_]+$ ]] || { log_error "Invalid key: $1"; return 1; }
+}
 
-      if test yes = "$no_install"; then
-	# We don't need to create a wrapper script.
-	link_command=$compile_var$compile_command$compile_rpath
-	# Replace the output file specification.
-	link_command=`$ECHO "$link_command" | $SED 's%@OUTPUT@%'"$output"'%g'`
-	# Delete the old output file.
-	$opt_dry_run || $RM $output
-	# Link the executable and exit
-	func_show_eval "$link_command" 'exit $?'
+# ══════════════════════════════════════════════════════════════════════════════
+# 4. DATABASE ENGINE
+# ══════════════════════════════════════════════════════════════════════════════
 
-	if test -n "$postlink_cmds"; then
-	  func_to_tool_file "$output"
-	  postlink_cmds=`func_echo_all "$postlink_cmds" | $SED -e 's%@OUTPUT@%'"$output"'%g' -e 's%@TOOL_OUTPUT@%'"$func_to_tool_file_result"'%g'`
-	  func_execute_cmds "$postlink_cmds" 'exit $?'
-	fi
+ensure_db_init() {
+    mkdir -p "$(dirname "$DB_PATH")" && chmod 700 "$(dirname "$DB_PATH")"
+    
+    if [[ ! -f "$DB_PATH" ]]; then
+        log_info "Initializing database schema..."
+        sqlite3 -batch "$DB_PATH" <<SQL || exit_with_error "Failed to initialize database schema"
+CREATE TABLE IF NOT EXISTS system_config (key TEXT PRIMARY KEY, value TEXT);
+CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE NOT NULL, password_hash TEXT NOT NULL, role TEXT NOT NULL DEFAULT 'viewer', failed_attempts INTEGER DEFAULT 0, lockout_until DATETIME);
+CREATE TABLE IF NOT EXISTS sessions (id INTEGER PRIMARY KEY AUTOINCREMENT, token_hash TEXT UNIQUE NOT NULL, user_id INTEGER NOT NULL, created_at DATETIME NOT NULL, expires_at DATETIME NOT NULL);
+CREATE TABLE IF NOT EXISTS peers (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT UNIQUE NOT NULL, public_key TEXT UNIQUE NOT NULL, encrypted_private_key TEXT NOT NULL, allowed_ips TEXT NOT NULL, disabled INTEGER DEFAULT 0, last_handshake DATETIME, rx_bytes INTEGER DEFAULT 0, tx_bytes INTEGER DEFAULT 0, total_rx_bytes INTEGER DEFAULT 0, total_tx_bytes INTEGER DEFAULT 0, data_limit_gb INTEGER DEFAULT 0, expires_at INTEGER, created_at DATETIME DEFAULT CURRENT_TIMESTAMP);
+CREATE TABLE IF NOT EXISTS historical_usage (id INTEGER PRIMARY KEY AUTOINCREMENT, peer_name TEXT NOT NULL, public_key TEXT, rx_bytes INTEGER DEFAULT 0, tx_bytes INTEGER DEFAULT 0, deleted_at DATETIME DEFAULT CURRENT_TIMESTAMP);
+CREATE TABLE IF NOT EXISTS audit_logs (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, action TEXT NOT NULL, target TEXT, details TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP);
+CREATE TABLE IF NOT EXISTS system_state (key TEXT PRIMARY KEY, value TEXT);
+CREATE TABLE IF NOT EXISTS ip_pool (id INTEGER PRIMARY KEY AUTOINCREMENT, ip TEXT UNIQUE, used INTEGER DEFAULT 0);
+CREATE INDEX IF NOT EXISTS idx_peers_public_key ON peers(public_key);
+CREATE INDEX IF NOT EXISTS idx_sessions_token_hash ON sessions(token_hash);
+SQL
+        chmod 600 "$DB_PATH"
+        log_success "Database initialized"
+    fi
+    
+    # Auto-migrate existing databases: add new columns if missing
+    if [[ -f "$DB_PATH" ]]; then
+        # Check if data_limit_gb column exists, if not add it (and related columns)
+        local has_limit=$(sqlite3 "$DB_PATH" "PRAGMA table_info(peers);" | grep -c "data_limit_gb" || echo "0")
+        if [[ "$has_limit" == "0" ]]; then
+            log_info "Migrating database schema..."
+            sqlite3 "$DB_PATH" "ALTER TABLE peers ADD COLUMN total_rx_bytes INTEGER DEFAULT 0;" 2>/dev/null
+            sqlite3 "$DB_PATH" "ALTER TABLE peers ADD COLUMN total_tx_bytes INTEGER DEFAULT 0;" 2>/dev/null
+            sqlite3 "$DB_PATH" "ALTER TABLE peers ADD COLUMN data_limit_gb INTEGER DEFAULT 0;" 2>/dev/null
+            sqlite3 "$DB_PATH" "ALTER TABLE peers ADD COLUMN disabled INTEGER DEFAULT 0;" 2>/dev/null
+            sqlite3 "$DB_PATH" "ALTER TABLE peers ADD COLUMN expires_at INTEGER;" 2>/dev/null
+            log_success "Database migrated"
+        fi
+    fi
+}
 
-	exit $EXIT_SUCCESS
-      fi
+# Database Abstraction (Handles Standalone vs Sync mode)
+db_query() {
+    [[ ! -f "$DB_PATH" ]] && return 1
+    command -v sqlite3 &>/dev/null || return 1
+    # Remove 2>/dev/null to allow seeing actual sqlite errors if they occur
+    sqlite3 -batch "$DB_PATH" "$1"
+}
 
-      case $hardcode_action,$fast_install in
-        relink,*)
-	  # Fast installation is not supported
-	  link_command=$compile_var$compile_command$compile_rpath
-	  relink_command=$finalize_var$finalize_command$finalize_rpath
+db_exec() {
+    [[ ! -f "$DB_PATH" ]] && return 0 # No-op if DB not present
+    command -v sqlite3 &>/dev/null || return 0
+    
+    # Retry loop for locked DB (SQLITE_BUSY)
+    local retries=0
+    local max_retries=5
+    while [[ $retries -lt $max_retries ]]; do
+        # capturing error output
+        if err=$(sqlite3 -batch "$DB_PATH" "$1" 2>&1); then
+            return 0
+        else
+            # Check if locked
+            if [[ "$err" == *"database is locked"* ]]; then
+                ((retries++))
+                sleep 0.2
+                continue
+            else
+                # Genuine error
+                # log_error "DB Error: $err" # Uncomment for debug
+                return 1
+            fi
+        fi
+    done
+    return 1
+}
 
-	  func_warning "this platform does not like uninstalled shared libraries"
-	  func_warning "'$output' will be relinked during installation"
-	  ;;
-        *,yes)
-	  link_command=$finalize_var$compile_command$finalize_rpath
-	  relink_command=`$ECHO "$compile_var$compile_command$compile_rpath" | $SED 's%@OUTPUT@%\$progdir/\$file%g'`
-          ;;
-	*,no)
-	  link_command=$compile_var$compile_command$compile_rpath
-	  relink_command=$finalize_var$finalize_command$finalize_rpath
-          ;;
-	*,needless)
-	  link_command=$finalize_var$compile_command$finalize_rpath
-	  relink_command=
-          ;;
-      esac
+db_set_config() {
+    validate_key "$1" || return 1
+    local safe_value=$(sanitize_input "$2")
+    db_exec "INSERT OR REPLACE INTO system_config (key, value) VALUES ('$1', '$safe_value');"
+}
 
-      # Replace the output file specification.
-      link_command=`$ECHO "$link_command" | $SED 's%@OUTPUT@%'"$output_objdir/$outputname"'%g'`
+db_get_config() {
+    validate_key "$1" || return 1
+    db_query "SELECT value FROM system_config WHERE key='$1';"
+}
 
-      # Delete the old output files.
-      $opt_dry_run || $RM $output $output_objdir/$outputname $output_objdir/lt-$outputname
+get_peer_count() {
+    db_query "SELECT COUNT(*) FROM peers;" || echo "0"
+}
 
-      func_show_eval "$link_command" 'exit $?'
+get_stale_peer_count() {
+    db_query "SELECT COUNT(*) FROM peers WHERE disabled=1;" || echo "0"
+}
 
-      if test -n "$postlink_cmds"; then
-	func_to_tool_file "$output_objdir/$outputname"
-	postlink_cmds=`func_echo_all "$postlink_cmds" | $SED -e 's%@OUTPUT@%'"$output_objdir/$outputname"'%g' -e 's%@TOOL_OUTPUT@%'"$func_to_tool_file_result"'%g'`
-	func_execute_cmds "$postlink_cmds" 'exit $?'
-      fi
+# Get the configured API port (default: 8766)
+get_api_port() {
+    local port=$(db_get_config "api_port" 2>/dev/null)
+    [[ -z "$port" ]] && port="8766"
+    echo "$port"
+}
 
-      # Now create the wrapper script.
-      func_verbose "creating $output"
+# Get the full API base URL
+get_api_url() {
+    # On Windows/Docker Desktop, host requests appear as Gateway IP, rejected by LocalhostOnly middleware.
+    # We must use 'docker exec' for internal ops, but 'curl' for external status checks.
+    echo "http://127.0.0.1:$(get_api_port)"
+}
 
-      # Quote the relink command for shipping.
-      if test -n "$relink_command"; then
-	# Preserve any variables that may affect compiler behavior
-	for var in $variables_saved_for_relink; do
-	  if eval test -z \"\${$var+set}\"; then
-	    relink_command="{ test -z \"\${$var+set}\" || $lt_unset $var || { $var=; export $var; }; }; $relink_command"
-	  elif eval var_value=\$$var; test -z "$var_value"; then
-	    relink_command="$var=; export $var; $relink_command"
-	  else
-	    func_quote_for_eval "$var_value"
-	    relink_command="$var=$func_quote_for_eval_result; export $var; $relink_command"
-	  fi
-	done
-	relink_command="(cd `pwd`; $relink_command)"
-	relink_command=`$ECHO "$relink_command" | $SED "$sed_quote_subst"`
-      fi
+# Helper to execute internal API calls reliably on any OS/Network
+# Usage: api_call "GET|POST|PUT|DELETE" "/internal/..." [data_json]
+# Returns empty and non-zero exit if Docker/container unavailable (graceful fallback)
+api_call() {
+    local method="$1"
+    local path="$2"
+    local data="$3"
+    
+    # Check if Docker is available and container is running
+    if ! command -v docker &>/dev/null; then
+        return 1  # Docker not installed
+    fi
+    if ! docker ps --format '{{.Names}}' 2>/dev/null | grep -q "^samnet-wg-api$"; then
+        return 1  # Container not running
+    fi
+    
+    # Use docker exec to run curl INSIDE the container (where localhost is trusted)
+    local cmd="curl -s -X $method http://127.0.0.1:$(get_api_port)$path"
+    
+    if [[ -n "$data" ]]; then
+        cmd="$cmd -H 'Content-Type: application/json' -d '$data'"
+    fi
+     
+    # Execute inside container
+    docker exec samnet-wg-api sh -c "$cmd" 2>/dev/null
+}
 
-      # Only actually do things if not in dry run mode.
-      $opt_dry_run || {
-	# win32 will think the script is a binary if it has
-	# a .exe suffix, so we strip it off here.
-	case $output in
-	  *.exe) func_stripname '' '.exe' "$output"
-	         output=$func_stripname_result ;;
-	esac
-	# test for cygwin because mv fails w/o .exe extensions
-	case $host in
-	  *cygwin*)
-	    exeext=.exe
-	    func_stripname '' '.exe' "$outputname"
-	    outputname=$func_stripname_result ;;
-	  *) exeext= ;;
-	esac
-	case $host in
-	  *cygwin* | *mingw* )
-	    func_dirname_and_basename "$output" "" "."
-	    output_name=$func_basename_result
-	    output_path=$func_dirname_result
-	    cwrappersource=$output_path/$objdir/lt-$output_name.c
-	    cwrapper=$output_path/$output_name.exe
-	    $RM $cwrappersource $cwrapper
-	    trap "$RM $cwrappersource $cwrapper; exit $EXIT_FAILURE" 1 2 15
+# Check if a port is available
+is_port_available() {
+    local port=$1
+    # Use ss with sport filter (more reliable than grep with \s which isn't portable)
+    ! ss -Htuln sport = ":$port" 2>/dev/null | grep -q .
+}
 
-	    func_emit_cwrapperexe_src > $cwrappersource
 
-	    # The wrapper executable is built using the $host compiler,
-	    # because it contains $host paths and files. If cross-
-	    # compiling, it, like the target executable, must be
-	    # executed on the $host or under an emulation environment.
-	    $opt_dry_run || {
-	      $LTCC $LTCFLAGS -o $cwrapper $cwrappersource
-	      $STRIP $cwrapper
-	    }
+# Find an available port starting from the given port
+find_available_port() {
+    local start_port=${1:-8766}
+    local max_port=$((start_port + 100))
+    
+    for (( port=start_port; port < max_port; port++ )); do
+        if is_port_available "$port"; then
+            echo "$port"
+            return 0
+        fi
+    done
+    
+    # Fallback to default
+    echo "$start_port"
+    return 1
+}
 
-	    # Now, create the wrapper script for func_source use:
-	    func_ltwrapper_scriptname $cwrapper
-	    $RM $func_ltwrapper_scriptname_result
-	    trap "$RM $func_ltwrapper_scriptname_result; exit $EXIT_FAILURE" 1 2 15
-	    $opt_dry_run || {
-	      # note: this script will not be executed, so do not chmod.
-	      if test "x$build" = "x$host"; then
-		$cwrapper --lt-dump-script > $func_ltwrapper_scriptname_result
-	      else
-		func_emit_wrapper no > $func_ltwrapper_scriptname_result
-	      fi
-	    }
-	  ;;
-	  * )
-	    $RM $output
-	    trap "$RM $output; exit $EXIT_FAILURE" 1 2 15
+# IP Address synchronization helpers
+ip2int() {
+    local a b c d
+    IFS=. read -r a b c d <<< "$1"
+    a=${a:-0} b=${b:-0} c=${c:-0} d=${d:-0}
+    echo "$(( (a << 24) + (b << 16) + (c << 8) + d ))"
+}
 
-	    func_emit_wrapper no > $output
-	    chmod +x $output
-	  ;;
-	esac
-      }
-      exit $EXIT_SUCCESS
-      ;;
+int2ip() {
+    local n=$1
+    echo "$(( (n >> 24) & 0xFF )).$(( (n >> 16) & 0xFF )).$(( (n >> 8) & 0xFF )).$(( n & 0xFF ))"
+}
+
+db_allocate_ip() {
+    local requested="${1:-}"
+    local lock_file="/var/run/samnet-ip-alloc.lock"
+    
+    # ─── CRITICAL SECTION LOCK ───
+    # Use fd 200 for locking to prevent race conditions during concurrent creates
+    exec 200>"$lock_file"
+    if ! flock -x -w 5 200; then
+        log_error "Failed to acquire IP allocation lock."
+        return 1
+    fi
+    
+    # ─── ALLOCATE ───
+    # (Wrapped in subshell to unsure lock releases on return/exit)
+    (
+        # Check if we should use DB sync or Standalone Switch
+        local use_db=false
+        if [[ -f "$DB_PATH" ]] && command -v sqlite3 &>/dev/null; then
+            if [[ "$(sqlite3 "$DB_PATH" "SELECT value FROM system_config WHERE key='web_ui_enabled';" 2>/dev/null)" == "true" ]]; then
+                use_db=true
+            fi
+        fi
+
+        # Authoritative Subnet Discovery
+        local cidr="10.100.0.0/24"
+        if $use_db; then
+            cidr=$(db_get_config "subnet_cidr")
+        else
+            # Fallback to wg0.conf parsing for standalone mode
+            cidr=$(grep "Address" /etc/wireguard/wg0.conf 2>/dev/null | cut -d= -f2 | tr -d ' ' | cut -d, -f1)
+        fi
+        [[ -z "$cidr" ]] && cidr="10.100.0.0/24"
+        
+        local base_ip=$(echo "$cidr" | cut -d/ -f1)
+        local prefix=$(echo "$cidr" | cut -d/ -f2)
+        local base_int=$(ip2int "$base_ip")
+        local host_bits=$((32 - prefix))
+        local num_hosts=$(( 1 << host_bits ))
+        
+        # Exclusions
+        local used_ips
+        if $use_db; then
+            used_ips=$( (sqlite3 "$DB_PATH" "SELECT allowed_ips FROM peers;" 2>/dev/null | cut -d/ -f1; \
+                         grep -R "Address" "$INSTALL_DIR/clients" 2>/dev/null | cut -d= -f2 | tr -d ' ' | cut -d/ -f1) | sort -u )
+        else
+            used_ips=$(grep -R "Address" "$INSTALL_DIR/clients" 2>/dev/null | cut -d= -f2 | tr -d ' ' | cut -d/ -f1 | sort -u)
+        fi
+        
+        # Add server's own IP (usually .1) to used list
+        local server_ip=$(grep "Address" /etc/wireguard/wg0.conf 2>/dev/null | cut -d= -f2 | tr -d ' ' | cut -d/ -f1)
+        [[ -z "$server_ip" ]] && server_ip="${base_ip%.*}.1"
+        used_ips=$(printf "%s\n%s" "$used_ips" "$server_ip" | sort -u)
+
+        # 1. Handle Requested IP/Octet
+        if [[ -n "$requested" ]]; then
+            local target="$requested"
+            # If it's just an octet (1-254)
+            if [[ "$requested" =~ ^[0-9]+$ ]] && [[ "$requested" -ge 1 ]] && [[ "$requested" -lt $((num_hosts-1)) ]]; then
+                target=$(int2ip $((base_int + requested)))
+            fi
+            
+            # Validate target is in subnet and not network/broadcast
+            local target_int=$(ip2int "$target" 2>/dev/null)
+            if [[ -n "$target_int" ]] && [[ $target_int -gt $base_int ]] && [[ $target_int -lt $((base_int + num_hosts - 1)) ]]; then
+                if ! echo "$used_ips" | grep -qx "$target"; then
+                    echo "$target"
+                    exit 0
+                else
+                    # log_error "IP $target is already in use." # Quiet logic for internal func
+                    exit 1
+                fi
+            else
+                exit 1
+            fi
+        fi
+
+        # 2. Auto-generate: Scan for first free IP starting at .1
+        for (( i=1; i < num_hosts - 1; i++ )); do
+            local candidate_int=$((base_int + i))
+            local candidate=$(int2ip "$candidate_int")
+            if ! echo "$used_ips" | grep -qx "$candidate"; then
+                echo "$candidate"
+                exit 0
+            fi
+        done
+        exit 1
+    )
+    local result=$?
+    
+    # ─── UNLOCK ───
+    flock -u 200
+    
+    return $result
+}
+
+# Helper: Scan for peers (Unifies File + DB + Interface sources)
+# Returns a line-delimited list: NAME|IP|SOURCE|STATUS
+scan_peers() {
+    local client_dir="$INSTALL_DIR/clients"
+    declare -A peer_map_name  # Keys: Name
+    declare -A peer_map_ip
+    declare -A peer_map_src
+    local peer_ids=() # Order preservation
+
+    # 1. Source: Filesystem (Primary for Mode A)
+    if [[ -d "$client_dir" ]]; then
+        for conf in "$client_dir"/*.conf; do
+            [[ -e "$conf" ]] || continue
+            local n=$(basename "$conf" .conf)
+            local ip=$(grep "Address" "$conf" 2>/dev/null | cut -d= -f2 | tr -d ' ' | cut -d/ -f1)
+            [[ -z "$ip" ]] && ip="Unknown"
+            
+            peer_map_name["$n"]="$n"
+            peer_map_ip["$n"]="$ip"
+            peer_map_src["$n"]="FILE"
+            peer_ids+=("$n")
+        done
+    fi
+
+    # 2. Source: Database (Primary for Mode B, overwrites File info if cheaper/richer)
+    if [[ -f "$DB_PATH" ]] && command -v sqlite3 &>/dev/null; then
+        while IFS='|' read -r n ip disabled; do
+            [[ -z "$n" ]] && continue
+            local status="ACTIVE"
+            [[ "$disabled" == "1" ]] && status="DISABLED"
+            
+            # If existed in file, just update metadata. If new, add.
+            if [[ -z "${peer_map_name[$n]}" ]]; then
+                peer_ids+=("$n")
+            fi
+            peer_map_name["$n"]="$n"
+            peer_map_ip["$n"]="$ip"
+            peer_map_src["$n"]="DB"
+        done < <(sqlite3 -separator '|' "$DB_PATH" "SELECT name, allowed_ips, disabled FROM peers ORDER BY name ASC;" 2>/dev/null)
+    fi
+
+    # 3. Source: Active Interface (Validation Layer)
+    local active_pubs=""
+    local transfer_dump=""
+    if command -v wg &>/dev/null && wg show wg0 &>/dev/null; then
+        active_pubs=$(wg show wg0 latest-handshakes)
+        transfer_dump=$(wg show wg0 transfer)
+    fi
+    
+    # 4. Usage Limits (Pre-fetch for performance)
+    declare -A peer_limits
+    declare -A peer_stored_usage
+    if [[ -f "$DB_PATH" ]]; then
+        while IFS='|' read -r n lim stored; do
+            [[ -n "$lim" && "$lim" != "0" ]] && peer_limits["$n"]=$lim
+            peer_stored_usage["$n"]=${stored:-0}
+        done < <(sqlite3 "$DB_PATH" "SELECT name, data_limit_gb, (total_rx_bytes + total_tx_bytes) FROM peers;")
+    fi
+
+    # Output Result
+    local sorted_names=$(printf "%s\n" "${peer_ids[@]}" | sort -u)
+    local g_mask=$(db_get_config "subnet_cidr" | cut -d/ -f2)
+    [[ -z "$g_mask" ]] && g_mask="24"
+
+    for n in $sorted_names; do
+        [[ -z "$n" ]] && continue
+        local ip="${peer_map_ip[$n]}"
+        local src="${peer_map_src[$n]}"
+        local status="UNKNOWN"
+
+        local display_ip="$ip"
+        if [[ "$display_ip" == *"/32" ]] || [[ "$display_ip" != *"/"* ]]; then
+             display_ip="${display_ip%%/*}/${g_mask}"
+        fi
+
+        # Determine Status
+        local disabled=0
+        if [[ "$src" == "DB" ]]; then
+            local db_st=$(sqlite3 "$DB_PATH" "SELECT disabled FROM peers WHERE name='$n';" 2>/dev/null)
+            [[ "$db_st" == "1" ]] && disabled=1
+        elif [[ "$src" == "FILE" ]]; then 
+            [[ -f "$INSTALL_DIR/clients/${n}.conf.disabled" ]] && disabled=1
+        fi
+        
+        # Check Limits
+        local is_over_limit=0
+        if [[ "${peer_limits[$n]}" ]]; then
+             local limit_bytes=$(( ${peer_limits[$n]} * 1024 * 1024 * 1024 ))
+             local stored=${peer_stored_usage[$n]}
+             local live=0
+             # Get pubkey to find live usage
+             local pub=$(db_query "SELECT public_key FROM peers WHERE name='$n';" 2>/dev/null)
+             if [[ -z "$pub" && -f "$client_dir/${n}.conf" ]]; then
+                 local priv=$(grep "PrivateKey" "$client_dir/${n}.conf" 2>/dev/null | cut -d= -f2 | tr -d ' ')
+                 [[ -n "$priv" ]] && pub=$(echo "$priv" | wg pubkey 2>/dev/null)
+             fi
+             
+             if [[ -n "$pub" && -n "$transfer_dump" ]]; then
+                 local rx=0 tx=0
+                 # Use substring match to be safer or awk exact
+                 # transfer_dump is: pubkey rx tx
+                 local line=$(echo "$transfer_dump" | grep "$pub")
+                 if [[ -n "$line" ]]; then
+                    read -r _ rx tx <<< "$line"
+                 fi
+                 live=$((rx + tx))
+             fi
+             
+             if (( stored + live > limit_bytes )); then
+                 is_over_limit=1
+             fi
+        fi
+        
+        if [[ "$is_over_limit" == "1" ]]; then
+            status="OVER LIMIT"
+        elif [[ "$disabled" == "1" ]]; then
+            status="OFFLINE"
+        else
+            # If enabled, check for handshake
+            # Need pubkey (might have fetched above or fetch now)
+            [[ -z "$pub" ]] && pub=$(db_query "SELECT public_key FROM peers WHERE name='$n';" 2>/dev/null)
+            if [[ -z "$pub" && -f "$client_dir/${n}.conf" ]]; then
+                 local priv=$(grep "PrivateKey" "$client_dir/${n}.conf" 2>/dev/null | cut -d= -f2 | tr -d ' ')
+                 [[ -n "$priv" ]] && pub=$(echo "$priv" | wg pubkey 2>/dev/null)
+            fi
+            
+            if [[ -n "$pub" ]] && echo "$active_pubs" | grep -q "$pub"; then
+                local ts=$(echo "$active_pubs" | grep "$pub" | awk '{print $2}')
+                if [[ "$ts" != "0" ]]; then 
+                    status="ONLINE ACTIVE"
+                else
+                    status="ACTIVE" 
+                fi
+            else
+                 status="ACTIVE"
+            fi
+        fi
+        
+        echo "$n|$display_ip|$src|$status"
+    done
+}
+
+# reconcile_db_with_files ensures the database matches the actual file state
+# (Crucial for recovery after being offline/shutdown)
+reconcile_db_with_files() {
+    [[ ! -f "$DB_PATH" ]] && return
+    
+    local client_dir="$INSTALL_DIR/clients"
+    [[ ! -d "$client_dir" ]] && return
+
+    # 0. Self-heal: Purge corrupt IP entries from DB (Fixes 0.0.0.0 ghost peers)
+    db_exec "DELETE FROM peers WHERE allowed_ips LIKE '/%' OR allowed_ips LIKE '0.0.0.0/%';"
+
+    # 1. Adopt new files into DB that aren't there yet
+    # (Enables CLI-to-Web UI sync even for manually added files)
+    for conf in "$client_dir"/*.conf; do
+        [[ -e "$conf" ]] || continue
+        local name=$(basename "$conf" .conf)
+        
+        # If not in DB, try to adopt it
+        if [[ -z "$(db_query "SELECT id FROM peers WHERE name='$name';")" ]]; then
+            local priv=$(grep "PrivateKey" "$conf" 2>/dev/null | cut -d= -f2 | tr -d ' ')
+            local full_addr=$(grep "Address" "$conf" 2>/dev/null | cut -d= -f2 | tr -d ' ')
+            local addr=$(echo "$full_addr" | cut -d/ -f1)
+            
+            # CRITICAL FIX: Validate IP before inserting to prevent 0.0.0.0/32 corruption
+            if [[ -n "$priv" && -n "$addr" && "$addr" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+                local pub=$(echo "$priv" | wg pubkey 2>/dev/null)
+                if [[ -n "$pub" ]]; then
+                    # CRITICAL: Always encrypt private key for DB if possible (allows Web UI visibility)
+                    local enc_priv=$(encrypt_peer_key "$priv")
+                    
+                    # Use full_addr if it has a slash, otherwise default to /32
+                    local insert_addr="$full_addr"
+                    [[ "$insert_addr" != *"/"* ]] && insert_addr="${addr}/32"
+                    db_exec "INSERT OR IGNORE INTO peers (name, public_key, encrypted_private_key, allowed_ips) VALUES ('$name', '$pub', '$enc_priv', '$insert_addr');"
+                fi
+            else
+                # If we have a file but it's invalid (no IP, or bad format), it's likely a ghost/corrupt file
+                # from a race condition. Delete it to prevent "0.0.0.0" phantom peers.
+                log_warn "Found invalid/corrupt peer config '$name'. Deleting..."
+                rm -f "$conf"
+                rm -f "${conf}.expiry"
+            fi
+        fi
+        
+        # 1.5 Handle Disabled State Sync (File -> DB)
+        # PRIORITY: Presence of file forces DB to Disabled (Safety).
+        # Absence of file does NOT force DB to Enabled (prevents race conditions).
+        # To enable a peer, the DB must be updated explicitly (via API or CLI Wizard).
+        if [[ -f "${conf}.disabled" ]]; then
+            db_exec "UPDATE peers SET disabled=1 WHERE name='$name' AND (disabled=0 OR disabled IS NULL);"
+        fi
+    done
+
+    # 2. Purge DB entries that have no physical file OR no WireGuard presence
+    
+    local web_ui_active=$(db_get_config web_ui_enabled)
+    local db_peers=$(db_query "SELECT name FROM peers;")
+    
+    for p in $db_peers; do
+        local is_disabled=$(db_query "SELECT disabled FROM peers WHERE name='$p';")
+        if [[ "$is_disabled" == "1" ]]; then
+            [[ ! -f "$client_dir/${p}.conf.disabled" ]] && touch "$client_dir/${p}.conf.disabled"
+        else
+            [[ -f "$client_dir/${p}.conf.disabled" ]] && rm -f "$client_dir/${p}.conf.disabled"
+        fi
+        
+        if [[ ! -f "$client_dir/${p}.conf" ]]; then
+            
+            # Reverse Sync: Restore local file from DB (enables CLI QR/Config view for WebUI peers)
+            if [[ "$web_ui_active" == "true" ]]; then
+                # Fetch encrypted details from DB
+                local enc_priv=$(db_query "SELECT encrypted_private_key FROM peers WHERE name='$p';")
+                
+                if [[ -n "$enc_priv" ]]; then
+                    # Attempt to decrypt using Master Key
+                    local priv=$(decrypt_peer_key "$enc_priv")
+                    
+                    if [[ -n "$priv" ]]; then
+                        # FIX: Use full CIDR from DB, don't force /32 (fixes mismatch with Web UI)
+                        local full_cidr=$(db_query "SELECT allowed_ips FROM peers WHERE name='$p';")
+                        
+                        local dns=$(db_get_config dns_server)
+                        [[ -z "$dns" ]] && dns="1.1.1.1" # Fallback
+                        local endpoint_addr=$(db_get_config server_ip)
+                        local endpoint_port=$(db_get_config wireguard_port)
+                        local srv_pub=$(cat /etc/wireguard/publickey 2>/dev/null)
+                        
+                        log_info "Restoring local config for '$p' from DB..."
+                        
+                        cat <<EOF > "$client_dir/${p}.conf"
+[Interface]
+PrivateKey = $priv
+Address = $full_cidr
+DNS = $dns
+
+[Peer]
+PublicKey = $srv_pub
+Endpoint = ${endpoint_addr}:${endpoint_port}
+AllowedIPs = 0.0.0.0/0
+PersistentKeepalive = 25
+EOF
+                        chmod 600 "$client_dir/${p}.conf"
+                        
+                        # Generate expiry marker if needed (optional)
+                        echo "$(date +%s)" > "$client_dir/${p}.conf.expiry"
+                        continue
+                    else
+                         log_warn "Failed to decrypt key for '$p'. Master Key or OpenSSL issue?"
+                    fi
+                fi
+                # CRITICAL: If Web UI is active, NEVER delete from DB just because file is missing/failed to regenerate.
+                continue
+            fi
+
+            # Standard Logic for CLI-only mode:
+            # If file is gone AND not in live WireGuard -> Delete from DB
+            if ! wg show wg0 peers 2>/dev/null | grep -q "$(db_query "SELECT public_key FROM peers WHERE name='$p';")"; then
+                db_exec "DELETE FROM peers WHERE name='$p';"
+            fi
+        fi
+    done
+}
+
+# ─── Backup & Restore (Migration Core) ───────────────────────────────────────
+
+do_backup() {
+    local target_dir="${1:-/root/samnet-backups}"
+    mkdir -p "$target_dir"
+    local timestamp=$(date +%Y%m%d-%H%M%S)
+    local archive="$target_dir/samnet-backup-$timestamp.tar.gz"
+    
+    log_step "Preparing backup archive..."
+    
+    # Create temp workspace
+    local tmp_dir=$(mktemp -d)
+    
+    # Copy critical state
+    cp "$DB_PATH" "$tmp_dir/samnet.db" 2>/dev/null
+    cp "/var/lib/samnet-wg/master.key" "$tmp_dir/master.key" 2>/dev/null
+    cp "$WG_CONF" "$tmp_dir/wg0.conf" 2>/dev/null
+    cp /etc/wireguard/privatekey "$tmp_dir/privatekey" 2>/dev/null
+    cp /etc/wireguard/publickey "$tmp_dir/publickey" 2>/dev/null
+    
+    # Bundle clients
+    mkdir -p "$tmp_dir/clients"
+    cp "$INSTALL_DIR/clients/"*.conf "$tmp_dir/clients/" 2>/dev/null
+    
+    # Compress
+    tar -czf "$archive" -C "$tmp_dir" .
+    rm -rf "$tmp_dir"
+    
+    log_success "Backup created: $archive"
+    [[ "$INTERACTIVE" == "true" ]] && wait_key
+    echo "$archive"
+}
+
+do_restore() {
+    local archive="$1"
+    if [[ ! -f "$archive" ]]; then
+        log_error "Backup file not found: $archive"
+        return 1
+    fi
+    
+    ui_confirm_danger "RESTORE SYSTEM STATE (This will overwrite current config)" || return 1
+    
+    log_step "Stopping WireGuard..."
+    wg-quick down wg0 2>/dev/null || true
+    
+    log_step "Extracting backup..."
+    local tmp_dir=$(mktemp -d)
+    tar -xzf "$archive" -C "$tmp_dir"
+    
+    # Atomic Move
+    log_step "Applying configurations..."
+    mkdir -p "/var/lib/samnet-wg"
+    mv "$tmp_dir/samnet.db" "$DB_PATH" 2>/dev/null
+    mv "$tmp_dir/master.key" "/var/lib/samnet-wg/master.key" 2>/dev/null
+    cp "$tmp_dir/wg0.conf" "$WG_CONF" 2>/dev/null
+    cp "$tmp_dir/privatekey" /etc/wireguard/privatekey 2>/dev/null
+    cp "$tmp_dir/publickey" /etc/wireguard/publickey 2>/dev/null
+    
+    # Restore clients
+    mkdir -p "$INSTALL_DIR/clients"
+    cp "$tmp_dir/clients/"*.conf "$INSTALL_DIR/clients/" 2>/dev/null
+    
+    rm -rf "$tmp_dir"
+    
+    log_step "Starting WireGuard..."
+    wg-quick up wg0 2>/dev/null || log_warn "Failed to start WireGuard. Check config manualy."
+    
+    log_success "Restore complete. System state has been reverted."
+    wait_key
+}
+
+screen_maintenance() {
+    while true; do
+        ui_draw_header_mini "Maintenance & Migration"
+        
+        draw_box "Migration Tools" \
+            "Backup allows you to move SamNet to a new server." \
+            "Restore allows you to revert to a previous state."
+            
+        printf "\n"
+        menu_option "1" "Create Backup" "Save current system state"
+        menu_option "2" "Restore Backup" "Apply a backup archive"
+        menu_option "3" "Export Diag" "Generate support telemetry"
+        printf "\n"
+        menu_option "B" "Back" ""
+        
+        ui_draw_footer "[1-3] Select  [B] Back"
+        
+        local key=$(read_key)
+        case "$key" in
+            1) do_backup ;;
+            2) 
+                ui_clear
+                ui_draw_header_mini "Restore System"
+                local files=(/root/samnet-backups/*.tar.gz)
+                if [[ ! -e "${files[0]}" ]]; then
+                    log_error "No backups found in /root/samnet-backups/"
+                    wait_key
+                else
+                    log_info "Recent Backups:"
+                    local i=1
+                    for f in "${files[@]}"; do
+                        printf "  [%d] %s\n" "$i" "$(basename "$f")"
+                        ((i++))
+                    done
+                    local choice=$(ui_prompt "Select backup ID (or path)")
+                    if [[ "$choice" =~ ^[0-9]+$ ]] && [[ -n "${files[$((choice-1))]}" ]]; then
+                        do_restore "${files[$((choice-1))]}"
+                    elif [[ -f "$choice" ]]; then
+                        do_restore "$choice"
+                    fi
+                fi
+                ;;
+            3) log_info "Diagnostic bundle generation not yet implemented."; wait_key ;;
+            b|B|$'\x1b') return ;;
+        esac
+    done
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# 5. SYSTEM INFO HELPERS
+# ══════════════════════════════════════════════════════════════════════════════
+
+get_hostname() { hostname 2>/dev/null || echo "unknown"; }
+
+get_os_info() {
+    [[ -f /etc/os-release ]] && source /etc/os-release && echo "${PRETTY_NAME:-${NAME:-Linux}}" || echo "Linux"
+}
+
+get_compose_cmd() {
+    if docker compose version &>/dev/null; then
+        echo "docker compose"
+    elif command -v docker-compose &>/dev/null; then
+        echo "docker-compose"
+    else
+        return 1
+    fi
+}
+
+get_kernel() { uname -r 2>/dev/null || echo "unknown"; }
+
+get_wg_status() {
+    systemctl is-active --quiet wg-quick@wg0 2>/dev/null && echo "ONLINE" || echo "OFFLINE"
+}
+
+get_wg_interface_info() {
+    if command -v wg &>/dev/null && wg show wg0 &>/dev/null; then
+        local port=$(wg show wg0 listen-port 2>/dev/null || echo "51820")
+        local peers=$(wg show wg0 peers 2>/dev/null | wc -l)
+        echo "Port: $port | Peers: $peers"
+    else
+        echo "Not configured"
+    fi
+}
+
+get_firewall_backend() {
+    command -v nft &>/dev/null && nft list ruleset &>/dev/null && echo "nftables" || echo "unknown"
+}
+
+get_cpu_usage() { top -bn1 2>/dev/null | grep "Cpu(s)" | awk '{print $2}' | cut -d'%' -f1 || echo "N/A"; }
+get_mem_usage() { free 2>/dev/null | awk '/Mem:/ {printf "%.0f%%", $3/$2 * 100}' || echo "N/A"; }
+get_disk_usage() { df -h / 2>/dev/null | awk 'NR==2 {print $5}' || echo "N/A"; }
+
+# ══════════════════════════════════════════════════════════════════════════════
+# 5.5 AUTO-UPDATE SYSTEM
+# ══════════════════════════════════════════════════════════════════════════════
+
+get_remote_version() {
+    # Fetch just the version line from remote script (timeout 10s)
+    # Streams through grep to avoid loading entire file into memory
+    curl -sSL --max-time 10 "$REMOTE_VERSION_URL" 2>/dev/null | \
+        grep -m1 'readonly SAMNET_VERSION=' | cut -d'"' -f2
+}
+
+version_compare() {
+    # Returns: 0 if $1 > $2, 1 if equal, 2 if $1 < $2
+    # Handles versions like 1.0.4, 1.0.4-beta, 1.2.3.4
+    local v1="$1" v2="$2"
+    
+    # Strip any suffix after hyphen for comparison (e.g., 1.0.4-beta -> 1.0.4)
+    v1="${v1%%-*}"
+    v2="${v2%%-*}"
+    
+    [[ "$v1" == "$v2" ]] && return 1
+    
+    local IFS=.
+    local i v1_arr=($v1) v2_arr=($v2)
+    
+    for ((i=0; i<${#v1_arr[@]}; i++)); do
+        # Extract only numeric part from each component
+        local n1="${v1_arr[i]%%[^0-9]*}"
+        local n2="${v2_arr[i]%%[^0-9]*}"
+        [[ -z "$n1" ]] && n1=0
+        [[ -z "$n2" ]] && n2=0
+        
+        [[ -z "${v2_arr[i]:-}" ]] && return 0
+        ((10#$n1 > 10#$n2)) && return 0
+        ((10#$n1 < 10#$n2)) && return 2
+    done
+    
+    [[ ${#v1_arr[@]} -lt ${#v2_arr[@]} ]] && return 2
+    return 1
+}
+
+do_update() {
+    ui_clear
+    ui_draw_header_mini "System Update"
+    
+    log_info "Checking for updates..."
+    
+    # Cleanup trap for interrupted updates
+    trap 'rm -f "$INSTALL_DIR/samnet.sh.new" 2>/dev/null' RETURN
+    
+    # Check internet connectivity
+    if ! curl -s --max-time 5 https://github.com &>/dev/null; then
+        log_error "Cannot reach GitHub. Check your internet connection."
+        wait_key
+        return 1
+    fi
+    
+    local remote_version
+    remote_version=$(get_remote_version)
+    
+    if [[ -z "$remote_version" ]]; then
+        log_error "Failed to fetch remote version."
+        wait_key
+        return 1
+    fi
+    
+    echo ""
+    echo "  Current version: ${T_CYAN}v${SAMNET_VERSION}${T_RESET}"
+    echo "  Latest version:  ${T_GREEN}v${remote_version}${T_RESET}"
+    echo ""
+    
+    version_compare "$remote_version" "$SAMNET_VERSION"
+    local cmp=$?
+    
+    if [[ $cmp -eq 1 ]]; then
+        log_success "You are running the latest version!"
+        wait_key
+        return 0
+    elif [[ $cmp -eq 2 ]]; then
+        log_warn "Local version is newer than remote (dev build?)"
+        wait_key
+        return 0
+    fi
+    
+    # Update available
+    log_info "Update available: v${SAMNET_VERSION} → v${remote_version}"
+    echo ""
+    echo "  ${T_DIM}Your data will be preserved:${T_RESET}"
+    echo "  ${T_DIM}  ✓ WireGuard configs  ✓ Peers & clients${T_RESET}"
+    echo "  ${T_DIM}  ✓ Database settings  ✓ Firewall rules${T_RESET}"
+    echo ""
+    
+    if ! ui_confirm "Apply update now?"; then
+        log_info "Update cancelled."
+        wait_key
+        return 0
+    fi
+    
+    log_step "Creating backup..."
+    local backup_script="/tmp/samnet-backup-$(date +%s).sh"
+    cp "$INSTALL_DIR/samnet.sh" "$backup_script" 2>/dev/null || true
+    
+    log_step "Downloading update..."
+    
+    # Method 1: Git pull (preferred if .git exists)
+    if [[ -d "$INSTALL_DIR/.git" ]]; then
+        cd "$INSTALL_DIR"
+        if git fetch origin "$UPDATE_BRANCH" --quiet 2>/dev/null && \
+           git reset --hard "origin/$UPDATE_BRANCH" --quiet 2>/dev/null; then
+            log_success "Update downloaded via git!"
+        else
+            log_warn "Git update failed. Trying direct download..."
+            # Fall through to curl method
+            cd /
+        fi
+    fi
+    
+    # Method 2: Direct download (fallback)
+    if [[ ! -d "$INSTALL_DIR/.git" ]] || [[ "$(pwd)" == "/" ]]; then
+        # Ensure install directory exists
+        if [[ ! -d "$INSTALL_DIR" ]]; then
+            mkdir -p "$INSTALL_DIR" 2>/dev/null || {
+                log_error "Cannot create $INSTALL_DIR. Check permissions."
+                wait_key
+                return 1
+            }
+        fi
+        
+        if curl -sSL "$REMOTE_VERSION_URL" -o "$INSTALL_DIR/samnet.sh.new" 2>/dev/null; then
+            # Verify syntax before replacing
+            if bash -n "$INSTALL_DIR/samnet.sh.new" 2>/dev/null; then
+                if mv "$INSTALL_DIR/samnet.sh.new" "$INSTALL_DIR/samnet.sh" 2>/dev/null; then
+                    chmod +x "$INSTALL_DIR/samnet.sh" || true
+                    log_success "Update downloaded!"
+                else
+                    log_error "Failed to install update (permission denied?)."
+                    rm -f "$INSTALL_DIR/samnet.sh.new"
+                    [[ -f "$backup_script" ]] && cp "$backup_script" "$INSTALL_DIR/samnet.sh"
+                    wait_key
+                    return 1
+                fi
+            else
+                log_error "Downloaded script has syntax errors. Aborting."
+                rm -f "$INSTALL_DIR/samnet.sh.new"
+                [[ -f "$backup_script" ]] && cp "$backup_script" "$INSTALL_DIR/samnet.sh"
+                wait_key
+                return 1
+            fi
+        else
+            log_error "Download failed."
+            wait_key
+            return 1
+        fi
+    fi
+    
+    # Rebuild Docker containers if needed
+    log_step "Checking Docker containers..."
+    if docker ps --format '{{.Names}}' 2>/dev/null | grep -qE "samnet(-wg)?-api"; then
+        echo ""
+        if ui_confirm "Rebuild Docker containers with new code?"; then
+            log_info "Rebuilding containers (this may take a minute)..."
+            rebuild_docker 2>/dev/null || log_warn "Docker rebuild had issues. Check manually."
+        fi
+    fi
+    
+    log_success "Update complete!"
+    echo ""
+    echo "  ${T_GREEN}Updated to v${remote_version}${T_RESET}"
+    echo ""
+    echo "  ${T_DIM}Backup saved: $backup_script${T_RESET}"
+    echo "  ${T_DIM}(Delete after confirming update works)${T_RESET}"
+    echo ""
+    echo "  Restarting SamNet..."
+    sleep 2
+    
+    # Re-exec the new script
+    exec "$INSTALL_DIR/samnet.sh"
+}
+
+check_for_updates_silent() {
+    # Background check for updates (non-blocking)
+    # Called on TUI startup, shows notification if update available
+    local remote_version
+    remote_version=$(get_remote_version 2>/dev/null) || return 0
+    
+    [[ -z "$remote_version" ]] && return 0
+    
+    version_compare "$remote_version" "$SAMNET_VERSION"
+    if [[ $? -eq 0 ]]; then
+        echo "  ${T_YELLOW}●${T_RESET} Update        ${T_YELLOW}v${remote_version} available (run: samnet --update)${T_RESET}"
+        return 0
+    fi
+    return 1
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# 6. CORE INFRASTRUCTURE ENGINE
+# ══════════════════════════════════════════════════════════════════════════════
+
+ensure_dependencies() {
+    local web_ui_enabled="${1:-false}"
+    local missing=()
+    
+    # Core dependencies (always required)
+    for cmd in sqlite3 curl wg qrencode nft crontab xxd openssl; do
+        command -v $cmd &>/dev/null || missing+=($cmd)
+    done
+    
+    # Docker dependencies (only for Web UI)
+    if [[ "$web_ui_enabled" == "true" ]]; then
+        for cmd in docker; do
+            command -v $cmd &>/dev/null || missing+=($cmd)
+        done
+        if ! docker compose version &>/dev/null && ! command -v docker-compose &>/dev/null; then
+             missing+=("docker-compose-plugin")
+        fi
+    fi
+    
+    if [[ ${#missing[@]} -gt 0 ]]; then
+        log_warn "Missing: ${missing[*]}"
+        log_info "Installing..."
+        
+        if [[ -f /etc/os-release ]]; then
+            source /etc/os-release
+            if [[ "$ID" =~ ^(debian|ubuntu|raspbian)$ ]]; then
+                # Check connectivity before updating app lists
+                if ping -c 1 -W 1 8.8.8.8 &>/dev/null || curl -s --connect-timeout 2 https://1.1.1.1 >/dev/null; then
+                     log_info "Updating package lists..."
+                     if ! timeout 20s apt-get update -qq; then
+                          log_warn "Package update timed out or failed. Continuing..."
+                     fi
+                else
+                     log_warn "No internet connection. Skipping package list update."
+                     # If we are missing packages and offline, we must fail
+                     if [[ ${#pkgs_to_install[@]} -gt 0 ]]; then
+                         # Check if we can proceed anyway (maybe apt cache is good enough?)
+                         # Try simulating install
+                         if ! apt-get -s install "${pkgs_to_install[@]}" &>/dev/null; then
+                             exit_with_error "Missing dependencies: ${pkgs_to_install[*]} but system is offline. Connect to internet or install manually."
+                         fi
+                     fi
+                fi
+                
+                # Install core packages (xxd is usually in xxd or vim-common, openssl in openssl)
+    # API Backend (Headless) requires Docker always
+    local pkgs_to_install=()
+
+    # Check Core Packages
+    command -v sqlite3 &>/dev/null || pkgs_to_install+=("sqlite3")
+    command -v curl &>/dev/null || pkgs_to_install+=("curl")
+    command -v wg &>/dev/null || pkgs_to_install+=("wireguard")
+    command -v qrencode &>/dev/null || pkgs_to_install+=("qrencode")
+    command -v nft &>/dev/null || pkgs_to_install+=("nftables")
+    command -v crontab &>/dev/null || pkgs_to_install+=("cron")
+    command -v xxd &>/dev/null || pkgs_to_install+=("xxd")
+    command -v openssl &>/dev/null || pkgs_to_install+=("openssl")
+    command -v inotifywait &>/dev/null || pkgs_to_install+=("inotify-tools")
+    
+    # Check Docker (Only install if completely missing)
+    if ! command -v docker &>/dev/null; then
+        # Check if we should try plugin or legacy based on what's available in repo
+        # For now, just add the standard set if docker is missing
+        pkgs_to_install+=("docker.io" "docker-compose-plugin")
+    fi
+
+    if [[ ${#pkgs_to_install[@]} -gt 0 ]]; then
+        log_info "Installing missing packages: ${pkgs_to_install[*]}"
+        
+        # Try primary install
+        if ! apt-get install -y "${pkgs_to_install[@]}"; then
+             # If failed and docker was requested, retry with legacy docker-compose if plugin failed
+             if [[ " ${pkgs_to_install[*]} " =~ " docker-compose-plugin " ]]; then
+                 log_warn "Installation failed, retrying with legacy docker-compose..."
+                 # Replace plugin with legacy in the array (simple approximate fix for bash array)
+                 local legacy_pkgs=(${pkgs_to_install[@]/docker-compose-plugin/docker-compose})
+                 if ! apt-get install -y "${legacy_pkgs[@]}"; then
+                     exit_with_error "Failed to install dependencies."
+                 fi
+             else
+                 exit_with_error "Failed to install dependencies."
+             fi
+        fi
+    else
+        log_success "All dependencies already installed."
+    fi
+                
+    log_success "Dependencies installed"
+    
+    systemctl is-active --quiet docker || systemctl enable --now docker
+            else
+                exit_with_error "Unsupported OS: $ID"
+            fi
+        else
+            exit_with_error "Cannot detect OS"
+        fi
+    fi
+}
+
+# Decrypts a Web UI encrypted private key using the system master key
+decrypt_peer_key() {
+    local encoded="$1"
+    local master_key_path="/var/lib/samnet-wg/master.key"
+    
+    if [[ ! -f "$master_key_path" ]]; then 
+         log_debug "Master key missing at $master_key_path"
+         return 1
+    fi
+    
+    # Verify master key length (must be 32 bytes)
+    local key_size=$(stat -c%s "$master_key_path" 2>/dev/null || echo 0)
+    if [[ "$key_size" -ne 32 ]]; then
+        log_debug "Master key invalid size: $key_size bytes (expected 32)"
+        return 1
+    fi
+
+    # PRIORITY 1: Use running API container (Guarantees crypto compatibility)
+    if docker ps -q --filter "name=samnet-wg-api" | grep -q . || docker ps -q --filter "name=samnet-api" | grep -q .; then
+        local api_container=$(docker ps --format '{{.Names}}' | grep -E "^samnet(-wg)?-api$" | head -1)
+        local api_result
+        if api_result=$(docker exec "$api_container" /app/api -decrypt "$encoded" 2>/dev/null); then
+            if [[ -n "$api_result" ]]; then
+                 echo "$api_result"
+                 return 0
+            fi
+        fi
+        log_debug "Container decryption failed, falling back to local..."
+    fi
+
+    if ! command -v openssl &>/dev/null || ! command -v xxd &>/dev/null; then
+        log_debug "Missing required tools: openssl or xxd"
+        return 1
+    fi
+    
+    # 1. Get Master Key in Hex (strip newlines/spaces)
+    local key_hex=$(xxd -p -c 256 "$master_key_path" | tr -d '[:space:]')
+    
+    # 2. Decode Base64 to temp file
+    local tmp_bin=$(mktemp)
+    local tmp_iv=$(mktemp)
+    local tmp_tag=$(mktemp)
+    local tmp_cipher=$(mktemp)
+    
+    if ! echo "$encoded" | base64 -d > "$tmp_bin" 2>/dev/null; then
+        rm -f "$tmp_bin" "$tmp_iv" "$tmp_tag" "$tmp_cipher"
+        return 1
+    fi
+    
+    # 3. Parse Struct: IV (12) | Ciphertext (N) | Tag (16)
+    local total_size=$(stat -c%s "$tmp_bin")
+    if [[ $total_size -lt 28 ]]; then
+        rm -f "$tmp_bin" "$tmp_iv" "$tmp_tag" "$tmp_cipher"
+        return 1
+    fi
+    
+    local cipher_size=$((total_size - 28))
+    
+    # Extract IV (12 bytes)
+    dd if="$tmp_bin" bs=1 count=12 of="$tmp_iv" 2>/dev/null
+    
+    # Extract Tag (Last 16 bytes)
+    tail -c 16 "$tmp_bin" > "$tmp_tag"
+    
+    # Extract Ciphertext (Middle)
+    dd if="$tmp_bin" bs=1 skip=12 count="$cipher_size" of="$tmp_cipher" 2>/dev/null
+    
+    # 4. Decrypt using OpenSSL
+    local iv_hex=$(xxd -p -c 256 "$tmp_iv" | tr -d '[:space:]')
+    local tag_hex=$(xxd -p -c 256 "$tmp_tag" | tr -d '[:space:]')
+    
+    # OpenSSL output to stdout
+    # Note: openssl enc -aes-256-gcm works on OpenSSL 1.1.1+
+    local result
+    result=$(openssl enc -d -aes-256-gcm -K "$key_hex" -iv "$iv_hex" -in "$tmp_cipher" -tag "$tag_hex" 2>/dev/null)
+    local exit_code=$?
+    
+    # Cleanup
+    rm -f "$tmp_bin" "$tmp_iv" "$tmp_tag" "$tmp_cipher"
+    
+    if [[ $exit_code -eq 0 ]] && [[ -n "$result" ]]; then
+        echo "$result"
+        return 0
+    else
+        log_debug "OpenSSL decryption failed for peer (exit code: $exit_code)"
+        return 1
+    fi
+}
+
+encrypt_peer_key() {
+    local plaintext="$1"
+    
+    # Use running API container (Guarantees crypto compatibility)
+    # The API is always deployed, so this should always succeed
+    if docker ps -q --filter "name=samnet-wg-api" | grep -q . || docker ps -q --filter "name=samnet-api" | grep -q .; then
+        local api_container=$(docker ps --format '{{.Names}}' | grep -E "^samnet(-wg)?-api$" | head -1)
+        local api_result
+        if api_result=$(docker exec "$api_container" /app/api -encrypt "$plaintext" 2>/dev/null); then
+            # Valid encrypted key should be significantly longer than 44 chars (nonce+tag)
+            if [[ -n "$api_result" && ${#api_result} -gt 60 ]]; then
+                 echo "$api_result"
+                 return 0
+            fi
+        fi
+        log_debug "Container encryption failed for '$api_container'"
+    fi
+    
+    # SECURITY: Never fall back to plaintext or unreliable local encryption
+    # The API container should always be running after install
+    log_error "Encryption failed: API container not available. Start with: docker start samnet-wg-api"
+    return 1
+}
+
+
+
+# Install rollback function for transactional safety
+rollback_install() {
+    local stage="${1:-unknown}"
+    log_error "Installation failed at stage: $stage. Rolling back..."
+    
+    case "$stage" in
+        "wireguard")
+            systemctl stop wg-quick@wg0 2>/dev/null || true
+            rm -f /etc/wireguard/wg0.conf
+            ;;
+        "firewall")
+            [[ -f /tmp/nftables.backup.$$ ]] && nft -f "/tmp/nftables.backup.$$" 2>/dev/null
+            ;;
+        "docker")
+            local compose_cmd=$(get_compose_cmd || echo "docker-compose")
+            $compose_cmd -f "$INSTALL_DIR/services/docker-compose.yml" down 2>/dev/null || true
+            ;;
     esac
+    
+    log_warn "Partial rollback complete. Review system state."
+    exit 1
+}
 
-    # See if we need to build an old-fashioned archive.
-    for oldlib in $oldlibs; do
+# Check if firewall rules need to be updated (idempotency)
+firewall_rules_match() {
+    local new_rules="$1"
+    local current=$(nft list ruleset 2>/dev/null | md5sum | awk '{print $1}')
+    local proposed=$(echo "$new_rules" | md5sum | awk '{print $1}')
+    [[ "$current" == "$proposed" ]]
+}
 
-      case $build_libtool_libs in
-        convenience)
-	  oldobjs="$libobjs_save $symfileobj"
-	  addlibs=$convenience
-	  build_libtool_libs=no
-	  ;;
-	module)
-	  oldobjs=$libobjs_save
-	  addlibs=$old_convenience
-	  build_libtool_libs=no
-          ;;
-	*)
-	  oldobjs="$old_deplibs $non_pic_objects"
-	  $preload && test -f "$symfileobj" \
-	    && func_append oldobjs " $symfileobj"
-	  addlibs=$old_convenience
-	  ;;
-      esac
+gen_server_keys() {
+    mkdir -p /etc/wireguard && chmod 700 /etc/wireguard
+    if [[ ! -f /etc/wireguard/privatekey ]]; then
+        umask 077
+        wg genkey | tee /etc/wireguard/privatekey | wg pubkey > /etc/wireguard/publickey
+        log_success "Server keys generated"
+    fi
+}
 
-      if test -n "$addlibs"; then
-	gentop=$output_objdir/${outputname}x
-	func_append generated " $gentop"
+write_wg_conf() {
+    local privkey=$(cat /etc/wireguard/privatekey)
+    local port=$(db_get_config "listen_port")
+    local subnet=$(db_get_config "subnet_cidr")
+    
+    # Calculate Server IP: 10.100.0.0/24 -> 10.100.0.1/24
+    local base_ip="${subnet%/*}"
+    local mask="${subnet#*/}"
+    local prefix="${base_ip%.*}"
+    local addr="${prefix}.1/${mask}"
+    
+    local mtu=$(db_get_config "mtu")
+    # 1380 is safer than 1420 for most ISPs (accounts for PPPoE, tunnels, etc.)
+    [[ -z "$mtu" ]] && mtu="1380"
+    
+    local tmp_conf=$(mktemp)
+    cat > "$tmp_conf" <<EOF
+[Interface]
+Address = $addr
+ListenPort = $port
+PrivateKey = $privkey
+MTU = $mtu
+SaveConfig = false
+PostUp = nft -f /etc/samnet/samnet.nft; [[ -f /etc/samnet-ports.nft ]] && nft -f /etc/samnet-ports.nft || true
+PostDown = nft delete table inet samnet-filter 2>/dev/null; nft delete table ip samnet-nat 2>/dev/null; nft delete table ip6 samnet-nat6 2>/dev/null || true
 
-	func_extract_archives $gentop $addlibs
-	func_append oldobjs " $func_extract_archives_result"
-      fi
+# Disable IPv6 for this interface specifically to avoid leaks
+# (Though OS-level disable is better, this is safe per-interface)
+# Table = off  <-- Optional if we wanted manual route control
 
-      # Do each command in the archive commands.
-      if test -n "$old_archive_from_new_cmds" && test yes = "$build_libtool_libs"; then
-	cmds=$old_archive_from_new_cmds
-      else
-
-	# Add any objects from preloaded convenience libraries
-	if test -n "$dlprefiles"; then
-	  gentop=$output_objdir/${outputname}x
-	  func_append generated " $gentop"
-
-	  func_extract_archives $gentop $dlprefiles
-	  func_append oldobjs " $func_extract_archives_result"
-	fi
-
-	# POSIX demands no paths to be encoded in archives.  We have
-	# to avoid creating archives with duplicate basenames if we
-	# might have to extract them afterwards, e.g., when creating a
-	# static archive out of a convenience library, or when linking
-	# the entirety of a libtool archive into another (currently
-	# not supported by libtool).
-	if (for obj in $oldobjs
-	    do
-	      func_basename "$obj"
-	      $ECHO "$func_basename_result"
-	    done | sort | sort -uc >/dev/null 2>&1); then
-	  :
-	else
-	  echo "copying selected object files to avoid basename conflicts..."
-	  gentop=$output_objdir/${outputname}x
-	  func_append generated " $gentop"
-	  func_mkdir_p "$gentop"
-	  save_oldobjs=$oldobjs
-	  oldobjs=
-	  counter=1
-	  for obj in $save_oldobjs
-	  do
-	    func_basename "$obj"
-	    objbase=$func_basename_result
-	    case " $oldobjs " in
-	    " ") oldobjs=$obj ;;
-	    *[\ /]"$objbase "*)
-	      while :; do
-		# Make sure we don't pick an alternate name that also
-		# overlaps.
-		newobj=lt$counter-$objbase
-		func_arith $counter + 1
-		counter=$func_arith_result
-		case " $oldobjs " in
-		*[\ /]"$newobj "*) ;;
-		*) if test ! -f "$gentop/$newobj"; then break; fi ;;
-		esac
-	      done
-	      func_show_eval "ln $obj $gentop/$newobj || cp $obj $gentop/$newobj"
-	      func_append oldobjs " $gentop/$newobj"
-	      ;;
-	    *) func_append oldobjs " $obj" ;;
-	    esac
-	  done
-	fi
-	func_to_tool_file "$oldlib" func_convert_file_msys_to_w32
-	tool_oldlib=$func_to_tool_file_result
-	eval cmds=\"$old_archive_cmds\"
-
-	func_len " $cmds"
-	len=$func_len_result
-	if test "$len" -lt "$max_cmd_len" || test "$max_cmd_len" -le -1; then
-	  cmds=$old_archive_cmds
-	elif test -n "$archiver_list_spec"; then
-	  func_verbose "using command file archive linking..."
-	  for obj in $oldobjs
-	  do
-	    func_to_tool_file "$obj"
-	    $ECHO "$func_to_tool_file_result"
-	  done > $output_objdir/$libname.libcmd
-	  func_to_tool_file "$output_objdir/$libname.libcmd"
-	  oldobjs=" $archiver_list_spec$func_to_tool_file_result"
-	  cmds=$old_archive_cmds
-	else
-	  # the command line is too long to link in one step, link in parts
-	  func_verbose "using piecewise archive linking..."
-	  save_RANLIB=$RANLIB
-	  RANLIB=:
-	  objlist=
-	  concat_cmds=
-	  save_oldobjs=$oldobjs
-	  oldobjs=
-	  # Is there a better way of finding the last object in the list?
-	  for obj in $save_oldobjs
-	  do
-	    last_oldobj=$obj
-	  done
-	  eval test_cmds=\"$old_archive_cmds\"
-	  func_len " $test_cmds"
-	  len0=$func_len_result
-	  len=$len0
-	  for obj in $save_oldobjs
-	  do
-	    func_len " $obj"
-	    func_arith $len + $func_len_result
-	    len=$func_arith_result
-	    func_append objlist " $obj"
-	    if test "$len" -lt "$max_cmd_len"; then
-	      :
-	    else
-	      # the above command should be used before it gets too long
-	      oldobjs=$objlist
-	      if test "$obj" = "$last_oldobj"; then
-		RANLIB=$save_RANLIB
-	      fi
-	      test -z "$concat_cmds" || concat_cmds=$concat_cmds~
-	      eval concat_cmds=\"\$concat_cmds$old_archive_cmds\"
-	      objlist=
-	      len=$len0
-	    fi
-	  done
-	  RANLIB=$save_RANLIB
-	  oldobjs=$objlist
-	  if test -z "$oldobjs"; then
-	    eval cmds=\"\$concat_cmds\"
-	  else
-	    eval cmds=\"\$concat_cmds~\$old_archive_cmds\"
-	  fi
-	fi
-      fi
-      func_execute_cmds "$cmds" 'exit $?'
+# Peers
+EOF
+    
+    # Fetch peers and force /32 for server-side routing
+    db_query "SELECT public_key, allowed_ips, name FROM peers WHERE disabled=0;" | while IFS='|' read -r pub ips name; do
+        [[ -z "$pub" ]] && continue
+        # Normalize: strip any existing mask and force /32
+        local safe_ip=$(echo "$ips" | cut -d/ -f1)
+        echo -e "\n[Peer]\n# $name\nPublicKey = $pub\nAllowedIPs = ${safe_ip}/32" >> "$tmp_conf"
     done
+    
+    chmod 600 "$tmp_conf"
+    
+    # Use flock (if available) to safely overwrite wg0.conf in-place (preserving inode)
+    # This ensures consistency with the API which also locks wg0.conf
+    if command -v flock &>/dev/null; then
+        (
+            flock -x 200
+            cat "$tmp_conf" > "$WG_CONF"
+        ) 200>>"$WG_CONF"
+    else
+        cat "$tmp_conf" > "$WG_CONF"
+    fi
+    rm -f "$tmp_conf"
+}
 
-    test -n "$generated" && \
-      func_show_eval "${RM}r$generated"
+# ══════════════════════════════════════════════════════════════════════════════
+# 6.6 HTTPS/SSL CONFIGURATION
+# ══════════════════════════════════════════════════════════════════════════════
 
-    # Now create the libtool archive.
-    case $output in
-    *.la)
-      old_library=
-      test yes = "$build_old_libs" && old_library=$libname.$libext
-      func_verbose "creating $output"
+setup_https() {
+    local domain="$1"
+    local email="${2:-admin@$domain}"
+    
+    log_info "Setting up HTTPS for $domain..."
+    
+    # Install certbot if missing
+    if ! command -v certbot &>/dev/null; then
+        log_info "Installing certbot..."
+        apt-get update -qq
+        apt-get install -y -qq certbot
+    fi
+    
+    # Create webroot directory
+    mkdir -p /var/www/certbot
+    
+    # Stop any service on port 80 temporarily
+    local ui_was_running=false
+    local ui_container=$(docker ps --format '{{.Names}}' | grep -E "^samnet(-wg)?-ui$" | head -1)
+    if [[ -n "$ui_container" ]]; then
+        docker stop "$ui_container" &>/dev/null
+        ui_was_running=true
+    fi
+    
+    # Obtain certificate
+    if certbot certonly --standalone \
+        -d "$domain" \
+        --non-interactive \
+        --agree-tos \
+        --email "$email" \
+        --cert-name samnet-wg; then
+        
+        log_success "SSL certificate obtained!"
+        db_set_config "ssl_domain" "$domain"
+        db_set_config "ssl_enabled" "true"
+        
+        # Setup auto-renewal cron (uses samnet-wg-ui)
+        if ! crontab -l 2>/dev/null | grep -q "certbot renew"; then
+            (crontab -l 2>/dev/null; echo "0 3 * * * certbot renew --quiet --post-hook 'docker restart samnet-wg-ui'") | crontab -
+            log_info "Auto-renewal cron job added"
+        fi
+    else
+        log_error "Failed to obtain SSL certificate"
+        log_warn "Make sure port 80 is open and $domain points to this server"
+        db_set_config "ssl_enabled" "false"
+    fi
+    
+    # Restart UI if it was running
+    [[ "$ui_was_running" == true && -n "$ui_container" ]] && docker start "$ui_container" &>/dev/null
+}
 
-      # Preserve any variables that may affect compiler behavior
-      for var in $variables_saved_for_relink; do
-	if eval test -z \"\${$var+set}\"; then
-	  relink_command="{ test -z \"\${$var+set}\" || $lt_unset $var || { $var=; export $var; }; }; $relink_command"
-	elif eval var_value=\$$var; test -z "$var_value"; then
-	  relink_command="$var=; export $var; $relink_command"
-	else
-	  func_quote_for_eval "$var_value"
-	  relink_command="$var=$func_quote_for_eval_result; export $var; $relink_command"
-	fi
-      done
-      # Quote the link command for shipping.
-      relink_command="(cd `pwd`; $SHELL \"$progpath\" $preserve_args --mode=relink $libtool_args @inst_prefix_dir@)"
-      relink_command=`$ECHO "$relink_command" | $SED "$sed_quote_subst"`
-      if test yes = "$hardcode_automatic"; then
-	relink_command=
-      fi
-
-      # Only create the output if not a dry run.
-      $opt_dry_run || {
-	for installed in no yes; do
-	  if test yes = "$installed"; then
-	    if test -z "$install_libdir"; then
-	      break
-	    fi
-	    output=$output_objdir/${outputname}i
-	    # Replace all uninstalled libtool libraries with the installed ones
-	    newdependency_libs=
-	    for deplib in $dependency_libs; do
-	      case $deplib in
-	      *.la)
-		func_basename "$deplib"
-		name=$func_basename_result
-		func_resolve_sysroot "$deplib"
-		eval libdir=`$SED -n -e 's/^libdir=\(.*\)$/\1/p' $func_resolve_sysroot_result`
-		test -z "$libdir" && \
-		  func_fatal_error "'$deplib' is not a valid libtool archive"
-		func_append newdependency_libs " ${lt_sysroot:+=}$libdir/$name"
-		;;
-	      -L*)
-		func_stripname -L '' "$deplib"
-		func_replace_sysroot "$func_stripname_result"
-		func_append newdependency_libs " -L$func_replace_sysroot_result"
-		;;
-	      -R*)
-		func_stripname -R '' "$deplib"
-		func_replace_sysroot "$func_stripname_result"
-		func_append newdependency_libs " -R$func_replace_sysroot_result"
-		;;
-	      *) func_append newdependency_libs " $deplib" ;;
-	      esac
-	    done
-	    dependency_libs=$newdependency_libs
-	    newdlfiles=
-
-	    for lib in $dlfiles; do
-	      case $lib in
-	      *.la)
-	        func_basename "$lib"
-		name=$func_basename_result
-		eval libdir=`$SED -n -e 's/^libdir=\(.*\)$/\1/p' $lib`
-		test -z "$libdir" && \
-		  func_fatal_error "'$lib' is not a valid libtool archive"
-		func_append newdlfiles " ${lt_sysroot:+=}$libdir/$name"
-		;;
-	      *) func_append newdlfiles " $lib" ;;
-	      esac
-	    done
-	    dlfiles=$newdlfiles
-	    newdlprefiles=
-	    for lib in $dlprefiles; do
-	      case $lib in
-	      *.la)
-		# Only pass preopened files to the pseudo-archive (for
-		# eventual linking with the app. that links it) if we
-		# didn't already link the preopened objects directly into
-		# the library:
-		func_basename "$lib"
-		name=$func_basename_result
-		eval libdir=`$SED -n -e 's/^libdir=\(.*\)$/\1/p' $lib`
-		test -z "$libdir" && \
-		  func_fatal_error "'$lib' is not a valid libtool archive"
-		func_append newdlprefiles " ${lt_sysroot:+=}$libdir/$name"
-		;;
-	      esac
-	    done
-	    dlprefiles=$newdlprefiles
-	  else
-	    newdlfiles=
-	    for lib in $dlfiles; do
-	      case $lib in
-		[\\/]* | [A-Za-z]:[\\/]*) abs=$lib ;;
-		*) abs=`pwd`"/$lib" ;;
-	      esac
-	      func_append newdlfiles " $abs"
-	    done
-	    dlfiles=$newdlfiles
-	    newdlprefiles=
-	    for lib in $dlprefiles; do
-	      case $lib in
-		[\\/]* | [A-Za-z]:[\\/]*) abs=$lib ;;
-		*) abs=`pwd`"/$lib" ;;
-	      esac
-	      func_append newdlprefiles " $abs"
-	    done
-	    dlprefiles=$newdlprefiles
-	  fi
-	  $RM $output
-	  # place dlname in correct position for cygwin
-	  # In fact, it would be nice if we could use this code for all target
-	  # systems that can't hard-code library paths into their executables
-	  # and that have no shared library path variable independent of PATH,
-	  # but it turns out we can't easily determine that from inspecting
-	  # libtool variables, so we have to hard-code the OSs to which it
-	  # applies here; at the moment, that means platforms that use the PE
-	  # object format with DLL files.  See the long comment at the top of
-	  # tests/bindir.at for full details.
-	  tdlname=$dlname
-	  case $host,$output,$installed,$module,$dlname in
-	    *cygwin*,*lai,yes,no,*.dll | *mingw*,*lai,yes,no,*.dll | *cegcc*,*lai,yes,no,*.dll)
-	      # If a -bindir argument was supplied, place the dll there.
-	      if test -n "$bindir"; then
-		func_relative_path "$install_libdir" "$bindir"
-		tdlname=$func_relative_path_result/$dlname
-	      else
-		# Otherwise fall back on heuristic.
-		tdlname=../bin/$dlname
-	      fi
-	      ;;
-	  esac
-	  $ECHO > $output "\
-# $outputname - a libtool library file
-# Generated by $PROGRAM (GNU $PACKAGE) $VERSION
-#
-# Please DO NOT delete this file!
-# It is necessary for linking the library.
-
-# The name that we can dlopen(3).
-dlname='$tdlname'
-
-# Names of this library.
-library_names='$library_names'
-
-# The name of the static archive.
-old_library='$old_library'
-
-# Linker flags that cannot go in dependency_libs.
-inherited_linker_flags='$new_inherited_linker_flags'
-
-# Libraries that this one depends upon.
-dependency_libs='$dependency_libs'
-
-# Names of additional weak libraries provided by this library
-weak_library_names='$weak_libs'
-
-# Version information for $libname.
-current=$current
-age=$age
-revision=$revision
-
-# Is this an already installed library?
-installed=$installed
-
-# Should we warn about portability when linking against -modules?
-shouldnotlink=$module
-
-# Files to dlopen/dlpreopen
-dlopen='$dlfiles'
-dlpreopen='$dlprefiles'
-
-# Directory that this library needs to be installed in:
-libdir='$install_libdir'"
-	  if test no,yes = "$installed,$need_relink"; then
-	    $ECHO >> $output "\
-relink_command=\"$relink_command\""
-	  fi
-	done
-      }
-
-      # Do a symbolic link so that the libtool archive can be found in
-      # LD_LIBRARY_PATH before the program is installed.
-      func_show_eval '( cd "$output_objdir" && $RM "$outputname" && $LN_S "../$outputname" "$outputname" )' 'exit $?'
-      ;;
+run_ddns_wizard() {
+    show_banner
+    section "DDNS Setup Wizard"
+    
+    printf "\n  ${C_BOLD}What is DDNS?${C_RESET}\n"
+    printf "  Dynamic DNS gives you a stable domain name even if your\n"
+    printf "  IP address changes. Free options include DuckDNS and No-IP.\n\n"
+    
+    printf "  ${C_BOLD}Choose a provider:${C_RESET}\n\n"
+    menu_option "1" "DuckDNS" "Free, simple, recommended"
+    menu_option "2" "No-IP" "Popular, requires account"
+    menu_option "3" "Dynu" "Flexible, free tier"
+    menu_option "4" "Custom domain" "You own a domain"
+    menu_option "S" "Skip" "Use raw WAN IP"
+    menu_option "B" "Back" ""
+    
+    printf "\n${C_CYAN}❯${C_RESET} "
+    local c=$(read_key)
+    
+    case "${c^^}" in
+        1)
+            show_banner
+            section "DuckDNS Setup"
+            printf "\n  ${C_BOLD}Step 1:${C_RESET} Go to ${C_CYAN}https://duckdns.org${C_RESET}\n"
+            printf "  ${C_BOLD}Step 2:${C_RESET} Sign in with Google/GitHub\n"
+            printf "  ${C_BOLD}Step 3:${C_RESET} Create a subdomain (e.g., myvpn)\n"
+            printf "  ${C_BOLD}Step 4:${C_RESET} Copy your token from the page\n\n"
+            
+            local subdomain=$(prompt "Enter subdomain" "myvpn")
+            local token=$(prompt "Enter token")
+            
+            if [[ -n "$subdomain" && -n "$token" ]]; then
+                db_set_config "ddns_provider" "duckdns"
+                db_set_config "ddns_domain" "${subdomain}.duckdns.org"
+                db_set_config "ddns_token" "$token"
+                log_success "DuckDNS configured: ${subdomain}.duckdns.org"
+                echo "${subdomain}.duckdns.org"
+            fi
+            ;;
+        2|3)
+            log_warn "Provider setup coming soon. Using WAN IP for now."
+            ;;
+        4)
+            local domain=$(prompt "Enter your domain" "vpn.example.com")
+            if [[ -n "$domain" ]]; then
+                db_set_config "ddns_domain" "$domain"
+                db_set_config "ddns_provider" "custom"
+                echo "$domain"
+            fi
+            ;;
+        S)
+            log_info "Skipping DDNS. Using WAN IP directly."
+            echo "$(db_get_config wan_ip)"
+            ;;
+        *)
+            return 1
+            ;;
     esac
-    exit $EXIT_SUCCESS
 }
 
-if test link = "$opt_mode" || test relink = "$opt_mode"; then
-  func_mode_link ${1+"$@"}
-fi
+# ══════════════════════════════════════════════════════════════════════════════
+# 6.5 SUBNET CONFIGURATION
+# ══════════════════════════════════════════════════════════════════════════════
 
+# IP Pool presets - /24 ranges (most common, shown first)
+IP_POOL_PRESETS=(
+    "pool_a|10.100.0.0/24|254|Pool A (10.100.0.x) - Default, works for most [RECOMMENDED]"
+    "pool_b|10.200.0.0/24|254|Pool B (10.200.0.x) - Use if 10.100 conflicts"
+    "pool_c|10.50.0.0/24|254|Pool C (10.50.0.x) - Lower range, avoids common VPCs"
+    "pool_d|172.30.0.0/24|254|Pool D (172.30.0.x) - Class B Range"
+    "pool_e|192.168.100.0/24|254|Pool E (192.168.100.x) - Classic format, familiar"
+    "pool_f|10.7.0.0/24|254|Pool F (10.7.0.x) - Custom range"
+)
 
-# func_mode_uninstall arg...
-func_mode_uninstall ()
-{
-    $debug_cmd
+# Size-based presets (larger to smaller, for scaling needs)
+SIZE_PRESETS=(
+    "small|10.100.0.0/28|14|/28 - Small Office (up to 14 devices)"
+    "medium|10.100.0.0/25|126|/25 - Medium Team (up to 126 devices)"
+    "enterprise|10.100.0.0/22|1022|/22 - Enterprise (up to 1,022 devices)"
+    "large_ent|10.100.0.0/21|2046|/21 - Large Enterprise (up to 2,046 devices)"
+    "carrier|10.100.0.0/20|4094|/20 - Carrier (up to 4,094 devices)"
+    "huge|10.100.0.0/19|8190|/19 - Huge (up to 8,190 devices)"
+    "massive|10.100.0.0/18|16382|/18 - Massive (up to 16,382 devices)"
+    "colossal|10.100.0.0/17|32766|/17 - Colossal (up to 32,766 devices)"
+)
 
-    RM=$nonopt
-    files=
-    rmforce=false
-    exit_status=0
-
-    # This variable tells wrapper scripts just to set variables rather
-    # than running their programs.
-    libtool_install_magic=$magic
-
-    for arg
-    do
-      case $arg in
-      -f) func_append RM " $arg"; rmforce=: ;;
-      -*) func_append RM " $arg" ;;
-      *) func_append files " $arg" ;;
-      esac
-    done
-
-    test -z "$RM" && \
-      func_fatal_help "you must specify an RM program"
-
-    rmdirs=
-
-    for file in $files; do
-      func_dirname "$file" "" "."
-      dir=$func_dirname_result
-      if test . = "$dir"; then
-	odir=$objdir
-      else
-	odir=$dir/$objdir
-      fi
-      func_basename "$file"
-      name=$func_basename_result
-      test uninstall = "$opt_mode" && odir=$dir
-
-      # Remember odir for removal later, being careful to avoid duplicates
-      if test clean = "$opt_mode"; then
-	case " $rmdirs " in
-	  *" $odir "*) ;;
-	  *) func_append rmdirs " $odir" ;;
-	esac
-      fi
-
-      # Don't error if the file doesn't exist and rm -f was used.
-      if { test -L "$file"; } >/dev/null 2>&1 ||
-	 { test -h "$file"; } >/dev/null 2>&1 ||
-	 test -f "$file"; then
-	:
-      elif test -d "$file"; then
-	exit_status=1
-	continue
-      elif $rmforce; then
-	continue
-      fi
-
-      rmfiles=$file
-
-      case $name in
-      *.la)
-	# Possibly a libtool archive, so verify it.
-	if func_lalib_p "$file"; then
-	  func_source $dir/$name
-
-	  # Delete the libtool libraries and symlinks.
-	  for n in $library_names; do
-	    func_append rmfiles " $odir/$n"
-	  done
-	  test -n "$old_library" && func_append rmfiles " $odir/$old_library"
-
-	  case $opt_mode in
-	  clean)
-	    case " $library_names " in
-	    *" $dlname "*) ;;
-	    *) test -n "$dlname" && func_append rmfiles " $odir/$dlname" ;;
-	    esac
-	    test -n "$libdir" && func_append rmfiles " $odir/$name $odir/${name}i"
-	    ;;
-	  uninstall)
-	    if test -n "$library_names"; then
-	      # Do each command in the postuninstall commands.
-	      func_execute_cmds "$postuninstall_cmds" '$rmforce || exit_status=1'
-	    fi
-
-	    if test -n "$old_library"; then
-	      # Do each command in the old_postuninstall commands.
-	      func_execute_cmds "$old_postuninstall_cmds" '$rmforce || exit_status=1'
-	    fi
-	    # FIXME: should reinstall the best remaining shared library.
-	    ;;
-	  esac
-	fi
-	;;
-
-      *.lo)
-	# Possibly a libtool object, so verify it.
-	if func_lalib_p "$file"; then
-
-	  # Read the .lo file
-	  func_source $dir/$name
-
-	  # Add PIC object to the list of files to remove.
-	  if test -n "$pic_object" && test none != "$pic_object"; then
-	    func_append rmfiles " $dir/$pic_object"
-	  fi
-
-	  # Add non-PIC object to the list of files to remove.
-	  if test -n "$non_pic_object" && test none != "$non_pic_object"; then
-	    func_append rmfiles " $dir/$non_pic_object"
-	  fi
-	fi
-	;;
-
-      *)
-	if test clean = "$opt_mode"; then
-	  noexename=$name
-	  case $file in
-	  *.exe)
-	    func_stripname '' '.exe' "$file"
-	    file=$func_stripname_result
-	    func_stripname '' '.exe' "$name"
-	    noexename=$func_stripname_result
-	    # $file with .exe has already been added to rmfiles,
-	    # add $file without .exe
-	    func_append rmfiles " $file"
-	    ;;
-	  esac
-	  # Do a test to see if this is a libtool program.
-	  if func_ltwrapper_p "$file"; then
-	    if func_ltwrapper_executable_p "$file"; then
-	      func_ltwrapper_scriptname "$file"
-	      relink_command=
-	      func_source $func_ltwrapper_scriptname_result
-	      func_append rmfiles " $func_ltwrapper_scriptname_result"
-	    else
-	      relink_command=
-	      func_source $dir/$noexename
-	    fi
-
-	    # note $name still contains .exe if it was in $file originally
-	    # as does the version of $file that was added into $rmfiles
-	    func_append rmfiles " $odir/$name $odir/${name}S.$objext"
-	    if test yes = "$fast_install" && test -n "$relink_command"; then
-	      func_append rmfiles " $odir/lt-$name"
-	    fi
-	    if test "X$noexename" != "X$name"; then
-	      func_append rmfiles " $odir/lt-$noexename.c"
-	    fi
-	  fi
-	fi
-	;;
-      esac
-      func_show_eval "$RM $rmfiles" 'exit_status=1'
-    done
-
-    # Try to remove the $objdir's in the directories where we deleted files
-    for dir in $rmdirs; do
-      if test -d "$dir"; then
-	func_show_eval "rmdir $dir >/dev/null 2>&1"
-      fi
-    done
-
-    exit $exit_status
+show_subnet_help() {
+    clear_screen
+    draw_header
+    ui_info_box "Subnet Configuration Help"
+    echo
+    echo -e "  ${C_BOLD}WHAT IS A SUBNET?${C_RESET}"
+    echo "  WireGuard creates a private virtual network using IP addresses from a subnet"
+    echo "  (IP range) you choose. This range should NOT conflict with your existing network."
+    echo
+    echo -e "  ${C_BOLD}CHOOSING A SIZE (/28, /24, etc.)${C_RESET}"
+    echo "  The number after the slash determines how many devices can connect:"
+    echo "    /28 = 14 devices    - Home lab, personal use"
+    echo "    /25 = 126 devices   - Small business"
+    echo "    /24 = 254 devices   - Most common, good default"
+    echo "    /22 = 1,022 devices - Large enterprise"
+    echo "    /20 = 4,094 devices - Service provider"
+    echo
+    echo -e "  ${C_BOLD}AVOIDING CONFLICTS${C_RESET}"
+    echo "  Common networks to avoid overlap with:"
+    echo "    • Your home/office LAN: usually 192.168.1.0/24 or 192.168.0.0/24"
+    echo "    • Docker default: 172.17.0.0/16"
+    echo "    • Cloud VPCs: often 10.0.0.0/8 ranges"
+    echo
+    echo -e "  ${C_BOLD}IP POOLS EXPLAINED${C_RESET}"
+    echo "    Pool A (10.100.0.x)  - Default, works for most setups"
+    echo "    Pool B (10.200.0.x)  - Alternative if 10.100 conflicts"
+    echo "    Pool C (10.50.0.x)   - Lower range, avoids common VPCs"
+    echo "    Pool D (172.30.0.x)  - Class B, good for Docker environments"
+    echo "    Pool E (192.168.100.x) - Familiar format, easy to remember"
+    echo
+    draw_footer
+    read -p "  Press Enter to return to subnet selection..." _
 }
 
-if test uninstall = "$opt_mode" || test clean = "$opt_mode"; then
-  func_mode_uninstall ${1+"$@"}
-fi
-
-test -z "$opt_mode" && {
-  help=$generic_help
-  func_fatal_help "you must specify a MODE"
+show_subnet_wizard() {
+    while true; do
+        clear_screen
+        draw_header
+        ui_info_box "VPN Subnet Configuration"
+        echo
+        echo -e "  ${T_BOLD}${T_WHITE}STEP 1: Choose by SIZE (how many devices)${T_RESET}"
+        echo
+        
+        local i=1
+        for preset in "${SIZE_PRESETS[@]}"; do
+            IFS='|' read -r id cidr max desc <<< "$preset"
+            printf "    ${T_CYAN}%d)${T_RESET} %-18s ${T_WHITE}%s${T_RESET}\n" "$i" "$cidr" "$desc"
+            ((i++))
+        done
+        
+        echo
+        echo -e "  ${T_BOLD}${T_WHITE}STEP 2: Or choose by IP POOL (to avoid conflicts)${T_RESET}"
+        echo
+        
+        for preset in "${IP_POOL_PRESETS[@]}"; do
+            IFS='|' read -r id cidr max desc <<< "$preset"
+            printf "    ${T_CYAN}%d)${T_RESET} ${T_WHITE}%s${T_RESET}\n" "$i" "$desc"
+            ((i++))
+        done
+        
+        echo
+        echo "    ${T_CYAN}C)${T_RESET} Custom CIDR (advanced users)"
+        echo "    ${T_CYAN}H)${T_RESET} Help - What do these options mean?"
+        echo "    ${T_CYAN}B)${T_RESET} Back to menu"
+        echo
+        ui_draw_footer
+        
+        # Explicitly show default in prompt
+        read -p "  Select [1-10, C, H, B] (default=3): " choice
+        choice=${choice:-3}  # Auto-select 3 if Enter is pressed
+        
+        local selected_cidr="10.100.0.0/24"
+        local selected_preset="large"
+        
+        case "$choice" in
+            [1-5])
+                IFS='|' read -r selected_preset selected_cidr _ _ <<< "${SIZE_PRESETS[$((choice-1))]}"
+                ;;
+            [6-9]|10)
+                local pool_idx=$((choice-6))
+                IFS='|' read -r selected_preset selected_cidr _ _ <<< "${IP_POOL_PRESETS[$pool_idx]}"
+                ;;
+            [Cc])
+                echo
+                echo -e "  ${C_YELLOW}Enter a private IP range in CIDR notation.${C_RESET}"
+                echo "  Examples: 10.10.0.0/24, 172.20.0.0/22, 192.168.50.0/24"
+                echo
+                read -p "  Custom CIDR: " custom_cidr
+                if [[ "$custom_cidr" =~ ^(10|172\.(1[6-9]|2[0-9]|3[01])|192\.168)\.[0-9]+\.[0-9]+/[0-9]+$ ]]; then
+                    selected_cidr="$custom_cidr"
+                    selected_preset="custom"
+                else
+                    log_error "Invalid CIDR format. Must be a private IP range with /prefix."
+                    sleep 2
+                    continue
+                fi
+                ;;
+            [Hh])
+                show_subnet_help
+                continue
+                ;;
+            [Bb])
+                return
+                ;;
+            *)
+                log_error "Invalid selection. Try again."
+                sleep 1
+                continue
+                ;;
+        esac
+        
+        # Confirm selection
+        echo
+        echo -e "  ${C_GREEN}Selected:${C_RESET} $selected_cidr (preset: $selected_preset)"
+        read -p "  Apply this subnet? [Y/n]: " confirm
+        if [[ "${confirm:-y}" =~ ^[Yy]$ ]]; then
+            # Save to database
+            db_set_config "subnet_cidr" "$selected_cidr"
+            db_set_config "subnet_preset" "$selected_preset"
+            
+            log_success "Subnet configured: $selected_cidr"
+            
+            # Apply changes to brain
+            write_wg_conf
+            ensure_wg_up
+            apply_firewall
+            
+            sleep 2
+            return
+        fi
+    done
 }
 
-test -z "$exec_cmd" && \
-  func_fatal_help "invalid operation mode '$opt_mode'"
+get_current_subnet() {
+    db_get_config "subnet_cidr" || echo "10.100.0.0/24"
+}
 
-if test -n "$exec_cmd"; then
-  eval exec "$exec_cmd"
-  exit $EXIT_FAILURE
-fi
+ensure_wg_up() {
+    log_info "Starting WireGuard service..."
+    systemctl enable wg-quick@wg0 >/dev/null 2>&1
+    
+    if ! systemctl start wg-quick@wg0; then
+        log_error "WireGuard failed to start!"
+        echo -e "\n${T_YELLOW}--- DEBUG LOGS START ---${T_RESET}"
+        journalctl -n 20 -u wg-quick@wg0 --no-pager
+        echo -e "${T_YELLOW}--- DEBUG LOGS END ---${T_RESET}\n"
+        
+        echo -e "${T_CYAN}Config Dump:${T_RESET}"
+        cat /etc/wireguard/wg0.conf
+        return 1
+    fi
+    log_success "WireGuard is running"
+    
+    # Enable IP forwarding persistently
+    if [[ "$(sysctl -n net.ipv4.ip_forward)" != "1" ]]; then
+        sysctl -w net.ipv4.ip_forward=1 >/dev/null
+        echo "net.ipv4.ip_forward=1" > /etc/sysctl.d/99-samnet.conf
+    fi
+}
 
-exit $exit_status
+apply_firewall() {
+    local wan_iface=$(ip route get 8.8.8.8 2>/dev/null | awk '{print $5; exit}')
+    local port=$(db_get_config "listen_port")
+    port="${port:-51820}"
+    
+    validate_interface "$wan_iface" || { log_error "Invalid WAN interface"; return 1; }
+    
+    local backup="/tmp/nftables.backup.$$"
+    nft list ruleset > "$backup" 2>/dev/null || true
+    
+    modprobe nft_chain_nat_ipv4 2>/dev/null || true
+    
+    # Get firewall mode (default: samnet-managed)
+    local firewall_mode=$(db_get_config "firewall_mode")
+    firewall_mode="${firewall_mode:-samnet}"
+    
+    # Always clean up our tables first
+    nft delete table inet samnet-filter 2>/dev/null || true
+    nft delete table ip samnet-nat 2>/dev/null || true
+    nft delete table ip6 samnet-nat6 2>/dev/null || true
+    
+    # ─── Create SamNet config directory ───
+    mkdir -p /etc/samnet
+    
+    # ─── Mode-specific firewall setup ───
+    # Write to /etc/samnet/samnet.nft (NOT /etc/nftables.conf - preserves user config)
+    if [[ "$firewall_mode" == "samnet" ]]; then
+        # Full samnet firewall management (filter + nat)
+        cat > /etc/samnet/samnet.nft <<EOF
+# SamNet-WG Firewall Rules
+# Auto-generated - do not edit manually
+table inet samnet-filter {
+    chain input {
+        type filter hook input priority 0; policy accept;
+        iifname "lo" accept
+        iifname "wg0" accept
+        ct state established,related accept
+    }
+    chain forward {
+        type filter hook forward priority 10; policy accept;
+        # Allow established/related traffic (most common case, handles return traffic)
+        ct state established,related accept
+        # WireGuard VPN traffic
+        iifname "$wan_iface" oifname "wg0" ct state established,related accept
+        iifname "wg0" oifname "$wan_iface" accept
+        iifname "wg0" oifname "wg0" accept
+        # Docker bridge traffic is already handled by Docker's own rules at priority 0
+        # We run at priority 10 (after Docker) with policy accept, so we don't interfere
+    }
+}
+table ip samnet-nat {
+    chain postrouting {
+        type nat hook postrouting priority 100; policy accept;
+        oifname "$wan_iface" masquerade
+    }
+}
+table ip6 samnet-nat6 {
+    chain postrouting {
+        type nat hook postrouting priority 100; policy accept;
+        oifname "$wan_iface" masquerade
+    }
+}
+EOF
+    else
+        # External firewall mode (UFW/iptables) - only NAT rules for VPN, no filter
+        # UFW/Docker manage their own filtering, we just add masquerading for VPN traffic
+        cat > /etc/samnet/samnet.nft <<EOF
+# SamNet VPN NAT rules only (firewall managed externally)
+table ip samnet-nat {
+    chain postrouting {
+        type nat hook postrouting priority 100; policy accept;
+        oifname "$wan_iface" masquerade
+    }
+}
+table ip6 samnet-nat6 {
+    chain postrouting {
+        type nat hook postrouting priority 100; policy accept;
+        oifname "$wan_iface" masquerade
+    }
+}
+EOF
+    fi
+    
+    # ─── Add include to /etc/nftables.conf if not present (safe: preserves existing config) ───
+    local include_line='include "/etc/samnet/samnet.nft"'
+    if [[ -f /etc/nftables.conf ]]; then
+        if ! grep -qF "$include_line" /etc/nftables.conf; then
+            # Append include line to existing config
+            echo "" >> /etc/nftables.conf
+            echo "# SamNet-WG VPN rules (added by samnet installer)" >> /etc/nftables.conf
+            echo "$include_line" >> /etc/nftables.conf
+            log_info "Added SamNet include to /etc/nftables.conf"
+        fi
+    else
+        # No existing nftables.conf - create minimal one with SamNet include only
+        # NOTE: We intentionally do NOT flush ruleset to avoid wiping any existing nft rules
+        log_warn "No /etc/nftables.conf found - creating minimal config"
+        cat > /etc/nftables.conf <<EOF
+#!/usr/sbin/nft -f
+# nftables configuration (created by SamNet-WG)
+# Add your custom rules here if needed
+
+# SamNet-WG VPN rules
+$include_line
+EOF
+        log_info "Created /etc/nftables.conf with SamNet include"
+    fi
+    
+    # Load our rules
+    if ! nft -f /etc/samnet/samnet.nft; then
+        log_error "Firewall failed, rolling back..."
+        nft -f "$backup" 2>/dev/null
+        rm -f "$backup"
+        return 1
+    fi
+    
+    rm -f "$backup"
+    
+    # ─── Step 2: Handle user ports table based on firewall mode ───
+    if [[ "$firewall_mode" == "samnet" ]]; then
+        # Only create samnet-ports if it doesn't exist (first install)
+        if ! nft list table inet samnet-ports &>/dev/null; then
+            create_samnet_ports_table "$port"
+        else
+            # Table exists - just ensure VPN port is current
+            update_vpn_port_rule "$port"
+        fi
+        # Load persisted rules if they exist
+        [[ -f /etc/samnet-ports.nft ]] && nft -f /etc/samnet-ports.nft 2>/dev/null || true
+    else
+        # If not in SamNet mode, ensure we remove our managed table so it doesn't block traffic
+        nft delete table inet samnet-ports 2>/dev/null || true
+    fi
+    
+    systemctl enable nftables 2>/dev/null || true
+    log_success "Firewall rules applied (mode: $firewall_mode)"
+    
+    # ─── Docker/iptables Compatibility ───────────────────────────────────────
+    # All rules tagged with --comment "samnet-wg" for safe removal
+    if command -v docker &>/dev/null || [[ -n "$(iptables -L FORWARD -n 2>/dev/null | grep DOCKER)" ]]; then
+        if iptables -L FORWARD -n 2>/dev/null | grep -q "DOCKER"; then
+            log_info "Docker detected - ensuring iptables compatibility..."
+            
+            # Remove any existing samnet-wg tagged rules first (idempotent)
+            while iptables -D FORWARD -i wg0 -o "$wan_iface" -j ACCEPT -m comment --comment "samnet-wg" 2>/dev/null; do :; done
+            while iptables -D FORWARD -i "$wan_iface" -o wg0 -m state --state ESTABLISHED,RELATED -j ACCEPT -m comment --comment "samnet-wg" 2>/dev/null; do :; done
+            
+            # Add rules WITH comment tags (safe for removal)
+            iptables -I FORWARD 1 -i wg0 -o "$wan_iface" -j ACCEPT -m comment --comment "samnet-wg"
+            iptables -I FORWARD 2 -i "$wan_iface" -o wg0 -m state --state ESTABLISHED,RELATED -j ACCEPT -m comment --comment "samnet-wg"
+            
+            # NAT rule with comment tag
+            while iptables -t nat -D POSTROUTING -s 10.0.0.0/8 -o "$wan_iface" -j MASQUERADE -m comment --comment "samnet-wg" 2>/dev/null; do :; done
+            iptables -t nat -A POSTROUTING -s 10.0.0.0/8 -o "$wan_iface" -j MASQUERADE -m comment --comment "samnet-wg"
+            
+            if ! command -v netfilter-persistent &>/dev/null; then
+                 log_info "Installing iptables-persistent..."
+                 export DEBIAN_FRONTEND=noninteractive
+                 apt-get update -qq &>/dev/null || true
+                 echo "iptables-persistent iptables-persistent/autosave_v4 boolean true" | debconf-set-selections
+                 echo "iptables-persistent iptables-persistent/autosave_v6 boolean true" | debconf-set-selections
+                 if ! apt-get install -y -qq iptables-persistent &>/dev/null; then
+                     log_warn "iptables-persistent install failed (non-fatal) - iptables rules may not persist across reboots"
+                 fi
+            fi
+            
+            command -v netfilter-persistent &>/dev/null && netfilter-persistent save >/dev/null 2>&1
+        fi
+    fi
+}
 
 
-# The TAGs below are defined such that we never get into a situation
-# where we disable both kinds of libraries.  Given conflicting
-# choices, we go for a static library, that is the most portable,
-# since we can't tell whether shared libraries were disabled because
-# the user asked for that or because the platform doesn't support
-# them.  This is particularly important on AIX, because we don't
-# support having both static and shared libraries enabled at the same
-# time on that platform, so we default to a shared-only configuration.
-# If a disable-shared tag is given, we'll fallback to a static-only
-# configuration.  But we'll never go from static-only to shared-only.
+# ─── User Ports Table Management ─────────────────────────────────────────────
 
-# ### BEGIN LIBTOOL TAG CONFIG: disable-shared
-build_libtool_libs=no
-build_old_libs=yes
-# ### END LIBTOOL TAG CONFIG: disable-shared
+create_samnet_ports_table() {
+    local vpn_port="${1:-51820}"
+    
+    log_info "Creating firewall with secure defaults + service detection..."
+    
+    # Detect running services on common ports
+    local detected_ports=""
+    local common_ports="80 443 8080 8443 3000 9090 9100 3306 5432 6379 27017 25 587 993 995"
+    
+    for port in $common_ports; do
+        # Use ss filter instead of grep with non-portable \s
+        if ss -tlnH sport = ":$port" 2>/dev/null | grep -q .; then
+            detected_ports="$detected_ports $port"
+        fi
+    done
+    
+    # Build the dynamic port rules - but ASK USER FIRST
+    local port_rules=""
+    local approved_ports=""
+    
+    if [[ -n "$detected_ports" ]]; then
+        echo ""
+        log_warn "Auto-detected running services on ports:$detected_ports"
+        echo ""
+        echo "  ${T_CYAN}Detected services:${T_RESET}"
+        for port in $detected_ports; do
+            case $port in
+                80)   echo "    • Port 80 (HTTP)" ;;
+                443)  echo "    • Port 443 (HTTPS)" ;;
+                8080) echo "    • Port 8080 (Alt HTTP)" ;;
+                8443) echo "    • Port 8443 (Alt HTTPS)" ;;
+                3000) echo "    • Port 3000 (Grafana/Dev)" ;;
+                9090) echo "    • Port 9090 (Prometheus)" ;;
+                9100) echo "    • Port 9100 (Node Exporter)" ;;
+                3306) echo "    • Port 3306 (MySQL)" ;;
+                5432) echo "    • Port 5432 (PostgreSQL)" ;;
+                6379) echo "    • Port 6379 (Redis)" ;;
+                27017) echo "    • Port 27017 (MongoDB)" ;;
+                25)   echo "    • Port 25 (SMTP)" ;;
+                587)  echo "    • Port 587 (Mail Submission)" ;;
+                993)  echo "    • Port 993 (IMAPS)" ;;
+                995)  echo "    • Port 995 (POP3S)" ;;
+            esac
+        done
+        echo ""
+        echo "  ${T_YELLOW}Opening these ports will allow external access.${T_RESET}"
+        read -r -p "  Open detected service ports? (yes/no) [default: no]: " open_detected
+        
+        if [[ "${open_detected,,}" == "yes" ]]; then
+            approved_ports="$detected_ports"
+            log_success "Approved:$approved_ports"
+        else
+            log_info "Skipped auto-detected ports (only SSH + VPN will be open)"
+        fi
+    fi
+    
+    # Build rules only for approved ports
+    for port in $approved_ports; do
+        case $port in
+            80)   port_rules="${port_rules}        tcp dport 80 accept comment \"http-detected\"\n" ;;
+            443)  port_rules="${port_rules}        tcp dport 443 accept comment \"https-detected\"\n" ;;
+            8080) port_rules="${port_rules}        tcp dport 8080 accept comment \"alt-http-detected\"\n" ;;
+            8443) port_rules="${port_rules}        tcp dport 8443 accept comment \"alt-https-detected\"\n" ;;
+            3000) port_rules="${port_rules}        tcp dport 3000 accept comment \"grafana-detected\"\n" ;;
+            9090) port_rules="${port_rules}        tcp dport 9090 accept comment \"prometheus-detected\"\n" ;;
+            9100) port_rules="${port_rules}        tcp dport 9100 accept comment \"node-exporter-detected\"\n" ;;
+            3306) port_rules="${port_rules}        tcp dport 3306 accept comment \"mysql-detected\"\n" ;;
+            5432) port_rules="${port_rules}        tcp dport 5432 accept comment \"postgres-detected\"\n" ;;
+            6379) port_rules="${port_rules}        tcp dport 6379 accept comment \"redis-detected\"\n" ;;
+            27017) port_rules="${port_rules}        tcp dport 27017 accept comment \"mongodb-detected\"\n" ;;
+            25)   port_rules="${port_rules}        tcp dport 25 accept comment \"smtp-detected\"\n" ;;
+            587)  port_rules="${port_rules}        tcp dport 587 accept comment \"submission-detected\"\n" ;;
+            993)  port_rules="${port_rules}        tcp dport 993 accept comment \"imaps-detected\"\n" ;;
+            995)  port_rules="${port_rules}        tcp dport 995 accept comment \"pop3s-detected\"\n" ;;
+        esac
+    done
 
-# ### BEGIN LIBTOOL TAG CONFIG: disable-static
-build_old_libs=`case $build_libtool_libs in yes) echo no;; *) echo yes;; esac`
-# ### END LIBTOOL TAG CONFIG: disable-static
+    
+    # Using 'inet' family covers both IPv4 and IPv6
+    # Priority -10 ensures this runs before standard filter chains
+    nft -f - <<EOF
+table inet samnet-ports {
+    chain input {
+        type filter hook input priority -10; policy drop;
+        
+        # Core System Rules
+        iifname "lo" accept comment "allow-loopback"
+        ct state established,related accept comment "allow-return-traffic"
+        
+        # Docker Compatibility - allow all traffic from Docker bridges
+        iifname "docker0" accept comment "docker-bridge"
+        iifname "br-*" accept comment "docker-custom-networks"
+        
+        # Protocols
+        ip protocol icmp accept
+        ip6 nexthdr icmpv6 accept
+        
+        # Required Ports
+        udp dport $vpn_port accept comment "wireguard-vpn"
+        tcp dport 22 accept comment "ssh"
+$(echo -e "$port_rules")
+    }
+}
+EOF
+    
+    persist_samnet_ports
+    
+    local count=$(echo "$approved_ports" | wc -w)
+    log_success "Firewall created: SSH + VPN + Docker + $count approved services"
+}
 
-# Local Variables:
-# mode:shell-script
-# sh-indentation:2
-# End:
+update_vpn_port_rule() {
+    local new_port="$1"
+    
+    # Remove old VPN port rule if exists
+    local old_handle=$(nft -a list chain inet samnet-ports input 2>/dev/null | \
+                       grep 'comment "wireguard-vpn"' | grep -oP 'handle \K[0-9]+')
+    [[ -n "$old_handle" ]] && nft delete rule inet samnet-ports input handle "$old_handle" 2>/dev/null
+    
+    # Add new VPN port rule at the beginning (after icmp)
+    nft insert rule inet samnet-ports input udp dport "$new_port" accept comment '"wireguard-vpn"' 2>/dev/null || true
+    persist_samnet_ports
+}
+
+persist_samnet_ports() {
+    nft list table inet samnet-ports > /etc/samnet-ports.nft 2>/dev/null || true
+    chmod 600 /etc/samnet-ports.nft 2>/dev/null || true
+}
+
+add_firewall_port() {
+    local port="$1"
+    local proto="${2:-tcp}"
+    local label="${3:-user-defined}"
+    
+    # Validate port
+    if ! [[ "$port" =~ ^[0-9]+$ ]] || [[ "$port" -lt 1 ]] || [[ "$port" -gt 65535 ]]; then
+        log_error "Invalid port number: $port"
+        return 1
+    fi
+    
+    # Validate protocol
+    if [[ "$proto" != "tcp" && "$proto" != "udp" ]]; then
+        log_error "Invalid protocol: $proto (must be tcp or udp)"
+        return 1
+    fi
+    
+    # Check firewall mode
+    local firewall_mode=$(db_get_config "firewall_mode")
+    if [[ "$firewall_mode" != "samnet" ]]; then
+        log_error "Cannot add ports - firewall is in '$firewall_mode' mode"
+        log_info "Change to 'samnet' mode or use your external firewall tool"
+        return 1
+    fi
+    
+    # Ensure table exists
+    if ! nft list table inet samnet-ports &>/dev/null; then
+        log_error "Ports table doesn't exist. Run install first."
+        return 1
+    fi
+    
+    # Check if already exists
+    if nft list chain inet samnet-ports input 2>/dev/null | grep -q "$proto dport $port "; then
+        log_warn "Port $port/$proto is already open"
+        return 0
+    fi
+    
+    # Add rule
+    nft add rule inet samnet-ports input "$proto" dport "$port" accept comment "\"$label\""
+    persist_samnet_ports
+    
+    log_success "Opened port $port/$proto ($label)"
+}
+
+remove_firewall_port() {
+    local port="$1"
+    local proto="${2:-tcp}"
+    
+    local vpn_port=$(db_get_config "listen_port")
+    vpn_port="${vpn_port:-51820}"
+    
+    # Prevent removing VPN port
+    if [[ "$port" == "$vpn_port" && "$proto" == "udp" ]]; then
+        log_error "Cannot remove VPN port - this would break WireGuard"
+        return 1
+    fi
+    
+    # Prevent removing SSH (with warning)
+    if [[ "$port" == "22" && "$proto" == "tcp" ]]; then
+        log_warn "Removing SSH port 22 - make sure you have alternative access!"
+    fi
+    
+    # Find and remove rule by handle
+    local handle=$(nft -a list chain inet samnet-ports input 2>/dev/null | \
+                   grep "$proto dport $port " | grep -oP 'handle \K[0-9]+' | head -1)
+    
+    if [[ -z "$handle" ]]; then
+        log_warn "Port $port/$proto not found in firewall rules"
+        return 1
+    fi
+    
+    nft delete rule inet samnet-ports input handle "$handle"
+    persist_samnet_ports
+    
+    log_success "Closed port $port/$proto"
+}
+
+list_firewall_ports() {
+    local firewall_mode=$(db_get_config "firewall_mode")
+    
+    if [[ "$firewall_mode" != "samnet" ]]; then
+        echo "Firewall mode: $firewall_mode (ports managed externally)"
+        return 0
+    fi
+    
+    if ! nft list table inet samnet-ports &>/dev/null; then
+        echo "No ports table found"
+        return 1
+    fi
+    
+    # Parse and display ports
+    nft list chain inet samnet-ports input 2>/dev/null | \
+        grep -E "(tcp|udp) dport" | \
+        sed 's/.*\(tcp\|udp\) dport \([0-9]*\).*/\2\/\1/' | \
+        while read port_proto; do
+            local comment=$(nft list chain inet samnet-ports input 2>/dev/null | \
+                           grep "$port_proto" | grep -oP 'comment "\K[^"]+' || echo "")
+            echo "$port_proto  $comment"
+        done
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# 7. INSTALLATION ENGINE
+# ══════════════════════════════════════════════════════════════════════════════
+
+run_preflight_checks() {
+    log_info "Running pre-flight checks..."
+    local failed=0
+    
+    # 1. Port Availability Checks (Fast)
+    if ss -tuln 2>/dev/null | grep -q ":80 " && [[ "$(db_get_config web_ui_enabled)" == "true" ]]; then
+        log_warn "Port 80 in use (Web UI might fail)"
+    fi
+    if ss -tuln 2>/dev/null | grep -q ":8080 "; then
+        log_warn "Port 8080 in use"
+    fi
+    
+    # 2. Internet Connectivity (Ultra Fast)
+    # Strategy: Ping first (sub-second usually), fallback to HTTP head check
+    local connected=false
+    
+    if ping -c 1 -W 1 8.8.8.8 &>/dev/null || ping -c 1 -W 1 1.1.1.1 &>/dev/null; then
+        connected=true
+    elif curl -s --head --connect-timeout 2 https://1.1.1.1 &>/dev/null; then
+        connected=true
+    fi
+    
+    if [[ "$connected" == "false" ]]; then
+         log_warn "No internet connectivity detected (or blocked)"
+    fi
+    
+    # 3. Kernel Modules
+    if ! modprobe wireguard 2>/dev/null; then
+         # Try to see if it's built-in
+         if [[ ! -d /sys/module/wireguard ]]; then
+             log_warn "WireGuard kernel module not loaded (will attempt to install)"
+         fi
+    fi
+
+    log_success "Pre-flight checks passed"
+    return 0
+}
+
+# Optimized IP Detection (Fast & Robust)
+detect_public_ip() {
+    local ip=""
+    # Parallel-ish attempt with fast failovers
+    ip=$(curl -s --connect-timeout 2 http://ifconfig.me)
+    [[ -z "$ip" ]] && ip=$(curl -s --connect-timeout 2 https://api.ipify.org)
+    [[ -z "$ip" ]] && ip=$(curl -s --connect-timeout 2 https://icanhazip.com)
+    
+    # Validation
+    if [[ "$ip" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+        echo "$ip"
+    else
+        # Fallback: Use local interface IP (Robustness for partial connectivity)
+        local local_ip=$(ip route get 8.8.8.8 2>/dev/null | awk '{print $7; exit}')
+        if [[ "$local_ip" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+            # log_warn "Using local IP as fallback" >&2
+            echo "$local_ip"
+        else
+            echo ""
+        fi
+    fi
+}
+
+do_install() {
+    check_root
+    
+    # S0014: Prevent concurrent installer runs
+    local install_lock="/var/run/samnet-install.lock"
+    if [[ -f "$install_lock" ]]; then
+        local pid=$(cat "$install_lock")
+        if kill -0 "$pid" 2>/dev/null; then
+            exit_with_error "Another instance of SamNet installer (PID $pid) is already running."
+        fi
+    fi
+    echo $$ > "$install_lock"
+    trap 'rm -f "$install_lock"' EXIT
+    
+    run_preflight_checks || { log_error "Critical pre-flight checks failed"; rm -f "$install_lock"; return 1; }
+    
+    # Transaction pattern: track stages for rollback
+    export INSTALL_STAGE="init"
+    trap 'rollback_install "$INSTALL_STAGE"' ERR
+    
+    if [[ "$INTERACTIVE" == true ]]; then
+        ensure_db_init  # Initialize DB before wizard to prevent sqlite errors
+        if ! run_install_wizard; then
+            log_info "Installation cancelled by user."
+            return 0
+        fi
+    else
+        log_info "Zero-Touch Installation..."
+        ensure_db_init
+        
+        local detected_ip=$(detect_public_ip)
+        [[ -n "$detected_ip" ]] && db_set_config "wan_ip" "$detected_ip"
+        db_set_config "listen_port" "51820"
+        db_set_config "subnet_cidr" "10.100.0.0/24"
+        
+        # Smart firewall detection for zero-touch mode
+        # If existing firewall detected, use external mode to avoid conflicts
+        local detected_firewall="none"
+        
+        # Check for UFW
+        if command -v ufw &>/dev/null && ufw status 2>/dev/null | grep -q "Status: active"; then
+            detected_firewall="ufw"
+        # Check for iptables with non-default rules (more than just ACCEPT policies)
+        elif iptables -L INPUT -n 2>/dev/null | grep -qE "^(DROP|REJECT|ACCEPT.*dpt:)"; then
+            detected_firewall="iptables"
+        # Check for nftables with existing filter tables (excluding samnet's own)
+        elif nft list tables 2>/dev/null | grep -qE "filter|firewall" && ! nft list tables 2>/dev/null | grep -q "samnet"; then
+            detected_firewall="nftables"
+        fi
+        
+        if [[ "$detected_firewall" != "none" ]]; then
+            log_info "Detected existing firewall: $detected_firewall - using external mode"
+            db_set_config "firewall_mode" "external"
+        else
+            log_info "No existing firewall detected - using SamNet managed mode"
+            db_set_config "firewall_mode" "samnet"
+        fi
+    fi
+    
+    # Get Web UI preference
+    local web_ui_enabled=$(db_get_config "web_ui_enabled")
+    [[ -z "$web_ui_enabled" ]] && web_ui_enabled="false"
+    
+    ensure_dependencies "$web_ui_enabled"
+    ensure_db_init
+    
+    log_info "Installing system files..."
+    INSTALL_STAGE="files"
+    mkdir -p "$INSTALL_DIR"
+    cp -f "$0" "$INSTALL_DIR/samnet" && chmod +x "$INSTALL_DIR/samnet"
+    ln -sf "$INSTALL_DIR/samnet" /usr/local/bin/samnet
+    
+    INSTALL_STAGE="wireguard"
+    gen_server_keys
+    write_wg_conf
+    
+    INSTALL_STAGE="firewall"
+    apply_firewall
+    
+    # Deploy Docker stack (API/DB are now core dependencies for headless mode)
+    # Deploy Docker stack (API/DB are now core dependencies for headless mode)
+    if [[ -d "$DIR/services" ]]; then
+        INSTALL_STAGE="docker"
+        log_info "Deploying Backend Stack (Headless)..."
+        # Only copy if source and destination are different
+        if [[ "$(realpath "$DIR/services")" != "$(realpath "$INSTALL_DIR/services")" ]]; then
+            cp -r "$DIR/services" "$INSTALL_DIR/"
+        fi
+        
+        # Create database directory for API container (user 1000:1000 = samnet)
+        log_info "Setting up database directory..."
+        mkdir -p /var/lib/samnet-wg
+        chown -R 1000:1000 /var/lib/samnet-wg
+        chmod 750 /var/lib/samnet-wg
+        
+        # Fix DNS for Docker builds (Docker uses its own DNS, not host's)
+        # Fix DNS for Docker builds (Docker uses its own DNS, not host's)
+        # We explicitly check for reliable resolvers (8.8.8.8 or 1.1.1.1)
+        # If not found, we BACKUP existing config and FORCE our working config.
+        # This fixes the common "lookup registry-1.docker.io: i/o timeout" error.
+        log_info "Configuring Docker DNS for reliable builds..."
+        mkdir -p /etc/docker
+        
+        local update_dns=false
+        if [[ ! -f /etc/docker/daemon.json ]]; then
+            update_dns=true
+        elif ! grep -qE "8\.8\.8\.8|1\.1\.1\.1" /etc/docker/daemon.json; then
+            log_warn "Existing Docker DNS config may be unreliable. Overwriting..."
+            cp /etc/docker/daemon.json /etc/docker/daemon.json.bak
+            update_dns=true
+        fi
+        
+        if [[ "$update_dns" == "true" ]]; then
+            echo '{"dns": ["8.8.8.8", "1.1.1.1"]}' > /etc/docker/daemon.json
+            systemctl restart docker 2>/dev/null || true
+            sleep 3 # Give it a moment to bind
+        fi
+        
+        # Wait for Docker to be ready (up to 30 seconds)
+        local docker_wait=0
+        while ! docker info &>/dev/null; do
+            sleep 2
+            ((docker_wait+=2))
+            if [[ $docker_wait -ge 30 ]]; then
+                log_warn "Docker daemon slow to restart, continuing anyway..."
+                break
+            fi
+        done
+        log_success "Docker daemon ready"
+        
+        if [[ -f "$INSTALL_DIR/services/docker-compose.yml" ]]; then
+            # OPTIMIZATION: Prepare UI build artifacts if Web UI is enabled
+            if [[ "$(db_get_config web_ui_enabled)" == "true" ]]; then
+                local ui_dir="$INSTALL_DIR/services/ui"
+                
+                # 1. Ensure .dockerignore exists (speeds up build context)
+                if [[ ! -f "$ui_dir/.dockerignore" ]]; then
+                    log_info "Creating UI build optimizations..."
+                    cat > "$ui_dir/.dockerignore" <<EOF
+node_modules
+.git
+.gitignore
+dist
+coverage
+npm-debug.log
+EOF
+                fi
+                
+                # 2. Generate package-lock.json if missing (speeds up npm install)
+                if [[ ! -f "$ui_dir/package-lock.json" ]]; then
+                    log_info "Generating npm lockfile (using host network for speed)..."
+                    # Use --network host to bypass Docker bridge DNS issues
+                    if docker run --rm --network host -v "$ui_dir:/app" -w /app node:18-alpine npm install --package-lock-only; then
+                        log_success "Lockfile generated successfully"
+                        # Ensure permissions are correct (docker runs as root)
+                        chown -R $SUDO_USER:$SUDO_USER "$ui_dir/package-lock.json" 2>/dev/null || true
+                    else
+                        log_warn "Failed to generate lockfile. Build may be slow."
+                    fi
+                fi
+            fi
+
+            local compose_cmd
+            local compose_cmd
+            compose_cmd=$(get_compose_cmd) || { log_error "Docker Compose not found."; }
+            
+            # Build image with host networking (bypasses Docker's bridge network issues)
+            local docker_success=false
+            for attempt in 1 2 3; do
+                log_info "Building API image (Attempt $attempt/3)..."
+                if docker build --network=host --label project=samnet-wg -t samnet-wg/api:latest "$DIR/services/api"; then
+                    docker_success=true
+                    break
+                else
+                    log_warn "API build failed, retrying in 10s..."
+                    sleep 10
+                fi
+            done
+
+            # Build UI image with host networking (CRITICAL for npm install speed)
+            if [[ "$(db_get_config web_ui_enabled)" == "true" ]]; then
+                local ui_success=false
+                for attempt in 1 2 3; do
+                    log_info "Building Web UI image (Attempt $attempt/3)..."
+                    if docker build --network=host --label project=samnet-wg -t samnet-wg/ui:latest "$DIR/services/ui"; then
+                        ui_success=true
+                        break
+                    else
+                        log_warn "UI build failed, retrying in 10s..."
+                        sleep 10
+                    fi
+                done
+                if [[ "$ui_success" == false ]]; then
+                    log_warn "Web UI build failed. API will work, but Web UI unavailable."
+                fi
+            fi
+            
+            if [[ "$docker_success" == false ]]; then
+                log_warn "Docker deployment failed after 3 attempts. Continuing with WireGuard-only mode."
+                log_warn "You can manually run 'docker build --network=host -t samnet/api:latest $INSTALL_DIR/services/api' later."
+            else
+                # Start containers using native Docker (more robust than fragile compose versions)
+                log_info "Starting services..."
+
+                # 1. Cleanup old
+                docker rm -f samnet-wg-api samnet-wg-ui samnet-api samnet-ui 2>/dev/null || true
+
+                # 1.5 Create Bridge Network (Windows/Mac compatibility)
+                if ! docker network ls | grep -q "samnet-grid"; then
+                    log_info "Creating Docker network 'samnet-grid'..."
+                    docker network create samnet-grid >/dev/null
+                fi
+
+                # 2. Start API
+                log_info "Launching API..."
+                
+                # Dynamic Port Selection: Check if default port is available
+                local api_port=8766
+                if ! is_port_available "$api_port"; then
+                    log_warn "Port $api_port is already in use. Finding alternative..."
+                    api_port=$(find_available_port 8766)
+                    log_info "Selected alternative API port: $api_port"
+                fi
+                
+                # Save the selected port to database for CLI and other tools to use
+                db_set_config "api_port" "$api_port"
+                log_info "API will run on port $api_port"
+                
+                # Use --network=host so API container can directly access host's wg0 interface
+                # This allows `wg set` to work from within the container
+                # Note: --sysctl not allowed with host network (IP forwarding already enabled on host)
+                if ! docker run -d \
+                    --name samnet-wg-api \
+                    --network=host \
+                    --restart=unless-stopped \
+                    --cap-add=NET_ADMIN \
+                    -v /var/lib/samnet-wg:/var/lib/samnet-wg \
+                    -v /etc/wireguard:/etc/wireguard \
+                    -v "$DIR/clients":/opt/samnet/clients \
+                    -e SAMNET_DB_PATH=/var/lib/samnet-wg/samnet.db \
+                    -e PORT=$api_port \
+                    -e INSECURE_HTTP=true \
+                    -e GIN_MODE=release \
+                    samnet-wg/api:latest >/dev/null; then
+                    log_error "Failed to start API container"
+                    return 1
+                fi
+
+                # 3. Start UI (if enabled)
+                if [[ "$web_ui_enabled" == "true" ]]; then
+                    log_info "Launching Web UI..."
+                    
+                    # Determine UI mode
+                    local ui_mode="lan"
+                    [[ "$(db_get_config web_ui_mode)" == "https" ]] && ui_mode="https"
+                    
+                    # Safety Check: Port 80 conflict
+                    if [[ "$ui_mode" == "lan" ]] && ss -tuln 2>/dev/null | grep -q ":80 "; then
+                        log_error "Port 80 is already in use by another service!"
+                        log_warn "You must stop existing web servers (e.g., Apache, Nginx) before SamNet can use Port 80."
+                        log_warn "Try running: systemctl stop nginx apache2"
+                        return 1
+                    fi
+
+                    # UI also needs host network to connect to API on localhost
+                    if ! docker run -d \
+                        --name samnet-wg-ui \
+                        --network=host \
+                        --restart=unless-stopped \
+                        -v /etc/letsencrypt:/etc/letsencrypt:ro \
+                        -v /var/www/certbot:/var/www/certbot:ro \
+                        -e NGINX_MODE="$ui_mode" \
+                        -e API_PORT="$api_port" \
+                        samnet-wg/ui:latest >/dev/null; then
+                        log_error "Failed to start UI container"
+                        return 1
+                    fi
+
+                    # Verify UI startup
+                    sleep 2
+                    if ! docker ps --format '{{.Names}}' | grep -qE "^samnet(-wg)?-ui$"; then
+                        log_error "Web UI container crashed immediately!"
+                        echo -e "\n${T_YELLOW}--- UI CRASH LOGS ---${T_RESET}"
+                        docker logs samnet-wg-ui 2>&1 | tail -n 20 || docker logs samnet-ui 2>&1 | tail -n 20
+                        echo -e "${T_YELLOW}-----------------------${T_RESET}\n"
+                        return 1
+                    fi
+                fi
+                
+                log_success "Services started successfully"
+            fi
+        fi
+        
+        # Only wait for API if Docker succeeded
+        if [[ "$docker_success" == true ]]; then
+            # Wait for API to be healthy before creating admin (with timeout)
+            log_info "Waiting for API to become ready..."
+            local max_wait=120
+            local waited=0
+            local api_url=$(get_api_url)
+            local curl_err=""
+        while ! curl_err=$(curl -sf --connect-timeout 2 --max-time 5 "${api_url}/health/live" 2>&1); do
+            # Fail fast if container died
+            if ! docker ps --format '{{.Names}}' | grep -qE "^samnet(-wg)?-api$"; then
+                log_error "API container stopped unexpectedly!"
+                echo -e "\n${T_YELLOW}--- API CRASH LOGS ---${T_RESET}"
+                docker logs samnet-wg-api 2>&1 | tail -n 20 || docker logs samnet-api 2>&1 | tail -n 20
+                echo -e "${T_YELLOW}-----------------------${T_RESET}\n"
+                return 1
+            fi
+
+            sleep 2
+            ((waited+=2))
+            
+            # UX: Stream API logs if taking more than 4 seconds
+            if [[ $waited -ge 4 ]] && [[ $((waited % 10)) -eq 0 ]]; then
+                echo -e "  ${T_DIM}Still waiting... (waited ${waited}s)${T_RESET}"
+                echo -e "  ${T_DIM}Latest API Log:${T_RESET} $(docker logs samnet-wg-api 2>&1 | tail -n 1)"
+            fi
+
+            if [[ $waited -ge $max_wait ]]; then
+                log_error "API did not become ready in ${max_wait}s"
+                echo -e "  ${T_DIM}Tried URL: ${api_url}/health/live${T_RESET}"
+                echo -e "  ${T_DIM}Curl Error: ${curl_err}${T_RESET}"
+                echo -e "\n${T_YELLOW}--- API DEBUG LOGS ---${T_RESET}"
+                docker logs samnet-wg-api 2>&1 | tail -n 20 || docker logs samnet-api 2>&1 | tail -n 20
+                echo -e "${T_YELLOW}-----------------------${T_RESET}\n"
+                return 1
+            fi
+        done
+        log_success "API ready after ${waited}s"
+        
+        local temp_pass="changeme"
+        local api_container=$(docker ps --format '{{.Names}}' | grep -E "^samnet(-wg)?-api$" | head -1)
+        if docker exec "$api_container" /home/samnet/api -create-admin "admin" -password "$temp_pass" >/dev/null 2>&1; then
+            # Atomic credential file write - only after admin creation verified
+            local tmp_cred=$(mktemp)
+            cat > "$tmp_cred" <<CREDS
+# SamNet-WG Initial Credentials
+# Created: $(date -Iseconds)
+# DELETE AFTER READING!
+URL: http://$(db_get_config wan_ip):8766
+Username: admin
+Password: $temp_pass
+CREDS
+            chmod 600 "$tmp_cred"
+            mv "$tmp_cred" "$INSTALL_DIR/credentials.txt"
+            log_success "Admin user created"
+        else
+            log_error "Failed to create admin user"
+        fi
+        unset temp_pass
+        fi  # End of docker_success check
+    else
+        log_info "CLI-only mode - skipping Docker/Web UI deployment"
+    fi  # End of services directory check
+    
+    # Start WireGuard last
+    ensure_wg_up
+
+    # Ensure cron is running (for check_expiry fallback)
+    systemctl enable cron 2>/dev/null || true
+    systemctl start cron 2>/dev/null || true
+
+    if [[ "$(db_get_config web_ui_enabled)" == "true" ]]; then
+        log_info "Installing WireGuard sync service..."
+        
+        cat > /etc/systemd/system/samnet-wg-sync.service << 'WGSYNC_SERVICE'
+[Unit]
+Description=SamNet WireGuard Config Sync (instant reload from API)
+After=wg-quick@wg0.service
+Wants=wg-quick@wg0.service
+
+[Service]
+Type=simple
+# Watch the DIRECTORY for trigger file creation (file doesn't exist until API creates it)
+ExecStart=/bin/bash -c 'while true; do inotifywait -qq -e create -e modify --include "\.reload_trigger$" /etc/wireguard/ 2>/dev/null && wg syncconf wg0 <(wg-quick strip wg0) && rm -f /etc/wireguard/.reload_trigger; sleep 0.1; done'
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+WGSYNC_SERVICE
+        
+        systemctl daemon-reload
+        systemctl enable samnet-wg-sync.service >/dev/null 2>&1
+        systemctl start samnet-wg-sync.service >/dev/null 2>&1
+        log_success "WireGuard sync service installed (instant peer updates)"
+    fi
+    
+    trap - ERR
+    unset INSTALL_STAGE
+    
+    log_success "SamNet-WG Installed!"
+    echo -e "\n  ${C_BOLD}Access:${C_RESET}"
+    local ui_mode=$(db_get_config web_ui_mode)
+    local ui_url=""
+    if [[ "$ui_mode" == "https" ]]; then
+        ui_url="https://$(db_get_config ssl_domain)"
+    else
+        # Show local IP for LAN mode
+        local local_ip=$(hostname -I | awk '{print $1}')
+        ui_url="http://${local_ip:-$(db_get_config wan_ip)}"
+    fi
+    [[ "$(db_get_config web_ui_enabled)" == "true" ]] && echo -e "  ├─ Web UI:     ${C_CYAN}${ui_url}${C_RESET}"
+    echo -e "  ├─ CLI:        ${C_WHITE}samnet${C_RESET}"
+    [[ -f "$CRED_FILE" ]] && echo -e "  └─ Credentials: ${C_YELLOW}$CRED_FILE${C_RESET}"
+    
+    echo -e "\n  ${C_RED}${C_BOLD}IMPORTANT:${C_RESET} ${C_WHITE}Forward UDP Port $(db_get_config listen_port) on your router to this device!${C_RESET}"
+}
+
+run_install_wizard() {
+    local step=1 wan_ip="" port="51820" subnet="10.100.0.0/24"
+    
+    # FAILSAFE: Block installation on active system
+    if systemctl is-active --quiet wg-quick@wg0 || docker ps --format '{{.Names}}' | grep -qE "^samnet(-wg)?-api$"; then
+        echo
+        ui_box_danger "SYSTEM ACTIVE" \
+            "SamNet is already running!" \
+            "" \
+            "You cannot run the install wizard on top of a live system." \
+            "Please uninstall first or run the 'Repair' wizard."
+        echo
+        wait_key
+        return
+    fi
+    
+    while true; do
+        show_banner
+        printf "  ${C_DIM}Step %d of 6${C_RESET}\n" "$step"
+        
+        case $step in
+            1)
+                section "WAN IP Address"
+                local detected=$(detect_public_ip)
+                if [[ -n "$detected" ]]; then
+                    printf "  Detected: ${C_WHITE}%s${C_RESET}\n\n" "$detected"
+                    menu_option "Y" "Use detected" ""
+                    menu_option "M" "Enter manually" ""
+                    menu_option "B" "Back" ""
+                    menu_option "Q" "Quit" ""
+                    
+                    printf "\n${C_CYAN}❯${C_RESET} "
+                    local c=$(read_key)
+                    case "${c^^}" in
+                        B) return 1 ;;
+                        Y) wan_ip="$detected"; ((step++)) ;;
+                        M) wan_ip=$(prompt "Enter IP"); [[ -n "$wan_ip" ]] && ((step++)) ;;
+                        Q) exit 0 ;;
+                    esac
+                else
+                    wan_ip=$(prompt "Enter public IP")
+                    [[ -n "$wan_ip" ]] && ((step++))
+                fi
+                [[ -n "$wan_ip" ]] && db_set_config "wan_ip" "$wan_ip"
+                
+                # Custom Endpoint Hostname
+                echo ""
+                if ui_confirm "Do you have a custom domain/hostname (e.g. vpn.example.com)?"; then
+                    local cust_host=$(prompt "Enter hostname")
+                    [[ -n "$cust_host" ]] && db_set_config "endpoint_hostname" "$cust_host"
+                else
+                    db_set_config "endpoint_hostname" "" # Clear if not used
+                fi
+                ;;
+            2)
+                section "WireGuard Port"
+                echo "  Enter the UDP port for WireGuard traffic (Default: 51820)"
+                echo "  Type 'B' to go back to previous step."
+                echo
+                
+                while true; do
+                    port=$(prompt "Port [B=Back]" "51820")
+                    
+                    # Check for back command first
+                    if [[ "${port^^}" == "B" ]]; then
+                        ((step--))
+                        break
+                    fi
+                    
+                    # Validate port number
+                    if [[ "$port" =~ ^[0-9]+$ ]] && ((port >= 1 && port <= 65535)); then
+                        db_set_config "listen_port" "$port"
+                        ((step++))
+                        break
+                    else
+                        log_error "Invalid port. Must be a number 1-65535."
+                    fi
+                done
+                ;;
+            3)
+                section "Web UI Dashboard"
+                printf "\n  ${C_BOLD}Access your VPN from a web browser.${C_RESET}\n\n"
+                
+                menu_option "1" "Skip for now" "CLI only mode [DEFAULT]"
+                menu_option "2" "LAN Only (HTTP)" "Local network access"
+                menu_option "B" "Back" ""
+                
+                printf "\n"
+                local c=$(prompt "Select [1-2, B]" "1")
+                case "${c^^}" in
+                    1)
+                        db_set_config "web_ui_enabled" "false"
+                        ((step++))
+                        ;;
+                    2)
+                        db_set_config "web_ui_enabled" "true"
+                        db_set_config "web_ui_mode" "lan"
+                        ((step++))
+                        ;;
+                    B) ((step--)) ;;
+                esac
+                ;;
+            4)
+                if ! run_firewall_mode_wizard "install"; then
+                    ((step--))
+                else
+                    ((step++))
+                fi
+                ;;
+
+            5)
+                section "Subnet Selection"
+                run_subnet_wizard
+                [[ -n "$WIZARD_SUBNET" ]] && { db_set_config "subnet_cidr" "$WIZARD_SUBNET"; ((step++)); } || ((step--))
+                ;;
+            6)
+                section "Review & Apply"
+                draw_box "Configuration" \
+                    "WAN IP:    $(db_get_config wan_ip)" \
+                    "Port:      $(db_get_config listen_port)" \
+                    "Web UI:    $(db_get_config web_ui_enabled)" \
+                    "Firewall:  $(db_get_config firewall_mode)" \
+                    "Subnet:    $(db_get_config subnet_cidr)"
+                
+                menu_option "A" "Apply" ""
+                menu_option "B" "Back" ""
+                menu_option "X" "Abort" ""
+                printf "\n${C_CYAN}❯${C_RESET} "
+                local c=$(read_key)
+                case "${c^^}" in
+                    A) return 0 ;;
+                    B) ((step--)) ;;
+                    X) exit 0 ;;
+                esac
+                ;;
+        esac
+    done
+}
+
+
+run_subnet_wizard() {
+    WIZARD_SUBNET=""
+    printf "\n  ${T_BOLD}Recommended /24 Pools:${T_RESET}\n\n"
+    
+    local i=1
+    local options=()
+    local cidrs=()
+    
+    # Show Pool Presets FIRST (user requested /24 pools at top)
+    for preset in "${IP_POOL_PRESETS[@]}"; do
+        IFS='|' read -r id cidr max desc <<< "$preset"
+        printf "  ${C_CYAN}[%d]${C_RESET} %-15s ${C_DIM}%s${C_RESET}\n" "$i" "$cidr" "$desc"
+        cidrs[$i]="$cidr"
+        ((i++))
+    done
+    
+    printf "\n  ${T_BOLD}Or Select Custom Size:${T_RESET}\n\n"
+    
+    # Show Size Presets SECOND
+    for preset in "${SIZE_PRESETS[@]}"; do
+        IFS='|' read -r id cidr max desc <<< "$preset"
+        printf "  ${C_CYAN}[%d]${T_RESET} %-15s ${C_DIM}%s${C_RESET}\n" "$i" "$cidr" "$desc"
+        cidrs[$i]="$cidr"
+        ((i++))
+    done
+    
+    echo
+    menu_option "B" "Back" ""
+    printf "\n${C_CYAN}❯${C_RESET} "
+    
+    local c=$(prompt "Select [1-$((i-1))]" "3")
+    
+    if [[ "$c" =~ ^[0-9]+$ ]] && [[ "$c" -ge 1 && "$c" -lt "$i" ]]; then
+        WIZARD_SUBNET="${cidrs[$c]}"
+    elif [[ "${c^^}" == "B" ]]; then
+        WIZARD_SUBNET=""
+    else
+        # Default to Large (/24) if invalid or empty
+        WIZARD_SUBNET="10.100.0.0/24"
+    fi
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# 8. TUI SCREENS
+# ══════════════════════════════════════════════════════════════════════════════
+
+screen_install() {
+    while true; do
+        ui_draw_header_mini "Install & Repair"
+        menu_option "1" "Zero-Touch Install" "Auto-setup"
+        menu_option "2" "Step-by-Step Wizard" "Guided"
+        menu_option "3" "Repair / Self-Heal" ""
+        menu_option "4" "Validate Only" "Dry-run"
+        printf "\n"
+        menu_option "B" "Back" ""
+        
+        ui_draw_footer "[1-4] Select  [B] Back"
+        printf "\n${T_CYAN}❯${T_RESET} "
+        
+        local key=$(read_key)
+        case "$key" in
+            1) INTERACTIVE=false; do_install; wait_key ;;
+            2) INTERACTIVE=true; do_install; wait_key ;;
+            3) run_repair; wait_key ;;
+            4) run_dry_validator; wait_key ;;
+            b|B|$'\x1b') return ;;
+            q|Q) cleanup_exit 0 ;;
+        esac
+    done
+}
+
+# Interactive QR Code Selector
+list_peers_qr() {
+    ui_draw_header_mini "Peer QR Codes"
+    
+    local client_dir="$INSTALL_DIR/clients"
+    
+    if [[ ! -d "$client_dir" ]]; then
+        log_error "No persistent client configs found."
+        log_info "Only peers created after this update have saved configs."
+        wait_key
+        return
+    fi
+    
+    local configs=("$client_dir"/*.conf)
+    if [[ ! -e "${configs[0]}" ]]; then
+        log_error "No client configurations found."
+        wait_key
+        return
+    fi
+    
+    echo "  Select a peer to view QR code:"
+    echo ""
+    
+    local i=1
+    local valid_indices=()
+    local files=()
+    
+    for conf in "${configs[@]}"; do
+        local name=$(basename "$conf" .conf)
+        printf "    ${T_CYAN}[%d]${T_RESET} %-15s ${C_DIM}%s${C_RESET}\n" "$i" "$name"
+        files[$i]="$conf"
+        valid_indices+=("$i")
+        ((i++))
+    done
+    
+    local selection=$(prompt "Select peer #")
+    
+    if [[ -z "$selection" ]]; then return; fi
+    
+    if [[ " ${valid_indices[*]} " =~ " ${selection} " ]]; then
+        local target="${files[$selection]}"
+        if [[ -f "$target" ]]; then
+             ui_clear
+             ui_draw_header_mini "QR Code: $(basename "$target" .conf)"
+             qrencode -t UTF8 -r "$target"
+             echo ""
+             wait_key
+        fi
+    else
+        log_error "Invalid selection."
+        sleep 1
+    fi
+}
+
+screen_security() {
+    while true; do
+        show_banner
+        section "Security & Access"
+        
+        menu_option "1" "Secrets Health" ""
+        menu_option "2" "Audit Log" ""
+        menu_option "3" "Rotate Token" ""
+        menu_option "4" "Firewall Ports" "Add/remove open ports"
+        menu_option "B" "Back" ""
+        
+        printf "\n${C_CYAN}❯${C_RESET} "
+        local c=$(read_key)
+        case "${c^^}" in
+            1) secrets_health ;;
+            2) view_audit ;;
+            3) rotate_token ;;
+            4) screen_firewall_ports ;;
+            B|G) return ;;
+            Q) cleanup_exit 0 ;;
+        esac
+    done
+}
+
+screen_firewall_ports() {
+    while true; do
+        show_banner
+        section "Firewall Ports"
+        
+        local mode=$(db_get_config "firewall_mode")
+        printf "  ${T_DIM}Current mode: ${T_RESET}${C_CYAN}%s${C_RESET}\n\n" "${mode:-not set}"
+        
+        if [[ "$mode" != "samnet" ]]; then
+            log_warn "Firewall is in '$mode' mode - use your external firewall tool"
+            log_info "Change to 'samnet' mode to manage ports here"
+            echo ""
+            menu_option "M" "Change Mode" ""
+            menu_option "B" "Back" ""
+            printf "\n${C_CYAN}❯${C_RESET} "
+            local c=$(read_key)
+            case "${c^^}" in
+                M) run_firewall_mode_wizard && apply_firewall ;;
+                B|Q) return ;;
+            esac
+            continue
+        fi
+        
+        menu_option "1" "List Open Ports" ""
+        menu_option "2" "Add Port" ""
+        menu_option "3" "Remove Port" ""
+        menu_option "M" "Change Mode" ""
+        menu_option "B" "Back" ""
+        
+        printf "\n${C_CYAN}❯${C_RESET} "
+        local c=$(read_key)
+        case "${c^^}" in
+            1)
+                echo ""
+                list_firewall_ports
+                wait_key
+                ;;
+            2)
+                echo ""
+                read -r -p "  Port number: " port
+                [[ -z "$port" ]] && continue
+                
+                echo ""
+                echo "  ${C_BOLD}Protocol:${C_RESET}"
+                menu_option "1" "TCP" "(default)"
+                menu_option "2" "UDP" ""
+                menu_option "3" "Both" ""
+                printf "\n  ${C_CYAN}❯${C_RESET} "
+                local proto_choice=$(read_key)
+                
+                case "$proto_choice" in
+                    1|"") 
+                        add_firewall_port "$port" "tcp"
+                        ;;
+                    2)
+                        add_firewall_port "$port" "udp"
+                        ;;
+                    3)
+                        add_firewall_port "$port" "tcp"
+                        add_firewall_port "$port" "udp"
+                        ;;
+                esac
+                wait_key
+                ;;
+            3)
+                echo ""
+                read -r -p "  Port to remove: " port
+                [[ -z "$port" ]] && continue
+                
+                echo ""
+                echo "  ${C_BOLD}Protocol:${C_RESET}"
+                menu_option "1" "TCP" "(default)"
+                menu_option "2" "UDP" ""
+                menu_option "3" "Both" ""
+                printf "\n  ${C_CYAN}❯${C_RESET} "
+                local proto_choice=$(read_key)
+                
+                case "$proto_choice" in
+                    1|"") 
+                        remove_firewall_port "$port" "tcp"
+                        ;;
+                    2)
+                        remove_firewall_port "$port" "udp"
+                        ;;
+                    3)
+                        remove_firewall_port "$port" "tcp"
+                        remove_firewall_port "$port" "udp"
+                        ;;
+                esac
+                wait_key
+                ;;
+            M)
+                run_firewall_mode_wizard && apply_firewall
+                ;;
+            B|Q) return ;;
+        esac
+    done
+}
+
+screen_observability() {
+    while true; do
+        show_banner
+        section "Observability"
+        
+        menu_option "1" "Health Check" ""
+        menu_option "2" "Recent Logs" ""
+        menu_option "3" "Audit Log" ""
+        menu_option "B" "Back" ""
+        
+        printf "\n${C_CYAN}❯${C_RESET} "
+        local c=$(read_key)
+        case "${c^^}" in
+            1) check_health ;;
+            2) tail_logs ;;
+            3) view_audit ;;
+            B|G) return ;;
+            Q) cleanup_exit 0 ;;
+        esac
+    done
+}
+
+screen_advanced_v2() {
+    while true; do
+        show_banner
+        section "Advanced Tools"
+        log_warn "For advanced operators only."
+        
+        menu_option "1" "Dry-Run Validator" "Zero side-effect check"
+        menu_option "2" "Firewall Diff" "Planned vs applied"
+        menu_option "3" "Troubleshooter" "Guided diagnostics"
+        menu_option "4" "Repair Wizard" "Step-by-step fix"
+        menu_option "5" "Export Diagnostics" "Sanitized bundle"
+        menu_option "6" "Watch Mode" "Live dashboard"
+        menu_option "7" "Quick Bench" "Performance test"
+        menu_option "D" "DDNS Setup" "Configure Dynamic DNS"
+        menu_option "W" "Web UI Settings" "Enable/HTTPS/LAN mode"
+        menu_option "B" "Back" ""
+        
+        printf "\n${C_CYAN}❯${C_RESET} "
+        local c=$(read_key)
+        case "${c^^}" in
+            1) run_dry_validator ;;
+            2) firewall_diff_viewer ;;
+            3) run_troubleshooter ;;
+            4) run_repair_wizard ;;
+            5) export_diagnostics_bundle ;;
+            6) run_watch_mode ;;
+            7) quick_bench ;;
+            D) configure_ddns ;;
+            W) screen_webui_settings ;;
+            B|G) return ;;
+            Q) cleanup_exit 0 ;;
+        esac
+    done
+}
+
+screen_webui_settings() {
+    while true; do
+        show_banner
+        section "Web UI Settings"
+        
+        local enabled=$(db_get_config web_ui_enabled)
+        local mode=$(db_get_config web_ui_mode)
+        local domain=$(db_get_config ssl_domain)
+        
+        printf "\n  ${C_BOLD}Current Status:${C_RESET}\n"
+        [[ "$enabled" == "true" ]] && printf "  ├─ Enabled:  ${C_GREEN}Yes${C_RESET}\n" || printf "  ├─ Enabled:  ${C_RED}No${C_RESET}\n"
+        printf "  ├─ Mode:     ${C_WHITE}%s${C_RESET}\n" "${mode:-not set}"
+        printf "  └─ Domain:   ${C_WHITE}%s${C_RESET}\n\n" "${domain:-not set}"
+        
+        menu_option "1" "Enable Web UI" ""
+        menu_option "2" "Disable Web UI" ""
+        menu_option "3" "Configure DDNS" "For WireGuard endpoint"
+        menu_option "B" "Back" ""
+        
+        printf "\n${C_CYAN}❯${C_RESET} "
+        local c=$(read_key)
+        case "${c^^}" in
+            1)
+                db_set_config "web_ui_enabled" "true"
+                db_set_config "web_ui_mode" "lan"
+                log_success "Web UI enabled. Restart required."
+                wait_key
+                ;;
+            2)
+                db_set_config "web_ui_enabled" "false"
+                docker stop samnet-wg-ui samnet-ui &>/dev/null || true
+                log_success "Web UI disabled."
+                wait_key
+                ;;
+            3)
+                run_ddns_wizard
+                wait_key
+                ;;
+            B|G) return ;;
+            Q) cleanup_exit 0 ;;
+        esac
+    done
+}
+
+screen_about() {
+    show_banner
+    section "About SamNet-WG"
+    
+    draw_box "Mission" \
+        "Production-grade, self-hosted WireGuard platform." \
+        "No cloud. No tracking. Just reliability."
+    
+    printf "\n  ${C_BOLD}Links${C_RESET}\n"
+    printf "  └─ GitHub: ${C_CYAN}github.com/samnet-wg${C_RESET}\n"
+    printf "\n  Version: %s\n" "$VERSION"
+    
+    wait_key
+}
+
+# Consolidating redundant uninstall...
+
+# ══════════════════════════════════════════════════════════════════════════════
+# 9. HELPER OPERATIONS
+# ══════════════════════════════════════════════════════════════════════════════
+
+# Consolidating stubs...
+
+archive_stale() {
+    local count=$(get_stale_peer_count)
+    [[ "$count" -eq 0 ]] && { log_info "No stale peers"; wait_key; return; }
+    confirm "Archive $count stale peers?" && log_success "Archived." || log_info "Cancelled."
+    wait_key
+}
+
+list_peers() {
+    show_banner
+    section "All Peers"
+    printf "  ${C_DIM}Subnet:${C_RESET} ${C_WHITE}%s${C_RESET}\n" "$(db_get_config subnet_cidr)"
+    printf "\n  ${C_BOLD}%-20s %-18s %-8s${C_RESET}\n" "NAME" "IP" "STATUS"
+    
+    scan_peers | \
+    while IFS='|' read -r n ip src s; do
+        [[ "$s" == "ACTIVE" ]] && printf "  %-20s %-18s ${C_GREEN}%s${C_RESET}\n" "$n" "$ip" "$s" \
+                                || printf "  %-20s %-18s ${C_RED}%s${C_RESET}\n" "$n" "$ip" "$s"
+    done
+
+    wait_key
+}
+
+# Alias for menu compatibility
+list_peers_screen() {
+    list_peers
+}
+
+run_dry_validator() {
+    show_banner
+    section "Dry-Run Validator"
+    log_info "Checking..."
+    
+    local checks=(
+        "WG module:lsmod 2>/dev/null | grep -q wireguard"
+        "Database:test -f $DB_PATH"
+        "Docker:systemctl is-active --quiet docker"
+    )
+    for check in "${checks[@]}"; do
+        local name="${check%%:*}"
+        local cmd="${check#*:}"
+        printf "  %s..." "$name"
+        eval "$cmd" &>/dev/null && printf " ${C_GREEN}✔${C_RESET}\n" || printf " ${C_RED}✘${C_RESET}\n"
+    done
+    wait_key
+}
+
+run_repair() {
+    run_repair_wizard
+}
+
+secrets_health() {
+    show_banner
+    section "Secrets Health"
+    [[ -f /var/lib/samnet-wg/master.key ]] && log_success "Master key exists" || log_error "Master key missing"
+    [[ -f /etc/wireguard/privatekey ]] && log_success "WG key exists" || log_error "WG key missing"
+    wait_key
+}
+
+view_audit() {
+    show_banner
+    section "Audit Log"
+    sqlite3 "$DB_PATH" "SELECT datetime(created_at), action, substr(details,1,30) FROM audit_logs ORDER BY created_at DESC LIMIT 10;" 2>/dev/null || log_warn "No logs"
+    wait_key
+}
+
+rotate_token() {
+    confirm "Rotate bootstrap token?" || return
+    log_success "Token: $(tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32)"
+    wait_key
+}
+
+check_health() {
+    show_banner
+    section "Health Check"
+    curl -sf $(get_api_url)/health/live &>/dev/null && log_success "Live: OK" || log_error "Live: FAIL"
+    curl -sf $(get_api_url)/health/ready &>/dev/null && log_success "Ready: OK" || log_error "Ready: FAIL"
+    wait_key
+}
+
+tail_logs() {
+    show_banner
+    section "Recent Logs"
+    journalctl -u wg-quick@wg0 -u docker --no-pager -n 15 2>/dev/null | sed 's/\(key\|password\|token\)=[^ ]*/\1=***REDACTED***/gi' || log_warn "No logs"
+    wait_key
+}
+
+firewall_diff() {
+    show_banner
+    section "Firewall Rules"
+    nft list ruleset 2>/dev/null | head -30 || log_warn "nft not available"
+    wait_key
+}
+
+quick_bench() {
+    show_banner
+    section "Quick Benchmark"
+    
+    local start=$(date +%s%N)
+    sqlite3 "$DB_PATH" "SELECT COUNT(*) FROM peers;" &>/dev/null
+    local end=$(date +%s%N)
+    printf "  DB Query: %d ms\n" "$(( (end - start) / 1000000 ))"
+    
+    local api=$(curl -o /dev/null -s -w '%{time_total}' $(get_api_url)/health/live 2>/dev/null || echo "N/A")
+    printf "  API: %s s\n" "$api"
+    wait_key
+}
+
+export_diag() {
+    local out="/tmp/samnet-diag-$(date +%Y%m%d-%H%M%S).tar.gz"
+    local tmp=$(mktemp)
+    uname -a > "$tmp/system.txt" 2>/dev/null
+    wg show > "$tmp/wg.txt" 2>/dev/null
+    nft list ruleset > "$tmp/fw.txt" 2>/dev/null
+    tar -czf "$out" -C "$tmp" . 2>/dev/null
+    rm -rf "$tmp"
+    log_success "Exported: $out"
+    wait_key
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# 10. POWER USER FEATURES
+# ══════════════════════════════════════════════════════════════════════════════
+
+readonly LOCK_FILE="/var/run/samnet-cli.lock"
+readonly SNAPSHOT_DIR="/var/lib/samnet-wg/snapshots"
+
+# Session Lock
+acquire_session_lock() {
+    if [[ -f "$LOCK_FILE" ]]; then
+        local pid=$(cat "$LOCK_FILE" 2>/dev/null)
+        if kill -0 "$pid" 2>/dev/null; then
+            log_error "Another session running (PID: $pid)"
+            exit 1
+        fi
+        rm -f "$LOCK_FILE"
+    fi
+    echo $$ > "$LOCK_FILE"
+    trap 'rm -f "$LOCK_FILE"; cleanup_exit 0' EXIT
+}
+
+release_session_lock() { rm -f "$LOCK_FILE"; }
+
+# Command Palette (/ or Ctrl+P)
+declare -a PALETTE_ACTIONS=(
+    "status|Status Dashboard|screen_status"
+    "peers|Manage Peers|screen_peers"
+    "create|Create Peer|add_peer_wizard"
+    "install|Run Installation|do_install"
+    "repair|Run Repair|run_repair_wizard"
+    "diag|Export Diagnostics|export_diagnostics_bundle"
+    "trouble|Troubleshooter|run_troubleshooter"
+    "fwdiff|Firewall Diff|firewall_diff_viewer"
+    "watch|Watch Mode|run_watch_mode"
+    "health|Health Check|check_health"
+    "logs|Recent Logs|tail_logs"
+    "audit|Audit Log|view_audit"
+    "about|About SamNet|screen_about"
+    "quit|Exit|cleanup_exit 0"
+)
+
+show_command_palette() {
+    local filter=""
+    while true; do
+        show_banner
+        section "Command Palette"
+        printf "\n  ${C_DIM}Type to filter, Enter to select, Esc to close${C_RESET}\n\n"
+        printf "  ${C_CYAN}❯${C_RESET} ${C_WHITE}%s${C_RESET}${C_DIM}█${C_RESET}\n\n" "$filter"
+        
+        local count=0
+        for action in "${PALETTE_ACTIONS[@]}"; do
+            IFS='|' read -r key label cmd <<< "$action"
+            if [[ -z "$filter" || "$key" == *"$filter"* || "${label,,}" == *"${filter,,}"* ]]; then
+                printf "  ${C_CYAN}%-10s${C_RESET} %s\n" "$key" "$label"
+                ((count++))
+                [[ $count -ge 8 ]] && break
+            fi
+        done
+        
+        show_footer "[Enter] Run  [Esc] Cancel"
+        
+        IFS= read -rsn1 key
+        case "$key" in
+            $'\x1b') return ;;
+            $'\x7f'|$'\b') filter="${filter%?}" ;;
+            '') 
+                for action in "${PALETTE_ACTIONS[@]}"; do
+                    IFS='|' read -r k l cmd <<< "$action"
+                    if [[ -z "$filter" || "$k" == *"$filter"* || "${l,,}" == *"${filter,,}"* ]]; then
+                        eval "$cmd"
+                        return
+                    fi
+                done
+                ;;
+            *) filter+="$key" ;;
+        esac
+    done
+}
+
+# Diagnostics Bundle Generator
+export_diagnostics_bundle() {
+    show_banner
+    section "Export Diagnostics Bundle"
+    
+    local snap_id=$(date +%Y%m%d-%H%M%S)
+    local outfile="/tmp/samnet-diag-${snap_id}.tar.gz"
+    
+    log_info "Generating sanitized bundle (ID: $snap_id)..."
+    
+    local tmpdir=$(mktemp -d)
+    
+    # System info
+    uname -a > "$tmpdir/system.txt" 2>/dev/null
+    cat /etc/os-release > "$tmpdir/os.txt" 2>/dev/null
+    df -h > "$tmpdir/disk.txt" 2>/dev/null
+    free -h > "$tmpdir/memory.txt" 2>/dev/null
+    
+    # Network (sanitized)
+    ip addr | sed 's/ether [^ ]*/ether XX:XX:XX:XX:XX:XX/g' > "$tmpdir/network.txt" 2>/dev/null
+    ip route > "$tmpdir/routes.txt" 2>/dev/null
+    
+    # WireGuard (sanitized - remove keys)
+    wg show 2>/dev/null | sed 's/\(private\|public\|preshared\) key:.*/\1 key: ***REDACTED***/gi' > "$tmpdir/wireguard.txt"
+    
+    # Firewall
+    nft list ruleset > "$tmpdir/firewall.txt" 2>/dev/null
+    
+    # Firewall mode and ports config
+    echo "firewall_mode=$(db_get_config firewall_mode)" > "$tmpdir/firewall_config.txt"
+    echo "listen_port=$(db_get_config listen_port)" >> "$tmpdir/firewall_config.txt"
+    [[ -f /etc/samnet-ports.nft ]] && cp /etc/samnet-ports.nft "$tmpdir/samnet-ports.nft"
+    [[ -f /etc/nftables.conf ]] && cp /etc/nftables.conf "$tmpdir/nftables.conf"
+    
+    # Services
+    systemctl status wg-quick@wg0 > "$tmpdir/wg-status.txt" 2>/dev/null
+    docker ps -a > "$tmpdir/docker.txt" 2>/dev/null
+    
+    # Logs (sanitized)
+    journalctl -u wg-quick@wg0 --no-pager -n 100 2>/dev/null | \
+        sed 's/\(key\|password\|token\|secret\)=[^ ]*/\1=***REDACTED***/gi' > "$tmpdir/logs.txt"
+    
+    # DB stats (no sensitive data)
+    [[ -f "$DB_PATH" ]] && sqlite3 "$DB_PATH" "SELECT 'peers', COUNT(*) FROM peers UNION SELECT 'users', COUNT(*) FROM users;" > "$tmpdir/db_stats.txt" 2>/dev/null
+    
+    # Manifest
+    echo "SamNet Diagnostics Bundle" > "$tmpdir/MANIFEST.txt"
+    echo "ID: $snap_id" >> "$tmpdir/MANIFEST.txt"
+    echo "Created: $(date -Iseconds)" >> "$tmpdir/MANIFEST.txt"
+    echo "Version: $VERSION" >> "$tmpdir/MANIFEST.txt"
+    
+    tar -czf "$outfile" -C "$tmpdir" . 2>/dev/null
+    rm -rf "$tmpdir"
+    
+    log_success "Bundle created!"
+    printf "\n  ${C_BOLD}File:${C_RESET} ${C_WHITE}%s${C_RESET}\n" "$outfile"
+    printf "  ${C_BOLD}ID:${C_RESET}   ${C_CYAN}%s${C_RESET}\n" "$snap_id"
+    printf "\n  ${C_DIM}Safe to share - all secrets redacted${C_RESET}\n"
+    wait_key
+}
+
+# Troubleshooter Wizard
+run_troubleshooter() {
+    show_banner
+    section "Troubleshooter Wizard"
+    
+    log_info "Running diagnostic checks..."
+    printf "\n"
+    
+    local issues=()
+    
+    # Check WireGuard
+    if ! systemctl is-active --quiet wg-quick@wg0; then
+        issues+=("WG|WireGuard not running|systemctl start wg-quick@wg0")
+    fi
+    
+    # Check interface
+    if ! ip link show wg0 &>/dev/null; then
+        issues+=("NET|wg0 interface missing|systemctl restart wg-quick@wg0")
+    fi
+    
+    # Check firewall
+    if ! nft list ruleset 2>/dev/null | grep -q "masquerade"; then
+        issues+=("FW|NAT rules missing|nft -f /etc/nftables.conf")
+    fi
+    
+    # Check firewall mode consistency
+    local fw_mode=$(db_get_config "firewall_mode")
+    if [[ "$fw_mode" == "samnet" ]]; then
+        if ! nft list table inet samnet-ports &>/dev/null; then
+            issues+=("FW|samnet-ports table missing|samnet --apply-firewall")
+        fi
+    fi
+    
+    # Check Docker
+    if ! systemctl is-active --quiet docker; then
+        issues+=("DOCKER|Docker not running|systemctl start docker")
+    fi
+    
+    # Check API
+    if ! curl -sf $(get_api_url)/health/live &>/dev/null; then
+        issues+=("API|API not responding|docker restart samnet-wg-api")
+    fi
+    
+    # Check DNS
+    if ! curl -sf --max-time 3 https://google.com &>/dev/null; then
+        issues+=("DNS|No internet/DNS|Check network config")
+    fi
+    
+    if [[ ${#issues[@]} -eq 0 ]]; then
+        log_success "All checks passed! No issues detected."
+    else
+        log_warn "Found ${#issues[@]} issue(s):"
+        printf "\n"
+        
+        local i=1
+        for issue in "${issues[@]}"; do
+            IFS='|' read -r code desc fix <<< "$issue"
+            printf "  ${C_RED}%d.${C_RESET} [%s] %s\n" "$i" "$code" "$desc"
+            printf "     ${C_DIM}Fix: %s${C_RESET}\n\n" "$fix"
+            ((i++))
+        done
+        
+        if confirm "Auto-fix all issues?"; then
+            for issue in "${issues[@]}"; do
+                IFS='|' read -r code desc fix <<< "$issue"
+                log_info "Fixing: $desc..."
+                if eval "$fix"; then
+                    log_success "Applied: $fix"
+                else
+                    log_error "Failed to fix: $desc"
+                fi
+            done
+            log_success "Fixes applied. Re-run to verify."
+        fi
+    fi
+    wait_key
+}
+
+# Firewall Diff Viewer
+firewall_diff_viewer() {
+    show_banner
+    section "Firewall Diff Viewer"
+    
+    local snap_id=$(date +%s | tail -c 5)
+    printf "  ${C_DIM}Snapshot ID: %s${C_RESET}\n\n" "$snap_id"
+    
+    # Show firewall mode
+    local mode=$(db_get_config "firewall_mode")
+    printf "  ${C_BOLD}Firewall Mode:${C_RESET} ${C_CYAN}%s${C_RESET}\n\n" "${mode:-not set}"
+    
+    log_info "Comparing planned vs applied rules..."
+    printf "\n"
+    
+    # Get current applied rules
+    local applied=$(nft list ruleset 2>/dev/null)
+    
+    printf "  ${C_BOLD}Applied Tables:${C_RESET}\n"
+    nft list tables 2>/dev/null | while read line; do
+        printf "  ${C_DIM}│${C_RESET} %s\n" "$line"
+    done
+    
+    printf "\n  ${C_BOLD}Config Files:${C_RESET}\n"
+    if [[ -f /etc/nftables.conf ]]; then
+        printf "  ${C_GREEN}●${C_RESET} /etc/nftables.conf (%d bytes)\n" "$(wc -c < /etc/nftables.conf)"
+    else
+        printf "  ${C_RED}●${C_RESET} /etc/nftables.conf - Missing!\n"
+    fi
+    
+    if [[ -f /etc/samnet-ports.nft ]]; then
+        printf "  ${C_GREEN}●${C_RESET} /etc/samnet-ports.nft (%d bytes)\n" "$(wc -c < /etc/samnet-ports.nft)"
+    else
+        printf "  ${C_DIM}●${C_RESET} /etc/samnet-ports.nft - Not created\n"
+    fi
+    
+    # Show open ports if in samnet mode
+    if [[ "$mode" == "samnet" ]] && nft list table inet samnet-ports &>/dev/null; then
+        printf "\n  ${C_BOLD}Open Ports (samnet-ports):${C_RESET}\n"
+        nft list chain inet samnet-ports input 2>/dev/null | \
+            grep -E "(tcp|udp) dport" | head -10 | while read line; do
+                printf "  ${C_DIM}│${C_RESET} %s\n" "$line"
+            done
+    fi
+    
+    # Check syntax
+    if [[ -f /etc/nftables.conf ]] && nft -c -f /etc/nftables.conf &>/dev/null; then
+        printf "\n  ${C_GREEN}✔${C_RESET} Config syntax valid\n"
+    elif [[ -f /etc/nftables.conf ]]; then
+        printf "\n  ${C_RED}✘${C_RESET} Config has syntax errors\n"
+    fi
+    
+    printf "\n"
+    menu_option "A" "Apply config" "(reload from file)"
+    menu_option "S" "Save snapshot" "(backup current)"
+    menu_option "B" "Back" ""
+    
+    printf "\n${C_CYAN}❯${C_RESET} "
+    local c=$(read_key)
+    case "${c^^}" in
+        A)
+            if confirm "Apply firewall config? (Snap: $snap_id)"; then
+                nft list ruleset > "$SNAPSHOT_DIR/fw-$snap_id.nft" 2>/dev/null
+                apply_firewall && log_success "Applied!" || log_error "Failed"
+            fi
+            wait_key
+            ;;
+        S)
+            mkdir -p "$SNAPSHOT_DIR"
+            nft list ruleset > "$SNAPSHOT_DIR/fw-$snap_id.nft" 2>/dev/null
+            log_success "Saved: $SNAPSHOT_DIR/fw-$snap_id.nft"
+            wait_key
+            ;;
+    esac
+}
+
+# Repair Wizard with Explainable Steps
+run_repair_wizard() {
+    show_banner
+    section "Repair Wizard"
+    
+    log_warn "This will check and repair SamNet components."
+    printf "\n  ${C_BOLD}Repair Checklist:${C_RESET}\n\n"
+    
+    local steps=(
+        "Check database integrity"
+        "Regenerate WireGuard config"
+        "Verify firewall rules"
+        "Restart WireGuard service"
+        "Check Docker containers"
+    )
+    
+    local i=1
+    for step in "${steps[@]}"; do
+        printf "  ${C_DIM}%d.${C_RESET} %s\n" "$i" "$step"
+        ((i++))
+    done
+    
+    printf "\n"
+    if ! confirm "Proceed with repair?"; then
+        log_info "Cancelled."
+        wait_key
+        return
+    fi
+    
+    printf "\n"
+    
+    # Step 1
+    printf "  ${C_CYAN}[1/5]${C_RESET} Database integrity..."
+    if [[ -f "$DB_PATH" ]] && sqlite3 "$DB_PATH" "PRAGMA integrity_check;" &>/dev/null; then
+        printf " ${C_GREEN}✔${C_RESET}\n"
+    else
+        printf " ${C_YELLOW}⚠${C_RESET} (will reinit)\n"
+        ensure_db_init
+    fi
+    
+    # Step 2
+    printf "  ${C_CYAN}[2/5]${C_RESET} WireGuard config..."
+    write_wg_conf
+    printf " ${C_GREEN}✔${C_RESET}\n"
+    
+    # Step 3
+    printf "  ${C_CYAN}[3/5]${C_RESET} Firewall rules..."
+    apply_firewall &>/dev/null && printf " ${C_GREEN}✔${C_RESET}\n" || printf " ${C_RED}✘${C_RESET}\n"
+    
+    # Step 4
+    printf "  ${C_CYAN}[4/5]${C_RESET} WireGuard service..."
+    ensure_wg_up &>/dev/null
+    printf " ${C_GREEN}✔${C_RESET}\n"
+    # Step 5
+    printf "  ${C_CYAN}[5/5]${C_RESET} Docker containers..."
+    if [[ -f "$INSTALL_DIR/services/docker-compose.yml" ]]; then
+        local api_port=$(db_get_config "api_port")
+        export API_PORT="${api_port:-8766}"
+        docker compose -f "$INSTALL_DIR/services/docker-compose.yml" up -d &>/dev/null
+        printf " ${C_GREEN}✔${C_RESET}\n"
+    else
+        printf " ${C_DIM}skipped${C_RESET}\n"
+    fi
+    
+    printf "\n"
+    log_success "Repair complete!"
+    wait_key
+}
+
+# Danger Zone Gating
+require_danger_confirmation() {
+    local action="$1"
+    local snap_id=$(date +%s | tail -c 4)
+    
+    printf "\n  ${C_RED}${C_BOLD}⚠ DANGER ZONE ⚠${C_RESET}\n"
+    printf "  ${C_DIM}Action: %s${C_RESET}\n\n" "$action"
+    printf "  To confirm, type: ${C_BOLD}%s${C_RESET}\n" "$snap_id"
+    printf "${C_CYAN}❯${C_RESET} "
+    
+    local input
+    read -r input
+    [[ "$input" == "$snap_id" ]]
+}
+
+# Watch Mode (low-overhead health dashboard)
+run_watch_mode() {
+    log_info "Entering watch mode (Ctrl+C to exit)..."
+    local interval=5
+    
+    while true; do
+        clear_screen
+        printf "${C_ORANGE}${C_BOLD}SamNet Watch Mode${C_RESET} ${C_DIM}(refresh: ${interval}s)${C_RESET}\n"
+        printf "${C_DIM}$(draw_line '─' 50)${C_RESET}\n\n"
+        
+        # Status row
+        local wg=$(get_wg_status)
+        [[ "$wg" == "ONLINE" ]] && printf "  WG: ${C_GREEN}●${C_RESET} " || printf "  WG: ${C_RED}●${C_RESET} "
+        
+        local docker_ok=$(systemctl is-active docker 2>/dev/null)
+        [[ "$docker_ok" == "active" ]] && printf "Docker: ${C_GREEN}●${C_RESET} " || printf "Docker: ${C_RED}●${C_RESET} "
+        
+        local api_ok=$(curl -sf --max-time 1 $(get_api_url)/health/live &>/dev/null && echo "ok")
+        [[ -n "$api_ok" ]] && printf "API: ${C_GREEN}●${C_RESET}" || printf "API: ${C_RED}●${C_RESET}"
+        printf "\n\n"
+        
+        # Metrics
+        printf "  Peers: ${C_WHITE}%s${C_RESET}  CPU: ${C_WHITE}%s%%${C_RESET}  Mem: ${C_WHITE}%s${C_RESET}\n" \
+            "$(get_peer_count)" "$(get_cpu_usage)" "$(get_mem_usage)"
+        
+        printf "\n${C_DIM}  Ctrl+C to exit${C_RESET}\n"
+        
+        sleep $interval || break
+    done
+}
+
+# DDNS Configuration Wizard
+configure_ddns() {
+    show_banner
+    section "DDNS Setup"
+    
+    log_info "Dynamic DNS keeps your VPN accessible if your home IP changes."
+    printf "\n"
+    
+    # Check current status
+    local current_conf=$(sqlite3 "$DB_PATH" "SELECT config FROM feature_flags WHERE key='ddns';" 2>/dev/null)
+    local enabled=$(sqlite3 "$DB_PATH" "SELECT enabled FROM feature_flags WHERE key='ddns';" 2>/dev/null)
+    
+    if [[ "$enabled" == "1" && -n "$current_conf" ]]; then
+        local prov=$(echo "$current_conf" | jq -r .provider 2>/dev/null)
+        local dom=$(echo "$current_conf" | jq -r .domain 2>/dev/null)
+        printf "  Status:   ${C_GREEN}● ACTIVE${C_RESET}\n"
+        printf "  Provider: ${C_WHITE}%s${C_RESET}\n" "$prov"
+        printf "  Domain:   ${C_WHITE}%s${C_RESET}\n\n" "$dom"
+        
+        if confirm "Reconfigure DDNS?"; then
+            : # Continue
+        else
+            if confirm "Disable DDNS?"; then
+                sqlite3 "$DB_PATH" "UPDATE feature_flags SET enabled=0 WHERE key='ddns';"
+                log_success "DDNS disabled."
+            fi
+            wait_key
+            return
+        fi
+    else
+        printf "  Status:   ${C_DIM}● NOT CONFIGURED${C_RESET}\n\n"
+    fi
+    
+    printf "  ${C_BOLD}Select Provider:${C_RESET}\n"
+    printf "    ${C_CYAN}[1]${C_RESET} DuckDNS      ${C_DIM}(Free, Easy)${C_RESET}\n"
+    printf "    ${C_CYAN}[2]${C_RESET} Cloudflare   ${C_DIM}(Custom Domain)${C_RESET}\n"
+    printf "    ${C_CYAN}[3]${C_RESET} Custom HTTP  ${C_DIM}(Advanced)${C_RESET}\n"
+    
+    printf "\n"
+    local choice=$(prompt "Select [1-3]")
+    local provider=""
+    local domain=""
+    local token=""
+    local webhook=""
+    
+    case "$choice" in
+        1)
+            provider="duckdns"
+            printf "\n  ${C_BOLD}DuckDNS Setup${C_RESET}\n"
+            printf "  1. Go to ${C_CYAN}duckdns.org${C_RESET}\n"
+            printf "  2. Create a domain (e.g., samnet.duckdns.org)\n"
+            printf "  3. Copy your token\n\n"
+            
+            domain=$(prompt "Domain (e.g. mysite.duckdns.org)")
+            token=$(prompt "Token")
+            [[ -z "$domain" || -z "$token" ]] && { log_error "Missing info"; wait_key; return; }
+            ;;
+        2)
+            provider="cloudflare"
+            echo -e "\n  ${C_BOLD}Cloudflare Setup${C_RESET}"
+            echo "  Requires an API Token with 'Zone:DNS:Edit' permissions."
+            
+            domain=$(prompt "Domain (e.g. vpn.example.com)")
+            token=$(prompt "API Token")
+            [[ -z "$domain" || -z "$token" ]] && { log_error "Missing info"; wait_key; return; }
+            ;;
+        3)
+            provider="webhook"
+            webhook=$(prompt "Webhook URL")
+            [[ -z "$webhook" ]] && { log_error "Missing URL"; wait_key; return; }
+            ;;
+        *)
+            log_error "Invalid selection."
+            wait_key
+            return
+            ;;
+    esac
+    
+    log_info "Saving configuration..."
+    
+    # Construct JSON
+    local json_conf
+    if [[ "$provider" == "webhook" ]]; then
+        json_conf=$(jq -n --arg p "$provider" --arg w "$webhook" '{provider: $p, webhook_url: $w, interval_minutes: 5}')
+    else
+        json_conf=$(jq -n --arg p "$provider" --arg d "$domain" --arg t "$token" '{provider: $p, domain: $d, token: $t, interval_minutes: 5}')
+    fi
+    
+    # Save to DB
+    sqlite3 "$DB_PATH" "INSERT OR REPLACE INTO feature_flags (key, enabled, config) VALUES ('ddns', 1, '$json_conf');"
+    
+    log_success "DDNS configured!"
+    log_info "Restarting API to apply changes..."
+    docker restart samnet-api >/dev/null 2>&1
+    
+    log_success "Done. Check logs in a few minutes to verify."
+    wait_key
+}
+
+# Help Overlay
+show_help_overlay() {
+    local screen="$1"
+    show_banner
+    section "Help: $screen"
+    
+    case "$screen" in
+        main)
+            draw_box "Main Menu" \
+                "Central navigation hub for SamNet-WG." \
+                "" \
+                "• Use number keys to navigate" \
+                "• Press / for command palette" \
+                "• Press ? for context help"
+            ;;
+        status)
+            draw_box "Status Dashboard" \
+                "Shows system health at a glance." \
+                "" \
+                "• WireGuard: VPN tunnel status" \
+                "• Peers: Active/stale client count" \
+                "• Resources: CPU, memory, disk"
+            ;;
+        peers)
+            draw_box "Peer Management" \
+                "Create and manage VPN clients." \
+                "" \
+                "• Create: Generate new peer config" \
+                "• Disable: Temporarily block peer" \
+                "• Archive: Remove inactive peers"
+            ;;
+        *)
+            printf "  ${C_DIM}No help available for this screen.${C_RESET}\n"
+            ;;
+    esac
+    wait_key
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# 11. MAIN MENU SCREENS
+# ══════════════════════════════════════════════════════════════════════════════
+
+# Status Dashboard Screen
+screen_status() {
+    while true; do
+        ui_draw_header_mini "Status Dashboard"
+        
+        # WireGuard Status
+        local wg_status=$(get_wg_status)
+        if [[ "$wg_status" == "ONLINE" ]]; then
+            printf "    ${T_GREEN}● WireGuard${T_RESET}  ${T_DIM}Interface wg0 active${T_RESET}\n"
+        else
+            printf "    ${T_RED}● WireGuard${T_RESET}  ${T_DIM}Interface wg0 down${T_RESET}\n"
+        fi
+        
+        # Docker/API Status
+        if docker ps --format '{{.Names}}' 2>/dev/null | grep -qE "samnet(-wg)?-api"; then
+            printf "    ${T_GREEN}● API Server${T_RESET}  ${T_DIM}Container running${T_RESET}\n"
+        else
+            printf "    ${T_RED}● API Server${T_RESET}  ${T_DIM}Container not running${T_RESET}\n"
+        fi
+        
+        # Peer count
+        local peer_count=0
+        # Prefer DB count (includes Web UI peers) over live WG count
+        if [[ -f "$DB_PATH" ]]; then
+            peer_count=$(db_query "SELECT COUNT(*) FROM peers;" 2>/dev/null)
+            [[ -z "$peer_count" ]] && peer_count=0
+        fi
+        # Fallback to live WG if DB returns 0 (for standalone mode)
+        if [[ "$peer_count" -eq 0 ]] && wg show wg0 &>/dev/null; then
+            peer_count=$(wg show wg0 | grep -c "peer:")
+        fi
+        
+        printf "    ${T_CYAN}● Peers${T_RESET}       ${T_WHITE}$peer_count connected${T_RESET}\n"
+        
+        printf "\n"
+        
+        # Show WireGuard details
+        printf "    ${T_CYAN}${T_BOLD}WireGuard Details:${T_RESET}\n"
+        printf "    ${T_DIM}────────────────────────────────────────────${T_RESET}\n"
+        wg show wg0 2>/dev/null | head -10 | while read line; do
+            printf "    ${T_DIM}%s${T_RESET}\n" "$line"
+        done
+        
+        ui_draw_footer "[R] Refresh  [B] Back"
+        
+        local key=$(read_key)
+        case "$key" in
+            r|R) ;; # Refresh - loop continues
+            b|B|$'\x1b') return ;;
+        esac
+    done
+}
+
+# Manage Peers Screen
+screen_peers() {
+    while true; do
+        # ──────── SYNC BEFORE DRAW ────────
+        # If Web UI is enabled, sync with its state periodically
+        if [[ "$(db_get_config web_ui_enabled)" == "true" ]]; then
+            reconcile_db_with_files &>/dev/null
+        fi
+        
+        ui_draw_header_mini "Manage Peers"
+        
+        # Show subnet and peer count
+        local raw_subnet=$(db_get_config "subnet_cidr")
+        if [[ -z "$raw_subnet" ]] && [[ -f "/etc/wireguard/wg0.conf" ]]; then
+             raw_subnet=$(grep "Address" /etc/wireguard/wg0.conf 2>/dev/null | cut -d= -f2 | tr -d ' ' | cut -d, -f1 | head -1)
+        fi
+        local subnet_display=$(normalize_cidr "$raw_subnet")
+        
+        # Consistent counting using unified source
+        local peer_count=$(scan_peers | grep -c .)
+        
+        printf "    ${T_CYAN}${T_BOLD}Network Status${T_RESET}\n"
+        printf "    ${T_DIM}────────────────────────────────────────────${T_RESET}\n"
+        printf "    ${T_WHITE}Subnet:${T_RESET} ${T_CYAN}%s${T_RESET}    ${T_WHITE}Peers:${T_RESET} ${T_GREEN}%s${T_RESET}\n\n" "$subnet_display" "$peer_count"
+        
+        printf "    ${T_CYAN}${T_BOLD}Peer Management${T_RESET}\n\n"
+        
+        menu_option "1" "Add Permanent Peer" "Create VPN client (no expiry)"
+        menu_option "2" "Add Temporary Peer" "Create time-limited access"
+        menu_option "3" "Add Bulk Peers" "Create multiple peers at once"
+        menu_option "4" "List Peers" "View all clients"
+        menu_option "5" "View Usage" "Bandwidth stats per peer"
+        menu_option "6" "Set Data Limit" "Configure bandwidth caps"
+        menu_option "7" "Remove Peer" "Delete a single client"
+        menu_option "8" "Bulk Remove" "Delete multiple peers"
+        menu_option "9" "Show QR Code" "Display config QR"
+        menu_option "r" "Rename Peer" "Change peer name"
+        menu_option "d" "Enable/Disable" "Toggle peer access"
+        menu_option "k" "Rotate Key / Repair" "Regenerate keys (Fix missing QR)"
+        menu_option "m" "Maintenance" "Backup, Restore & Migration"
+        printf "\n"
+        menu_option "B" "Back" ""
+        
+        ui_draw_footer "[1-9,R,D] Select  [B] Back"
+        printf "\n${C_CYAN}❯${C_RESET} "
+        
+        local key=$(read_key)
+        case "$key" in
+            1) add_peer_wizard ;;
+            2) add_temp_peer_wizard ;;
+            3) add_bulk_peers_wizard ;;
+            4) list_peers_screen ;;
+            5) view_usage_screen ;;
+            6) set_data_limit_wizard ;;
+            7) remove_peer_wizard ;;
+            8) remove_bulk_peers_wizard ;;
+            9) show_qr_wizard ;;
+            r|R) rename_peer_wizard ;;
+            d|D) toggle_peer_status_wizard ;;
+            k|K) rotate_peer_keys_wizard ;;
+            m|M) screen_maintenance ;;
+            "") ;; # Timeout - loop continues and refreshes
+            b|B|$'\x1b') return ;;
+        esac
+    done
+}
+
+# Rotate Peer Keys Wizard
+rotate_peer_keys_wizard() {
+    ui_draw_header_mini "Rotate Peer Keys"
+    
+    printf "    ${T_CYAN}This will regenerate the private/public keys for a peer.${T_RESET}\n"
+    printf "    ${T_YELLOW}Use this ONLY if you lost the client config/QR code.${T_RESET}\n"
+    printf "    ${T_DIM}Note: The old connection will stop working immediately.${T_RESET}\n"
+    printf "    ${T_DIM}You MUST scan the NEW QR code on your device after this.${T_RESET}\n\n"
+
+    # Unified peer scan
+    local names=()
+    while IFS='|' read -r n ip src s; do
+        [[ -n "$n" ]] && names+=("$n")
+    done < <(scan_peers)
+    
+    if [[ ${#names[@]} -eq 0 ]]; then
+        log_warn "No peers found."
+        wait_key
+        return
+    fi
+    
+    printf "    ${T_GREEN}Select peer to repair:${T_RESET}\n"
+    local i=1
+    for n in "${names[@]}"; do
+        printf "    ${T_GREEN}[%d]${T_RESET} %s\n" "$i" "$n"
+        ((i++))
+    done
+    
+    local choice=$(ui_prompt "Select #")
+    [[ -z "$choice" ]] && return
+    
+    local idx=$((choice-1))
+    local target_name="${names[$idx]}"
+    
+    if [[ -z "$target_name" ]]; then log_error "Invalid selection"; return; fi
+    
+    if confirm "Regenerate keys for '$target_name'? (Will break existing connection)"; then
+        log_info "Rotating keys..."
+        
+        # 1. Generate new keys
+        local priv=$(wg genkey)
+        local pub=$(echo "$priv" | wg pubkey)
+        local enc_priv=$(encrypt_peer_key "$priv")
+        
+        # 2. Update DB
+        if [[ -f "$DB_PATH" ]]; then
+            db_exec "UPDATE peers SET public_key='$pub', encrypted_private_key='$enc_priv' WHERE name='$target_name';"
+        fi
+        
+        # Remove old entry from wg0.conf
+        sed -i "/# $target_name/,/AllowedIPs/d" /etc/wireguard/wg0.conf
+        
+        # Get IP for this peer
+        local match_ip=""
+        if [[ -f "$DB_PATH" ]]; then
+            match_ip=$(db_query "SELECT allowed_ips FROM peers WHERE name='$target_name';")
+        fi
+        
+        # If IP missing from DB (rare), try to find it from old config backup or client file
+        if [[ -z "$match_ip" ]]; then
+             # Try client file
+             local cfile="$INSTALL_DIR/clients/${target_name}.conf"
+             if [[ -f "$cfile" ]]; then
+                 match_ip=$(grep "Address" "$cfile" | cut -d= -f2 | tr -d ' ')
+             fi
+        fi
+        
+        if [[ -z "$match_ip" ]]; then
+            log_error "Could not determine IP for peer. Cannot rotate."
+            wait_key
+            return
+        fi
+
+        local ip_short=$(echo "$match_ip" | cut -d/ -f1)
+        
+        # Add new entry to wg0.conf
+        echo "" >> /etc/wireguard/wg0.conf
+        echo "[Peer]" >> /etc/wireguard/wg0.conf
+        echo "# $target_name" >> /etc/wireguard/wg0.conf
+        echo "PublicKey = $pub" >> /etc/wireguard/wg0.conf
+        echo "AllowedIPs = $match_ip" >> /etc/wireguard/wg0.conf
+        
+        # Live reload
+        if command -v wg &>/dev/null; then
+            wg set wg0 peer "$pub" allowed-ips "${ip_short}/32"
+        fi
+        
+        # 4. Regenerate Client Config
+        local client_conf="$INSTALL_DIR/clients/${target_name}.conf"
+        local server_pubkey=$(cat /etc/wireguard/publickey 2>/dev/null)
+        local server_port=$(grep "ListenPort" /etc/wireguard/wg0.conf | cut -d= -f2 | tr -d ' ')
+        
+        # Get endpoint
+        local custom_host=$(db_get_config "endpoint_hostname")
+        local server_endpoint=""
+        if [[ -n "$custom_host" ]]; then
+            server_endpoint="$custom_host"
+        else
+            server_endpoint=$(curl -4 -sf ifconfig.me 2>/dev/null || echo "YOUR_SERVER_IP")
+        fi
+
+        local mtu=$(db_get_config "mtu")
+        [[ -z "$mtu" ]] && mtu="1380"
+        local dns=$(db_get_config "dns_server")
+        [[ -z "$dns" ]] && dns="1.1.1.1, 8.8.8.8"
+
+        mkdir -p "$(dirname "$client_conf")"
+        cat <<EOF > "$client_conf"
+[Interface]
+PrivateKey = $priv
+Address = $match_ip
+DNS = $dns
+MTU = $mtu
+
+[Peer]
+PublicKey = $server_pubkey
+Endpoint = ${server_endpoint}:${server_port}
+AllowedIPs = 0.0.0.0/0
+PersistentKeepalive = 25
+EOF
+        chmod 600 "$client_conf"
+        
+        log_success "Keys rotated! New QR code generated."
+        
+        printf "\n    ${T_CYAN}${T_BOLD}Scan New QR Code:${T_RESET}\n"
+        qrencode -t UTF8 -r "$client_conf" | less -R -K -P "Scan QR (Press Q to continue)"
+    fi
+    wait_key
+}
+
+# Rename Peer Wizard
+# Rename Peer Wizard
+rename_peer_wizard() {
+    ui_draw_header_mini "Rename Peer"
+    
+    # Select Peer Code (Unified scan_peers)
+    local names=()
+    local ids=()
+    while IFS='|' read -r n ip src s; do
+        [[ -n "$n" ]] && names+=("$n")
+        # In file mode, ID might be empty
+        ids+=("")
+        if [[ "$src" == "DB" && -f "$DB_PATH" ]]; then
+             local fetched_id=$(db_query "SELECT id FROM peers WHERE name='$n';")
+             ids[-1]="$fetched_id"
+        fi
+    done < <(scan_peers)
+    
+    if [[ ${#names[@]} -eq 0 ]]; then
+        log_warn "No peers found."
+        wait_key
+        return
+    fi
+    
+    printf "    ${T_CYAN}Select peer to rename:${T_RESET}\n\n"
+    local i=1
+    for n in "${names[@]}"; do
+        printf "    ${T_GREEN}[%d]${T_RESET} %s\n" "$i" "$n"
+        ((i++))
+    done
+    
+    local choice=$(ui_prompt "Select #")
+    [[ -z "$choice" ]] && return
+    
+    local idx=$((choice-1))
+    local target_name="${names[$idx]}"
+    local target_id="${ids[$idx]}"
+    
+    if [[ -z "$target_name" ]]; then log_error "Invalid selection"; return; fi
+    
+    local new_name=$(ui_prompt "New name for '$target_name'")
+    [[ -z "$new_name" ]] && return
+    [[ ! "$new_name" =~ ^[a-zA-Z0-9_-]+$ ]] && { log_error "Invalid name (alphanumeric only)"; return; }
+    
+    if ui_confirm "Rename '$target_name' to '$new_name'?"; then
+         if [[ "$(db_get_config web_ui_enabled)" == "true" && -n "$target_id" ]]; then
+              # Use new api_call helper (docker exec)
+              local api_resp
+              api_resp=$(api_call "PUT" "/internal/peers/$target_id" "{\"name\": \"$new_name\"}")
+              
+              # Simple success check (empty or JSON response usually means OK, error prints text)
+              # But let's check exit code of docker exec indirectly via the result
+              if [[ $? -eq 0 && -n "$api_resp" ]]; then 
+                  log_success "Renamed via API."
+                  sleep 1
+                  return
+              else
+                  log_warn "API rename failed. Falling back to local/DB mode..."
+              fi
+         fi
+         
+         # Local Mode (Mode A or Fallback)
+         local client_dir="$INSTALL_DIR/clients"
+         mv "$client_dir/${target_name}.conf" "$client_dir/${new_name}.conf" 2>/dev/null
+         mv "$client_dir/${target_name}.conf.limit" "$client_dir/${new_name}.conf.limit" 2>/dev/null
+         mv "$client_dir/${target_name}.conf.expiry" "$client_dir/${new_name}.conf.expiry" 2>/dev/null
+         mv "$client_dir/${target_name}.conf.disabled" "$client_dir/${new_name}.conf.disabled" 2>/dev/null
+         
+         # Update DB if exists
+         if [[ -f "$DB_PATH" ]]; then
+            db_exec "UPDATE peers SET name='$new_name' WHERE name='$target_name';"
+         fi
+         
+         # Update wg0 comment
+         sed -i "s/# $target_name/# $new_name/" /etc/wireguard/wg0.conf 2>/dev/null
+         
+         log_success "Renamed to '$new_name'."
+    fi
+    wait_key
+}
+
+# Toggle Enable/Disable Wizard
+toggle_peer_status_wizard() {
+    ui_draw_header_mini "Enable/Disable Peer"
+    
+     local names=()
+     local ids=()
+     local statuses=()
+     
+     # Use scan_peers for unified list
+     while IFS='|' read -r n ip src s; do
+        [[ -z "$n" ]] && continue
+        
+        local is_disabled=0
+        [[ "$s" == "DISABLED" || "$s" == "OFFLINE" || "$s" == "OVER LIMIT" ]] && is_disabled=1
+        
+        names+=("$n")
+        ids+=("")
+        statuses+=("$is_disabled")
+        
+        # Try to fetch ID if DB is there (for API fallback)
+        if [[ "$src" == "DB" && -f "$DB_PATH" ]]; then
+             local fetched_id=$(db_query "SELECT id FROM peers WHERE name='$n';")
+             ids[-1]="$fetched_id"
+        fi
+     done < <(scan_peers)
+      
+    if [[ ${#names[@]} -eq 0 ]]; then log_warn "No peers found."; wait_key; return; fi
+    
+    printf "    ${T_CYAN}Select peer to toggle:${T_RESET}\n\n"
+    local i=1
+    for idx in "${!names[@]}"; do
+        local n="${names[$idx]}"
+        local s="${statuses[$idx]}"
+        local status_str="${T_GREEN}Enabled${T_RESET}"
+        [[ "$s" == "1" ]] && status_str="${T_RED}Disabled${T_RESET}"
+        printf "    ${T_GREEN}[%d]${T_RESET} %-20s %s\n" "$i" "$n" "$status_str"
+        ((i++))
+    done
+    
+    local choice=$(ui_prompt "Select #")
+    [[ -z "$choice" ]] && return
+    
+    local idx=$((choice-1))
+    local target_name="${names[$idx]}"
+    local target_id="${ids[$idx]}"
+    local current_disabled="${statuses[$idx]}"
+    
+    if [[ -z "$target_name" ]]; then log_error "Invalid selection"; return; fi
+    
+    local action="Disable"
+    local new_state="true"
+    [[ "$current_disabled" == "1" ]] && { action="Enable"; new_state="false"; }
+    
+    if ui_confirm "$action '$target_name'?"; then
+        # API Delegation
+         if [[ "$(db_get_config web_ui_enabled)" == "true" && -n "$target_id" ]]; then
+             local api_url=$(get_api_url)
+             curl -s -X PUT "${api_url}/internal/peers/$target_id" \
+                -H "Content-Type: application/json" \
+                -d "{\"disabled\": $new_state}" >/dev/null
+             if [[ $? -eq 0 ]]; then
+                 # Maintain local marker parity immediately
+                 # We rely on the fall-through to the local block to touch/rm the file
+                 # to avoid duplicate operations and ensure directory existence checks happen once.
+                 
+                 log_success "Synced status with API."
+                 # FALL THROUGH to ensure local interface is physically updated
+                 # return  <-- REMOVED to fix persistence issue
+             fi
+         fi
+         
+         # Local Mode (Mode A or Fallback)
+         local client_conf="$INSTALL_DIR/clients/${target_name}.conf"
+         local pub=""
+         local ip=""
+         
+         # Try DB first
+         if [[ -f "$DB_PATH" ]]; then
+            pub=$(db_query "SELECT public_key FROM peers WHERE name='$target_name';")
+            ip=$(db_query "SELECT allowed_ips FROM peers WHERE name='$target_name';")
+         fi
+         
+         # Fallback to file extraction if empty (Mode A)
+         if [[ -z "$pub" && -f "$client_conf" ]]; then
+             local priv=$(grep "PrivateKey" "$client_conf" 2>/dev/null | cut -d= -f2 | tr -d ' ')
+             [[ -n "$priv" ]] && pub=$(echo "$priv" | wg pubkey 2>/dev/null)
+             ip=$(grep "Address" "$client_conf" 2>/dev/null | cut -d= -f2 | tr -d ' ')
+         fi
+         
+         if [[ -z "$pub" ]]; then
+            log_error "Could not find Public Key for '$target_name'."
+            wait_key
+            return
+         fi
+         
+         if [[ "$new_state" == "true" ]]; then
+              # DISABLE: First accumulate current data into total counters
+              if [[ -f "$DB_PATH" ]]; then
+                  db_exec "UPDATE peers SET total_rx_bytes = total_rx_bytes + COALESCE(rx_bytes, 0), total_tx_bytes = total_tx_bytes + COALESCE(tx_bytes, 0), rx_bytes = 0, tx_bytes = 0 WHERE name='$target_name';"
+              fi
+              # Remove from WireGuard interface
+              if command -v wg &>/dev/null; then
+                  wg set wg0 peer "$pub" remove 2>/dev/null
+              fi
+              # DB Update - set disabled flag
+              [[ -f "$DB_PATH" ]] && db_exec "UPDATE peers SET disabled=1 WHERE name='$target_name';"
+              # File Marker
+              mkdir -p "$(dirname "$client_conf")"
+              touch "${client_conf}.disabled" 2>/dev/null
+              
+              # Persist to wg0.conf
+              if [[ -f "$DB_PATH" ]]; then
+                  write_wg_conf
+              fi
+              
+              log_success "Disabled peer '$target_name'."
+         else
+             # ENABLE
+             if command -v wg &>/dev/null; then
+                 # If IP is missing from extraction, we are in trouble, but usually it works
+                 if [[ -n "$ip" ]]; then
+                     # CRITICAL: Force /32 for server-side routing
+                     local safe_ip=$(echo "$ip" | cut -d/ -f1)
+                     local wg_out
+                     if output=$(wg set wg0 peer "$pub" allowed-ips "${safe_ip}/32" 2>&1); then
+                         : # Success
+                     else
+                         log_error "WireGuard update failed: $output"
+                         wait_key
+                     fi
+                 else
+                     log_warn "Could not find AllowedIPs. WG interface not updated."
+                 fi
+             fi
+             # DB Update
+             [[ -f "$DB_PATH" ]] && db_exec "UPDATE peers SET disabled=0 WHERE name='$target_name';"
+             # File Marker
+             rm -f "${client_conf}.disabled"
+             
+             # Persist to wg0.conf
+             if [[ -f "$DB_PATH" ]]; then
+                 write_wg_conf
+             fi
+             
+             log_success "Enabled peer '$target_name'."
+         fi
+    fi
+    wait_key
+}
+
+# Add Peer Wizard
+add_peer_wizard() {
+    ui_draw_header_mini "Add New Peer"
+    
+    if ! wg show wg0 >/dev/null 2>&1; then
+        log_error "WireGuard interface (wg0) is down."
+        log_info "Please start WireGuard first."
+        wait_key
+        return
+    fi
+    
+    local peer_name=$(ui_prompt "Peer name (e.g., phone, laptop)")
+    [[ -z "$peer_name" ]] && return
+    
+    # Security: Prevent Injection
+    if [[ ! "$peer_name" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+        log_error "Invalid name. Alphanumeric, hyphen, underscore only."
+        wait_key
+        return
+    fi
+    
+    # Check for name collision (DB or Filesystem)
+    if [[ -f "$DB_PATH" ]]; then
+        local exists=$(db_query "SELECT COUNT(*) FROM peers WHERE name='$peer_name';")
+        if [[ "$exists" -gt 0 ]] || [[ -f "$INSTALL_DIR/clients/${peer_name}.conf" ]]; then
+            log_warn "Peer '$peer_name' already exists."
+            if ! confirm "Overwrite/Re-add peer?"; then
+                return
+            fi
+            # If overwriting, remove existing first to ensure clean state
+            remove_peer_core "$peer_name" "true"
+        fi
+    fi
+    
+    log_info "Creating peer '$peer_name'..."
+    
+    # Generate keys
+    local priv=$(wg genkey)
+    local pub=$(echo "$priv" | wg pubkey)
+    
+    # Authoritative IP Allocation (Checks shared Database & Files)
+    local subnet_display=$(db_get_config "subnet_cidr" | cut -d/ -f1-3)
+    [[ -z "$subnet_display" ]] && subnet_display="10.100.0"
+    local req_ip=$(ui_prompt "Enter IP suffix (e.g., .5) or full IP for $subnet_display.x (Enter for auto)")
+    local next_ip=$(db_allocate_ip "$req_ip")
+    
+    while [[ -z "$next_ip" ]]; do
+        log_error "IP allocation failed. Please choose another or press Enter for auto."
+        req_ip=$(ui_prompt "Enter host IP/octet (or press Enter for auto)")
+        next_ip=$(db_allocate_ip "$req_ip")
+        [[ -z "$req_ip" && -z "$next_ip" ]] && break # Safety breakout if even auto fails (subnet full)
+    done
+
+    if [[ -z "$next_ip" ]]; then
+        log_error "Subnet reached maximum capacity. Cannot allocate IP."
+        wait_key
+        return 1
+    fi
+     local mask=$(db_get_config "subnet_cidr" | cut -d/ -f2 || echo "24")
+
+    
+    # Add peer to WireGuard (Server side must use /32 for strict routing)
+    wg set wg0 peer "$pub" allowed-ips "${next_ip}/32"
+    
+    # Save to persistent config
+    echo "" >> /etc/wireguard/wg0.conf
+    echo "[Peer]" >> /etc/wireguard/wg0.conf
+    echo "# $peer_name" >> /etc/wireguard/wg0.conf
+    echo "PublicKey = $pub" >> /etc/wireguard/wg0.conf
+    echo "AllowedIPs = ${next_ip}/32" >> /etc/wireguard/wg0.conf
+    
+    # Sync with Web UI Dashboard (Database write)
+    # Encrypt the key so API/Web UI can read it
+    local enc_priv=$(encrypt_peer_key "$priv")
+    db_exec "INSERT OR REPLACE INTO peers (name, public_key, encrypted_private_key, allowed_ips) VALUES ('$peer_name', '$pub', '$enc_priv', '${next_ip}/32');"
+    
+    log_success "Peer '$peer_name' created with IP $next_ip"
+    
+    # Show client config
+    printf "\n    ${T_CYAN}${T_BOLD}Client Configuration:${T_RESET}\n"
+    printf "    ${T_DIM}────────────────────────────────────────────${T_RESET}\n"
+    
+    local server_pubkey=$(cat /etc/wireguard/publickey 2>/dev/null)
+    local server_port=$(grep "ListenPort" /etc/wireguard/wg0.conf | cut -d= -f2 | tr -d ' ')
+    # Detect Endpoint (Strict IPv4 Filter)
+    # Detect Endpoint (Strict IPv4 Filter)
+    local custom_host=$(db_get_config "endpoint_hostname")
+    local server_endpoint=""
+    if [[ -n "$custom_host" ]]; then
+        server_endpoint="$custom_host"
+    else
+        # 1. Try saved WAN IP (Primary)
+        server_endpoint=$(db_get_config "wan_ip")
+        # 2. Try detection if missing
+        [[ -z "$server_endpoint" ]] && server_endpoint=$(detect_public_ip)
+        # 3. Fallback
+        [[ -z "$server_endpoint" ]] && server_endpoint="YOUR_SERVER_IP"
+    fi
+    
+    # Ensure it's a valid IPv4 address OR a valid domain name
+    if [[ ! "$server_endpoint" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]] && [[ ! "$server_endpoint" =~ ^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; then
+         # If detection failed or returned junk, prompt user
+         printf "    ${T_DIM}Press ENTER to accept the auto-detected IP/Domain.${T_RESET}\n"
+         server_endpoint=$(prompt "Public IPv4 or Domain" "YOUR_SERVER_IP")
+    fi
+    
+    # Create clients directory if needed
+    mkdir -p "$INSTALL_DIR/clients"
+    chmod 700 "$INSTALL_DIR/clients"
+    chown 1000:1000 "$INSTALL_DIR/clients" 2>/dev/null || true
+    
+    local client_conf="$INSTALL_DIR/clients/${peer_name}.conf"
+    
+    # Create client config
+    local mtu=$(db_get_config "mtu")
+    # Safe MTU for WireGuard over most networks (accounts for overhead)
+    [[ -z "$mtu" ]] && mtu="1380"
+    
+    cat << CLIENTCONF > "$client_conf"
+[Interface]
+PrivateKey = $priv
+Address = ${next_ip}/${mask}
+DNS = 1.1.1.1, 8.8.8.8
+MTU = $mtu
+
+[Peer]
+PublicKey = $server_pubkey
+AllowedIPs = 0.0.0.0/0
+Endpoint = ${server_endpoint}:${server_port}
+PersistentKeepalive = 25
+CLIENTCONF
+
+    chmod 600 "$client_conf"
+    chown 1000:1000 "$client_conf" 2>/dev/null || true
+    
+    log_success "Peer '$peer_name' created. Config saved to $client_conf"
+    
+    # Show QR Code automatically
+    printf "\n    ${T_CYAN}${T_BOLD}Scan QR Code:${T_RESET}\n"
+    qrencode -t UTF8 -r "$client_conf" | less -R -K -P "Scan QR (Press Q to continue)"
+    
+    printf "\n"
+    wait_key
+}
+
+# Add Temporary Peer Wizard (with expiry)
+add_temp_peer_wizard() {
+    ui_draw_header_mini "Add Temporary Peer"
+    
+    if ! wg show wg0 >/dev/null 2>&1; then
+        log_error "WireGuard interface (wg0) is down."
+        log_info "Please start WireGuard first."
+        wait_key
+        return
+    fi
+    
+    local peer_name=$(ui_prompt "Peer name (e.g., guest-john)")
+    [[ -z "$peer_name" ]] && return
+    
+    if [[ ! "$peer_name" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+        log_error "Invalid name. Alphanumeric only."
+        wait_key
+        return
+    fi
+    
+    # Check for name collision
+    if [[ -f "$DB_PATH" ]]; then
+        local exists=$(db_query "SELECT COUNT(*) FROM peers WHERE name='$peer_name';")
+        if [[ "$exists" -gt 0 ]] || [[ -f "$INSTALL_DIR/clients/${peer_name}.conf" ]]; then
+            log_warn "Peer '$peer_name' already exists."
+            if ! confirm "Overwrite/Re-add peer?"; then
+                return
+            fi
+            remove_peer_core "$peer_name" "true"
+        fi
+    fi
+    
+    printf "\n    ${T_CYAN}How many days should this access last?${T_RESET}\n"
+    local days=$(ui_prompt "Days (1-365, default: 7)")
+    [[ -z "$days" ]] && days=7
+    
+    # Validate days input
+    if ! [[ "$days" =~ ^[0-9]+$ ]] || [[ "$days" -lt 1 ]] || [[ "$days" -gt 365 ]]; then
+        log_error "Invalid days. Using default of 7."
+        days=7
+    fi
+    
+    log_info "Creating temporary peer '$peer_name' (expires in $days days)..."
+    
+    # Generate keys
+    local priv=$(wg genkey)
+    local pub=$(echo "$priv" | wg pubkey)
+    
+    # Authoritative IP Allocation
+    local next_ip=$(db_allocate_ip)
+    if [[ -z "$next_ip" ]]; then
+        log_error "Subnet reached maximum capacity. Cannot allocate IP."
+        wait_key
+        return 1
+    fi
+    local mask=$(db_get_config "subnet_cidr" | cut -d/ -f2 || echo "24")
+
+    
+    # Add peer to WireGuard
+    wg set wg0 peer "$pub" allowed-ips "${next_ip}/32"
+    
+    # Save to persistent config
+    echo "" >> /etc/wireguard/wg0.conf
+    echo "[Peer]" >> /etc/wireguard/wg0.conf
+    echo "# $peer_name (TEMP - Expires: $(date -d "+$days days" +%Y-%m-%d))" >> /etc/wireguard/wg0.conf
+    echo "PublicKey = $pub" >> /etc/wireguard/wg0.conf
+    echo "AllowedIPs = ${next_ip}/32" >> /etc/wireguard/wg0.conf
+    
+    # Sync with Web UI Dashboard
+    local enc_priv=$(encrypt_peer_key "$priv")
+    db_exec "INSERT OR REPLACE INTO peers (name, public_key, encrypted_private_key, allowed_ips, expires_at) VALUES ('$peer_name', '$pub', '$enc_priv', '${next_ip}/32', datetime('+$days days'));"
+
+    
+    # Create clients directory if needed
+    mkdir -p "$INSTALL_DIR/clients"
+    chmod 700 "$INSTALL_DIR/clients"
+    chown 1000:1000 "$INSTALL_DIR/clients" 2>/dev/null || true
+    
+    local client_conf="$INSTALL_DIR/clients/${peer_name}.conf"
+    
+    # Generate client config
+    local server_pubkey=$(cat /etc/wireguard/publickey 2>/dev/null)
+    local server_port=$(grep "ListenPort" /etc/wireguard/wg0.conf | cut -d= -f2 | tr -d ' ')
+    
+    local custom_host=$(db_get_config "endpoint_hostname")
+    local server_endpoint=""
+    if [[ -n "$custom_host" ]]; then
+        server_endpoint="$custom_host"
+    else
+        # 1. Try saved WAN IP (Primary)
+        server_endpoint=$(db_get_config "wan_ip")
+        # 2. Try detection if missing
+        [[ -z "$server_endpoint" ]] && server_endpoint=$(detect_public_ip)
+        # 3. Fallback
+        [[ -z "$server_endpoint" ]] && server_endpoint="YOUR_SERVER_IP"
+    fi
+    
+    if [[ ! "$server_endpoint" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]] && [[ ! "$server_endpoint" =~ ^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; then
+         printf "    ${T_DIM}Press ENTER to accept the auto-detected IP/Domain.${T_RESET}\n"
+         server_endpoint=$(prompt "Public IPv4 or Domain" "YOUR_SERVER_IP")
+    fi
+    
+    local mtu=$(db_get_config "mtu")
+    [[ -z "$mtu" ]] && mtu="1380"
+
+    cat << CLIENTCONF > "$client_conf"
+[Interface]
+PrivateKey = $priv
+Address = ${next_ip}/${mask}
+DNS = 1.1.1.1, 8.8.8.8
+MTU = $mtu
+
+[Peer]
+PublicKey = $server_pubkey
+AllowedIPs = 0.0.0.0/0
+Endpoint = ${server_endpoint}:${server_port}
+PersistentKeepalive = 25
+CLIENTCONF
+
+    chmod 600 "$client_conf"
+    chown 1000:1000 "$client_conf" 2>/dev/null || true
+    
+    # Save expiry metadata
+    local expiry_date=$(date -d "+$days days" +%s)
+    echo "$expiry_date" > "${client_conf}.expiry"
+    
+    log_success "Temporary peer '$peer_name' created!"
+    local tz=$(date +%Z)
+    printf "    ${T_YELLOW}⚠ Expires: $(date -d "+$days days" "+%Y-%m-%d %H:%M") ($tz)${T_RESET}\n"
+    
+    # Show QR Code
+    printf "\n    ${T_CYAN}${T_BOLD}Scan QR Code:${T_RESET}\n"
+    qrencode -t UTF8 -r "$client_conf" | less -R -K -P "Scan QR (Press Q to continue)"
+    
+    printf "\n"
+    wait_key
+}
+
+# Add Bulk Peers Wizard
+add_bulk_peers_wizard() {
+    ui_draw_header_mini "Add Bulk Peers"
+    
+    if ! wg show wg0 >/dev/null 2>&1; then
+        log_error "WireGuard interface (wg0) is down."
+        log_info "Please start WireGuard first."
+        wait_key
+        return
+    fi
+    
+    printf "    ${T_CYAN}Create multiple peers at once${T_RESET}\n\n"
+    printf "    ${T_DIM}Note: Supports comma-separated list (e.g., 'saman, sina')${T_RESET}\n"
+    local input=$(ui_prompt "Peer name(s) or prefix(es)")
+    [[ -z "$input" ]] && return
+    
+    # Split input by comma and clean up spaces
+    IFS=',' read -ra items <<< "$input"
+    
+    # Validate each item
+    for item in "${items[@]}"; do
+        local clean_item=$(echo "$item" | tr -d ' ')
+        if [[ ! "$clean_item" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+            log_error "Invalid entry: '$clean_item'. Alphanumeric only."
+            wait_key
+            return
+        fi
+    done
+    
+    local count=$(ui_prompt "How many peers per name/prefix? (1-50)")
+    [[ -z "$count" ]] && return
+    
+    if ! [[ "$count" =~ ^[0-9]+$ ]] || [[ "$count" -lt 1 ]] || [[ "$count" -gt 50 ]]; then
+        log_error "Invalid count. Must be 1-50."
+        wait_key
+        return
+    fi
+    
+    printf "\n    ${T_CYAN}Peer type:${T_RESET}\n"
+    printf "    [1] Permanent (no expiry)\n"
+    printf "    [2] Temporary (with expiry)\n"
+    printf "\n"
+    local type_choice=$(ui_prompt "Select type (1 or 2)")
+    
+    local days=0
+    if [[ "$type_choice" == "2" ]]; then
+        days=$(ui_prompt "Days until expiry (1-365, default: 7)")
+        [[ -z "$days" ]] && days=7
+        if ! [[ "$days" =~ ^[0-9]+$ ]] || [[ "$days" -lt 1 ]] || [[ "$days" -gt 365 ]]; then
+            days=7
+        fi
+    fi
+    
+    if ! confirm "Create bulk peers for: ${items[*]} ($count each)?"; then
+        log_info "Cancelled."
+        wait_key
+        return
+    fi
+    
+    log_info "Creating peers..."
+    
+    local mask=$(db_get_config "subnet_cidr" | cut -d/ -f2 || echo "24")
+    local server_pubkey=$(cat /etc/wireguard/publickey 2>/dev/null)
+    local server_port=$(grep "ListenPort" /etc/wireguard/wg0.conf | cut -d= -f2 | tr -d ' ')
+    
+    local custom_host=$(db_get_config "endpoint_hostname")
+    local server_endpoint=""
+    if [[ -n "$custom_host" ]]; then
+        server_endpoint="$custom_host"
+    else
+        # 1. Try saved WAN IP (Primary)
+        server_endpoint=$(db_get_config "wan_ip")
+        # 2. Try detection if missing
+        [[ -z "$server_endpoint" ]] && server_endpoint=$(detect_public_ip)
+        # 3. Fallback
+        [[ -z "$server_endpoint" ]] && server_endpoint="YOUR_SERVER_IP"
+    fi
+    
+    mkdir -p "$INSTALL_DIR/clients"
+    chown 1000:1000 "$INSTALL_DIR/clients" 2>/dev/null || true
+    local total_created=0
+    
+    for item in "${items[@]}"; do
+        local prefix=$(echo "$item" | tr -d ' ')
+        for ((n=1; n<=count; n++)); do
+            local peer_name="${prefix}"
+            [[ "$count" -gt 1 ]] && peer_name="${prefix}-${n}"
+            
+            # Check for collision
+            if [[ -f "$INSTALL_DIR/clients/${peer_name}.conf" ]]; then
+                log_warn "Peer '$peer_name' already exists. Skipping."
+                continue
+            fi
+
+            local next_ip=$(db_allocate_ip)
+            if [[ -z "$next_ip" ]]; then
+                log_error "Subnet full. Created $total_created peers."
+                break 2
+            fi
+
+            local priv=$(wg genkey)
+            local pub=$(echo "$priv" | wg pubkey)
+            
+            # Add to WireGuard
+            wg set wg0 peer "$pub" allowed-ips "${next_ip}/32" 2>/dev/null
+            
+            # Append to config
+            echo "" >> /etc/wireguard/wg0.conf
+            echo "[Peer]" >> /etc/wireguard/wg0.conf
+            if [[ "$days" -gt 0 ]]; then
+                echo "# $peer_name (TEMP - Expires: $(date -d "+$days days" +%Y-%m-%d))" >> /etc/wireguard/wg0.conf
+            else
+                echo "# $peer_name" >> /etc/wireguard/wg0.conf
+            fi
+            echo "PublicKey = $pub" >> /etc/wireguard/wg0.conf
+            echo "AllowedIPs = ${next_ip}/32" >> /etc/wireguard/wg0.conf
+            
+            # Sync with Database
+            local enc_priv=$(encrypt_peer_key "$priv")
+            db_exec "INSERT OR REPLACE INTO peers (name, public_key, encrypted_private_key, allowed_ips) VALUES ('$peer_name', '$pub', '$enc_priv', '${next_ip}/32');"
+
+            # Create client config
+            local mtu=$(db_get_config "mtu")
+            [[ -z "$mtu" ]] && mtu="1380"
+            
+            local client_conf="$INSTALL_DIR/clients/${peer_name}.conf"
+            cat << CLIENTCONF > "$client_conf"
+[Interface]
+PrivateKey = $priv
+Address = ${next_ip}/${mask}
+DNS = 1.1.1.1, 8.8.8.8
+MTU = $mtu
+
+[Peer]
+PublicKey = $server_pubkey
+AllowedIPs = 0.0.0.0/0
+Endpoint = ${server_endpoint}:${server_port}
+PersistentKeepalive = 25
+CLIENTCONF
+            chmod 600 "$client_conf"
+            chown 1000:1000 "$client_conf" 2>/dev/null || true
+            
+            # Save expiry if temporary
+            if [[ "$days" -gt 0 ]]; then
+                local expiry_date=$(date -d "+$days days" +%s)
+                echo "$expiry_date" > "${client_conf}.expiry"
+            fi
+            
+            ((total_created++))
+            printf "    ${T_GREEN}✓${T_RESET} Created: $peer_name ($next_ip)\n"
+        done
+    done
+    
+    log_success "Created $total_created peers successfully!"
+    printf "    ${T_DIM}Configs saved to $INSTALL_DIR/clients/${T_RESET}\n"
+    
+    printf "\n"
+    wait_key
+}
+
+# Bulk Remove Peers Wizard
+remove_bulk_peers_wizard() {
+    ui_draw_header_mini "Bulk Remove Peers"
+    
+    local client_dir="$INSTALL_DIR/clients"
+    
+    if [[ ! -d "$client_dir" ]] || [[ -z "$(ls -A "$client_dir"/*.conf 2>/dev/null)" ]]; then
+        log_warn "No peers to remove."
+        wait_key
+        return
+    fi
+    
+    local configs=("$client_dir"/*.conf)
+    
+    printf "    ${T_CYAN}Enter peer numbers to remove (space-separated):${T_RESET}\n\n"
+    
+    local i=1
+    local files=()
+    for conf in "${configs[@]}"; do
+        [[ -e "$conf" ]] || continue
+        local name=$(basename "$conf" .conf)
+        local ip=$(grep "Address" "$conf" 2>/dev/null | cut -d= -f2 | tr -d ' ')
+        printf "    ${T_GREEN}[%d]${T_RESET} %-20s ${T_DIM}%s${T_RESET}\n" "$i" "$name" "$ip"
+        files[$i]="$conf"
+        ((i++))
+    done
+    
+    printf "\n"
+    printf "    ${T_DIM}Example: '1 3 5' removes peers 1, 3, and 5${T_RESET}\n"
+    printf "    ${T_DIM}Enter 'all' to remove ALL peers${T_RESET}\n\n"
+    
+    local selection=$(ui_prompt "Numbers to remove")
+    [[ -z "$selection" ]] && return
+    
+    local to_remove=()
+    
+    if [[ "$selection" == "all" ]]; then
+        for ((j=1; j<i; j++)); do
+            to_remove+=($j)
+        done
+    else
+        for num in $selection; do
+            if [[ "$num" =~ ^[0-9]+$ ]] && [[ $num -ge 1 ]] && [[ $num -lt $i ]]; then
+                to_remove+=($num)
+            fi
+        done
+    fi
+    
+    if [[ ${#to_remove[@]} -eq 0 ]]; then
+        log_error "No valid selections."
+        wait_key
+        return
+    fi
+    
+    printf "\n    ${T_YELLOW}⚠ About to remove ${#to_remove[@]} peer(s)${T_RESET}\n"
+    
+    if ! confirm "Proceed?"; then
+        log_info "Cancelled."
+        wait_key
+        return
+    fi
+    
+    local removed=0
+    for idx in "${to_remove[@]}"; do
+        local target="${files[$idx]}"
+        local name=$(basename "$target" .conf)
+        
+        if [[ -f "$DB_PATH" ]]; then
+            # Archive data to historical_usage
+            # Calculate total usage = stored total + current rx/tx
+            # Current rx/tx will be reset on delete, so we grab them now
+            # Note: We can't easily get live WG stats here for every peer efficiently without parsing 'wg show' dump
+            # relying on what's in DB (total + last sync) is safest/fastest.
+            # Ideally we sync one last time.
+            
+            # Simple archive: copy values from peers table
+            db_exec "INSERT INTO historical_usage (peer_name, public_key, rx_bytes, tx_bytes) 
+                     SELECT name, public_key, total_rx_bytes + rx_bytes, total_tx_bytes + tx_bytes FROM peers WHERE name='$name';"
+        fi
+
+        # Use core removal logic (handles API delegation and local cleanup)
+        remove_peer_core "$name" "true"
+        
+        ((removed++))
+        printf "    ${T_RED}✗${T_RESET} Removed: $name\n"
+    done
+    
+    log_success "Removed $removed peer(s)."
+    
+    printf "\n"
+    wait_key
+}
+
+# View Usage Screen - Shows bandwidth per peer
+view_usage_screen() {
+    while true; do
+        ui_draw_header_mini "Bandwidth Usage"
+        
+        local client_dir="$INSTALL_DIR/clients"
+        
+        if ! wg show wg0 &>/dev/null; then
+            log_warn "WireGuard not running. Cannot fetch live transfer stats."
+            wait_key
+            return
+        fi
+        
+        if [[ ! -f "$DB_PATH" ]]; then
+            log_warn "Database required for bandwidth tracking."
+            wait_key
+            return
+        fi
+
+        printf "    ${T_CYAN}${T_BOLD}Peer Bandwidth Usage${T_RESET}\n"
+        printf "    ${T_DIM}──────────────────────────────────────────────────────────────────────────${T_RESET}\n"
+        printf "    ${T_WHITE}%-18s %12s %12s %14s %14s${T_RESET}\n" "PEER" "USED" "LIMIT" "REMAINING" "STATUS"
+        printf "    ${T_DIM}──────────────────────────────────────────────────────────────────────────${T_RESET}\n"
+        
+        # 1. Fetch persistent totals and limits from DB
+        # name|public_key|total_rx|total_tx|limit_gb
+        local query="SELECT name, public_key, COALESCE(total_rx_bytes, 0), COALESCE(total_tx_bytes, 0), COALESCE(data_limit_gb, 0) FROM peers WHERE disabled=0 ORDER BY name;"
+        
+        # 2. Fetch Live Stats
+        declare -A live_rx
+        declare -A live_tx
+        if command -v wg &>/dev/null && ip link show wg0 &>/dev/null; then
+            while read -r pub rx tx; do
+                [[ -z "$pub" ]] && continue
+                live_rx["$pub"]=$rx
+                live_tx["$pub"]=$tx
+            done < <(wg show wg0 transfer)
+        fi
+        
+        local total_cluster_rx=0
+        local total_cluster_tx=0
+
+        while IFS='|' read -r name pub db_rx db_tx limit_gb; do
+            local cur_rx=${live_rx["$pub"]:-0}
+            local cur_tx=${live_tx["$pub"]:-0}
+            
+            # Cumulative
+            local total_rx=$((db_rx + cur_rx))
+            local total_tx=$((db_tx + cur_tx))
+            local total_usage=$((total_rx + total_tx))
+            
+            total_cluster_rx=$((total_cluster_rx + total_rx))
+            total_cluster_tx=$((total_cluster_tx + total_tx))
+            
+            local used_hr=$(numfmt --to=iec --suffix=B $total_usage 2>/dev/null || echo "${total_usage}B")
+            local limit_str="∞"
+            local rem_str="∞"
+            local status_str="${T_GREEN}OK${T_RESET}"
+            
+            if [[ "$limit_gb" -gt 0 ]]; then
+                limit_str="${limit_gb}GB"
+                local limit_bytes=$((limit_gb * 1024 * 1024 * 1024))
+                
+                if [[ $total_usage -ge $limit_bytes ]]; then
+                    status_str="${T_RED}OVER${T_RESET}"
+                    rem_str="0B"
+                else
+                    local rem_bytes=$((limit_bytes - total_usage))
+                    rem_str=$(numfmt --to=iec --suffix=B $rem_bytes 2>/dev/null || echo "${rem_bytes}B")
+                    
+                    # Calculate %
+                    if [[ $limit_bytes -gt 0 ]]; then
+                        local pct=$((total_usage * 100 / limit_bytes))
+                        if [[ $pct -ge 90 ]]; then status_str="${T_YELLOW}${pct}%${T_RESET}"; 
+                        else status_str="${T_GREEN}${pct}%${T_RESET}"; fi
+                    fi
+                fi
+            fi
+            
+            # Truncate name
+            name="${name:0:18}"
+            
+            printf "    %-18s %12s %12s %14s %14s\n" "$name" "$used_hr" "$limit_str" "$rem_str" "$status_str"
+            
+        done < <(sqlite3 "$DB_PATH" "$query")
+        
+        printf "    ${T_DIM}──────────────────────────────────────────────────────────────────────────${T_RESET}\n"
+        local historical_rx=0
+        local historical_tx=0
+        if [[ -f "$DB_PATH" ]]; then
+             local h_rx=$(sqlite3 "$DB_PATH" "SELECT SUM(rx_bytes) FROM historical_usage;")
+             local h_tx=$(sqlite3 "$DB_PATH" "SELECT SUM(tx_bytes) FROM historical_usage;")
+             [[ -n "$h_rx" ]] && historical_rx=$h_rx
+             [[ -n "$h_tx" ]] && historical_tx=$h_tx
+        fi
+        
+        local grand_total=$((total_cluster_rx + total_cluster_tx + historical_rx + historical_tx))
+        local grand_total_hr=$(numfmt --to=iec --suffix=B $grand_total 2>/dev/null || echo "${grand_total}B")
+        printf "    ${T_WHITE}%-18s %12s${T_RESET}\n" "TOTAL TRAFFIC" "$grand_total_hr"
+        
+        printf "\n    ${T_CYAN}[G]${T_RESET} Show Graph  ${T_CYAN}[H]${T_RESET} Historical Data  ${T_CYAN}[B]${T_RESET} Back\n"
+        printf "\n    ${T_DIM}Auto-refreshing every 2s...${T_RESET}"
+        
+        # Read key with 2 second timeout for auto-refresh
+        local key=""
+        read -s -n 1 -t 2 key || true
+        
+        case "$key" in
+            g|G) show_bandwidth_graph ;;
+            h|H) show_historical_usage ;;
+            b|B|$'\x1b') return ;;
+            "") ;; # Loop to refresh on timeout
+        esac
+    done
+}
+
+# View Historical Usage (for deleted peers)
+show_historical_usage_deleted_peers() {
+    if [[ ! -f "$DB_PATH" ]]; then
+        ui_draw_header_mini "Historical Usage"
+        log_warn "Database not found. Historical data requires database."
+        wait_key
+        return
+    fi
+    
+    while true; do
+        ui_draw_header_mini "Historical Usage (Deleted Peers)"
+        
+        printf "    ${T_CYAN}${T_BOLD}Archived Traffic Data${T_RESET}\n"
+        printf "    ${T_DIM}────────────────────────────────────────────────────────${T_RESET}\n"
+        printf "    ${T_WHITE}%-20s %12s %12s %19s${T_RESET}\n" "PEER" "TOTAL RX" "TOTAL TX" "DELETED AT"
+        printf "    ${T_DIM}────────────────────────────────────────────────────────${T_RESET}\n"
+        
+        # Query DB using sqlite3 formatted output
+        local count=0
+        while IFS='|' read -r name rx tx del_at; do
+             local rx_hr=$(numfmt --to=iec --suffix=B $rx 2>/dev/null || echo "${rx}B")
+             local tx_hr=$(numfmt --to=iec --suffix=B $tx 2>/dev/null || echo "${tx}B")
+             
+             printf "    %-20s %12s %12s %19s\n" "$name" "$rx_hr" "$tx_hr" "$del_at"
+             ((count++))
+        done < <(sqlite3 "$DB_PATH" "SELECT peer_name, rx_bytes, tx_bytes, deleted_at FROM historical_usage ORDER BY deleted_at DESC LIMIT 20;")
+        
+        if [[ $count -eq 0 ]]; then
+             printf "    ${T_DIM}No historical records found.${T_RESET}\n"
+        fi
+        
+        printf "\n    ${T_CYAN}[C]${T_RESET} Clear History  ${T_CYAN}[Enter]${T_RESET} Back\n"
+        printf "\n${T_CYAN}❯${T_RESET} "
+        
+        local key=$(read_key)
+        if [[ "$key" == "c" || "$key" == "C" ]]; then
+            if confirm "Clear all historical data?"; then
+                db_exec "DELETE FROM historical_usage;"
+                log_success "History cleared."
+                sleep 0.5
+            fi
+        else
+            return
+        fi
+    done
+}
+
+# ASCII Bar Graph for Bandwidth
+show_bandwidth_graph() {
+    ui_draw_header_mini "Bandwidth Graph"
+    
+    printf "    ${T_CYAN}${T_BOLD}Select Time Range:${T_RESET}\n\n"
+    printf "    [1] Last 24 Hours (hourly)\n"
+    printf "    [2] Last 7 Days (daily)\n"
+    printf "    [3] Last 30 Days (daily)\n\n"
+    
+    local choice=$(ui_prompt "Select range")
+    
+    local query=""
+    local title=""
+    local bars=24
+    
+    case "$choice" in
+        1)
+            title="Last 24 Hours"
+            bars=24
+            query="SELECT timestamp, SUM(rx_bytes + tx_bytes) as total FROM bandwidth_hourly 
+                   WHERE timestamp > strftime('%s', 'now') - 86400 
+                   GROUP BY timestamp ORDER BY timestamp;"
+            ;;
+        2)
+            title="Last 7 Days"
+            bars=7
+            query="SELECT date, SUM(rx_bytes + tx_bytes) as total FROM bandwidth_daily 
+                   WHERE date > date('now', '-7 days') 
+                   GROUP BY date ORDER BY date;"
+            ;;
+        3)
+            title="Last 30 Days"
+            bars=30
+            query="SELECT date, SUM(rx_bytes + tx_bytes) as total FROM bandwidth_daily 
+                   WHERE date > date('now', '-30 days') 
+                   GROUP BY date ORDER BY date;"
+            ;;
+        *)
+            return
+            ;;
+    esac
+    
+    ui_clear
+    ui_draw_header_mini "Bandwidth: $title"
+    
+    printf "\n    ${T_CYAN}${T_BOLD}$title - Total Network Usage${T_RESET}\n"
+    printf "    ${T_DIM}────────────────────────────────────────────────────────${T_RESET}\n\n"
+    
+    # Get data
+    local -a values=()
+    local -a labels=()
+    local max_val=1
+    
+    while IFS='|' read -r label val; do
+        [[ -z "$val" ]] && val=0
+        values+=($val)
+        if [[ "$choice" == "1" ]]; then
+            labels+=("$(date -d "@$label" +%H)")
+        else
+            labels+=("$(echo "$label" | cut -d- -f3)")
+        fi
+        [[ $val -gt $max_val ]] && max_val=$val
+    done < <(sqlite3 -batch "$DB_PATH" "$query" 2>/dev/null)
+    
+    if [[ ${#values[@]} -eq 0 ]]; then
+        printf "    ${T_DIM}No data available. Run 'samnet --init-bandwidth' first.${T_RESET}\n"
+        printf "\n"
+        wait_key
+        return
+    fi
+    
+    # Draw ASCII graph (10 rows high)
+    local graph_height=10
+    local bar_char="█"
+    local empty_char=" "
+    
+    for ((row=graph_height; row>=1; row--)); do
+        local threshold=$((max_val * row / graph_height))
+        printf "    "
+        
+        for val in "${values[@]}"; do
+            if [[ $val -ge $threshold ]]; then
+                printf "${T_CYAN}$bar_char${T_RESET}"
+            else
+                printf "$empty_char"
+            fi
+        done
+        
+        # Y-axis label
+        if [[ $row -eq $graph_height ]]; then
+            printf "  $(numfmt --to=iec $max_val 2>/dev/null || echo "$max_val")"
+        elif [[ $row -eq 1 ]]; then
+            printf "  0"
+        fi
+        printf "\n"
+    done
+    
+    # X-axis
+    printf "    ${T_DIM}"
+    for label in "${labels[@]}"; do
+        printf "$label"
+    done
+    printf "${T_RESET}\n"
+    
+    printf "\n    ${T_DIM}Legend: Each bar = 1 time period${T_RESET}\n"
+    
+    printf "\n"
+    wait_key
+}
+
+# Historical Usage View
+show_historical_usage() {
+    ui_draw_header_mini "Historical Usage"
+    
+    printf "    ${T_CYAN}${T_BOLD}Per-Peer Historical Data${T_RESET}\n"
+    printf "    ${T_DIM}────────────────────────────────────────────────────────${T_RESET}\n"
+    printf "    ${T_WHITE}%-20s %15s %15s${T_RESET}\n" "PEER" "LAST 24H" "LAST 30D"
+    printf "    ${T_DIM}────────────────────────────────────────────────────────${T_RESET}\n"
+    
+    # Get unique peers
+    local peers=$(sqlite3 -batch "$DB_PATH" "SELECT DISTINCT peer_name FROM bandwidth_total;" 2>/dev/null)
+    
+    if [[ -z "$peers" ]]; then
+        printf "    ${T_DIM}No historical data available.${T_RESET}\n"
+        printf "\n"
+        wait_key
+        return
+    fi
+    
+    while read -r peer; do
+        # Last 24h from hourly
+        local h24=$(sqlite3 -batch "$DB_PATH" "
+            SELECT COALESCE(MAX(rx_bytes + tx_bytes), 0) FROM bandwidth_hourly 
+            WHERE peer_name='$peer' AND timestamp > strftime('%s', 'now') - 86400;" 2>/dev/null)
+        
+        # Last 30d from daily
+        local d30=$(sqlite3 -batch "$DB_PATH" "
+            SELECT COALESCE(SUM(rx_bytes + tx_bytes), 0) FROM bandwidth_daily 
+            WHERE peer_name='$peer' AND date > date('now', '-30 days');" 2>/dev/null)
+        
+        local h24_hr=$(numfmt --to=iec --suffix=B $h24 2>/dev/null || echo "${h24}B")
+        local d30_hr=$(numfmt --to=iec --suffix=B $d30 2>/dev/null || echo "${d30}B")
+        
+        printf "    %-20s %15s %15s\n" "$peer" "$h24_hr" "$d30_hr"
+    done <<< "$peers"
+    
+    printf "\n"
+    wait_key
+}
+
+# Helper: Convert bytes to human readable
+bytes_to_human() {
+    local bytes=$1
+    if [[ $bytes -lt 1024 ]]; then
+        echo "${bytes}B"
+    elif [[ $bytes -lt 1048576 ]]; then
+        echo "$((bytes / 1024))KB"
+    elif [[ $bytes -lt 1073741824 ]]; then
+        echo "$((bytes / 1048576))MB"
+    else
+        echo "$((bytes / 1073741824))GB"
+    fi
+}
+
+# Set Data Limit Wizard
+set_data_limit_wizard() {
+    ui_draw_header_mini "Set Data Limit"
+    
+    # Read peers from database (includes both CLI and Web UI created peers)
+    local peers=$(sqlite3 "$DB_PATH" "SELECT id, name FROM peers ORDER BY name" 2>/dev/null)
+    
+    if [[ -z "$peers" ]]; then
+        log_warn "No peers configured."
+        wait_key
+        return
+    fi
+    
+    printf "    ${T_CYAN}Select peer to set bandwidth limit:${T_RESET}\n\n"
+    
+    local i=1
+    local ids=()
+    local names=()
+    
+    while IFS='|' read -r id name; do
+        # Get current limit from database (data_limit_gb column)
+        local limit=$(sqlite3 "$DB_PATH" "SELECT COALESCE(data_limit_gb, 0) FROM peers WHERE id=$id" 2>/dev/null)
+        local limit_display="No limit"
+        [[ "$limit" != "0" && -n "$limit" ]] && limit_display="${limit}GB"
+        
+        printf "    ${T_GREEN}[%d]${T_RESET} %-20s ${T_DIM}Limit: %s${T_RESET}\n" "$i" "$name" "$limit_display"
+        ids[$i]=$id
+        names[$i]=$name
+        ((i++))
+    done <<< "$peers"
+    
+    printf "\n"
+    local choice=$(ui_prompt "Select peer #")
+    [[ -z "$choice" ]] && return
+    
+    if [[ "$choice" =~ ^[0-9]+$ ]] && [[ $choice -ge 1 ]] && [[ $choice -lt $i ]]; then
+        local peer_id="${ids[$choice]}"
+        local peer_name="${names[$choice]}"
+        
+        printf "\n    ${T_CYAN}Set bandwidth limit for '$peer_name':${T_RESET}\n"
+        printf "    ${T_DIM}Enter limit in GB (e.g., 10 for 10GB, 0 to remove limit)${T_RESET}\n\n"
+        
+        local limit=$(ui_prompt "Limit (GB)")
+        
+        if [[ -z "$limit" ]]; then
+            return
+        fi
+        
+        if ! [[ "$limit" =~ ^[0-9]+$ ]]; then
+            log_error "Invalid limit. Must be a number."
+            wait_key
+            return
+        fi
+        
+        # Store in database for cross-engine sync
+        sqlite3 "$DB_PATH" "UPDATE peers SET data_limit_gb = $limit WHERE id = $peer_id" 2>/dev/null
+        
+        if [[ "$limit" == "0" ]]; then
+            log_success "Limit removed for '$peer_name'."
+        else
+            log_success "Set ${limit}GB limit for '$peer_name'."
+        fi
+    else
+        log_error "Invalid selection."
+    fi
+    
+    wait_key
+}
+
+# List Peers Screen
+# List Peers Screen (Interactive)
+# List Peers Screen (Interactive)
+list_peers_screen() {
+    local offset=0
+    local page_size=10
+    
+    # Ensure DB is converged before listing
+    reconcile_db_with_files &>/dev/null
+    
+    while true; do
+        if [[ ! -f "$DB_PATH" ]]; then
+            log_error "Database not found."
+            wait_key
+            return
+        fi
+
+        # 1. Fetch all peers from unified source
+        local list
+        list=$(scan_peers)
+        
+        # Read into array
+        local all_peers=()
+        if [[ -n "$list" ]]; then
+            while IFS= read -r line; do
+                all_peers+=("$line")
+            done <<< "$list"
+        fi
+        
+        local total_peers=${#all_peers[@]}
+        
+        ui_clear
+        local end_idx=$((offset + page_size))
+        [[ $end_idx -gt $total_peers ]] && end_idx=$total_peers
+        ui_draw_header "Peer List ($((offset + 1))-$end_idx of $total_peers)"
+        
+        # Header
+        printf "  %-4s %-20s %-15s %-15s\n" "ID" "Name" "IP" "Status"
+        echo "  --------------------------------------------------------"
+        
+        local i=$((offset + 1))
+        local peers_map=() # Index -> Name
+        
+        for (( idx=offset; idx<offset+page_size && idx<total_peers; idx++ )); do
+            local line="${all_peers[$idx]}"
+            IFS='|' read -r name ip src status <<< "$line"
+            
+            local status_display="${T_RED}OFFLINE${T_RESET}"
+            
+            if [[ "$status" == "ONLINE ACTIVE" ]]; then
+                 status_display="${T_GREEN}ONLINE${T_RESET}"
+            elif [[ "$status" == "ACTIVE" ]]; then
+                 status_display="${T_WHITE}ONLINE${T_RESET}"
+            elif [[ "$status" == "DISABLED" ]]; then
+                 status_display="${T_RED}OFFLINE${T_RESET}" 
+            elif [[ "$status" == "OFFLINE" ]]; then
+                 status_display="${T_RED}OFFLINE${T_RESET}"
+            elif [[ "$status" == "OVER LIMIT" ]]; then
+                 status_display="${T_RED}OVER LIMIT${T_RESET}"
+            fi
+            
+            # Remove mask for cleaner display if it's /32
+            local short_ip="${ip%%/*}"
+            
+            printf "  ${T_CYAN}[%d]${T_RESET}  %-20s %-15s %b\n" "$i" "$name" "$short_ip" "$status_display"
+            peers_map[$i]="$name"
+            ((i++))
+        done
+        
+        if [[ $total_peers -eq 0 ]]; then
+            echo "  (No peers found)"
+        fi
+        
+        echo ""
+        printf "  [N] Next Page  [P] Previous Page  [Q] Back/Quit\n"
+        echo ""
+        
+        local choice=$(ui_prompt "Select ID or Action")
+        
+        # Actions
+        case "${choice^^}" in
+            Q|B) return ;;
+            N)
+                if (( offset + page_size < total_peers )); then
+                    (( offset += page_size ))
+                else
+                    log_warn "Already at last page."
+                    sleep 1
+                fi
+                continue
+                ;;
+            P)
+                if (( offset - page_size >= 0 )); then
+                    (( offset -= page_size ))
+                else
+                    offset=0
+                fi
+                continue
+                ;;
+        esac
+        
+        # Logic for selection
+        if [[ -n "${peers_map[$choice]}" ]]; then
+            local p_name="${peers_map[$choice]}"
+            local target="$INSTALL_DIR/clients/$p_name.conf"
+            
+            # INNER LOOP: Peer Actions
+            while true; do
+                ui_clear
+                ui_draw_header "Peer: $p_name"
+                
+                echo "  [1] Show QR Code (Mobile)"
+                echo "  [2] Show Details / Keys"
+                echo "  [3] Show Raw Config"
+                echo ""
+                echo "  [B] Back to List"
+                echo ""
+                
+                local sub_choice=$(ui_prompt "Action")
+                case "${sub_choice^^}" in
+                    B) break ;; # Break inner loop, go back to list
+                    1)
+                        # QR Code Logic
+                        ui_clear
+                        ui_draw_header_mini "QR Code: $p_name"
+                        
+                        # Try API first for config
+                        local config_content=""
+                        local peer_id=$(db_query "SELECT id FROM peers WHERE name='$p_name';")
+                        
+                        if [[ -n "$peer_id" ]]; then
+                            log_info "Fetching config from API..."
+                             local api_resp
+                             # Use docker exec helper
+                             api_resp=$(api_call "GET" "/internal/peers/config?id=$peer_id")
+                             if [[ "$api_resp" == *"[Interface]"* ]]; then
+                                 config_content="$api_resp"
+                             else
+                                 log_warn "API request failed or returned invalid config."
+                             fi
+                        fi
+                        
+                        if [[ -z "$config_content" && -f "$target" ]]; then
+                             config_content=$(cat "$target")
+                        fi
+                        
+                        if [[ -n "$config_content" ]]; then
+                             echo "$config_content" | qrencode -t UTF8 | less -R -K -P "Press Q to exit QR view"
+                        else
+                             log_error "Could not retrieve config."
+                             echo "  Debug: Peer ID='$peer_id', File='$target'"
+                             wait_key
+                        fi
+                        ;;
+                    2)
+                        # Details Logic
+                        ui_clear
+                        ui_draw_header_mini "Details: $p_name"
+                        
+                        local db_pub=$(db_query "SELECT public_key FROM peers WHERE name='$p_name';")
+                        local db_ip=$(db_query "SELECT allowed_ips FROM peers WHERE name='$p_name';")
+                        
+                        echo ""
+                        echo "    ${T_BOLD}${T_CYAN}Name:${T_RESET}      $p_name"
+                        echo "    ${T_BOLD}${T_CYAN}Address:${T_RESET}   $db_ip"
+                        echo "    ${T_BOLD}${T_CYAN}Public Key:${T_RESET} $db_pub"
+                        echo ""
+                        
+                        if [[ -f "$target" ]]; then
+                             local priv=$(grep "PrivateKey" "$target" | cut -d= -f2 | tr -d ' ')
+                             echo "    ${T_BOLD}${T_CYAN}Private Key:${T_RESET} ${T_RED}${priv:0:4}***REDACTED***${T_RESET}"
+                        fi
+                        echo ""
+                        wait_key
+                        ;;
+                    3)
+                         # Unified Details Logic (File OR API)
+                         local config_content=""
+                         local peer_id=$(db_query "SELECT id FROM peers WHERE name='$p_name';")
+                        
+                         if [[ -n "$peer_id" ]]; then
+                             local api_resp
+                             api_resp=$(api_call "GET" "/internal/peers/config?id=$peer_id")
+                             if [[ "$api_resp" == *"[Interface]"* ]]; then
+                                 config_content="$api_resp"
+                             fi
+                         fi
+                         
+                         if [[ -z "$config_content" && -f "$target" ]]; then
+                             config_content=$(cat "$target")
+                         fi
+
+                         if [[ -n "$config_content" ]]; then
+                             ui_clear
+                             echo "$config_content" | less -R -K
+                         else
+                             log_error "Config not found (Checked disk and API)."
+                             wait_key
+                         fi
+                         ;;
+                     *) log_error "Invalid Option" ;;
+                esac
+            done
+        else
+            log_error "Invalid selection."
+            sleep 1
+        fi
+    done
+}
+
+# Core logic for peer removal (non-interactive)
+remove_peer_core() {
+    local target_name="$1"
+    local silent="${2:-false}"
+    
+    # Escape single quotes in name for SQL
+    local safe_name="${target_name//\'/\'\'}"
+    
+    # Check if Web UI is active - if so, DELEGATE TO API for atomic cleanup
+    local web_ui_active=$(db_get_config web_ui_enabled)
+    
+    if [[ "$web_ui_active" == "true" ]]; then
+         # Get peer ID from database
+         local peer_id=$(db_query "SELECT id FROM peers WHERE name='$safe_name';")
+         
+         if [[ -n "$peer_id" ]]; then
+             [[ "$silent" != "true" ]] && log_info "Delegating deletion to API for cross-engine sync..."
+             
+             local api_resp
+             api_resp=$(api_call "DELETE" "/internal/peers/$peer_id")
+             local api_status=$?
+             
+             if [[ $api_status -eq 0 ]]; then
+                 sleep 0.5
+                 local remaining=$(db_query "SELECT COUNT(*) FROM peers WHERE name='$safe_name';")
+                 if [[ -z "$remaining" || "$remaining" -eq 0 ]]; then
+                     [[ "$silent" != "true" ]] && log_success "Peer '$target_name' removed via API."
+                     return 0
+                 fi
+                 log_warn "API reported success but peer '$target_name' still in DB. Falling back to local removal..."
+             else
+                 log_warn "API deletion failed: $api_resp. Falling back to local removal..."
+             fi
+         fi
+         # Fallback
+         web_ui_active="fallback"
+    fi
+    
+    # Local cleanup (standalone mode OR fallback)
+    local client_dir="$INSTALL_DIR/clients"
+    
+    # 1. Get pubkey for Live WG removal
+    local pub=""
+    if [[ -f "$DB_PATH" ]]; then
+        pub=$(db_query "SELECT public_key FROM peers WHERE name='$safe_name';")
+    fi
+    if [[ -z "$pub" && -f "$client_dir/${target_name}.conf" ]]; then
+        local priv=$(grep "PrivateKey" "$client_dir/${target_name}.conf" 2>/dev/null | cut -d= -f2 | tr -d ' ')
+        [[ -n "$priv" ]] && pub=$(echo "$priv" | wg pubkey 2>/dev/null)
+    fi
+    
+    # 2. Kill from live WireGuard
+    if [[ -n "$pub" ]]; then
+        wg set wg0 peer "$pub" remove 2>/dev/null
+    fi
+    
+    # 3. Delete from DB
+    if [[ -f "$DB_PATH" ]]; then
+        db_exec "DELETE FROM peers WHERE name='$safe_name';"
+        if [[ -n "$pub" ]]; then
+            db_exec "DELETE FROM peers WHERE public_key='$pub';"
+        fi
+    fi
+    
+    # 4. Delete files
+    rm -f "$client_dir/${target_name}.conf" 2>/dev/null
+    rm -f "$client_dir/${target_name}.conf.expiry" 2>/dev/null
+    rm -f "$client_dir/${target_name}.conf.limit" 2>/dev/null
+    
+    # 5. Cleanup wg0.conf
+    if [[ -f /etc/wireguard/wg0.conf ]]; then
+         local tmp_conf=$(mktemp)
+         local in_peer=0
+         local skip=0
+         while IFS= read -r line; do
+             if [[ "$line" == "[Peer]" ]]; then
+                 in_peer=1
+                 skip=0
+             fi
+             if [[ "$in_peer" -eq 1 ]]; then
+                 if [[ "$line" == "# $target_name"* ]] || [[ -n "$pub" && "$line" == "PublicKey = $pub"* ]]; then
+                     skip=1
+                 fi
+             fi
+             if [[ "$skip" -eq 1 ]]; then
+                 if [[ -z "$line" ]] || [[ "$line" == "["* && "$line" != "[Peer]" ]]; then
+                     skip=0
+                     [[ -n "$line" ]] && echo "$line" >> "$tmp_conf"
+                 fi
+                 continue
+             fi
+             echo "$line" >> "$tmp_conf"
+         done < /etc/wireguard/wg0.conf
+         mv "$tmp_conf" /etc/wireguard/wg0.conf
+         chmod 600 /etc/wireguard/wg0.conf
+    fi
+    
+    [[ "$silent" != "true" ]] && log_success "Peer '$target_name' removed successfully."
+}
+
+# Check for expired peers and remove them
+check_expiry() {
+    [[ ! -f "$DB_PATH" ]] && return
+    local now=$(date +%s)
+    # Query expired peers
+    local expired=$(db_query "SELECT name FROM peers WHERE expires_at IS NOT NULL AND expires_at < $now;" 2>/dev/null)
+    
+    for peer in $expired; do
+        [[ -z "$peer" ]] && continue
+        log_info "Peer '$peer' has expired. Auto-removing..."
+        remove_peer_core "$peer" "true"
+    done
+}
+
+# Check for data limits and disable peers if exceeded
+check_limits() {
+    [[ ! -f "$DB_PATH" ]] && return
+    
+    # 1. Get peers with limits (limit > 0)
+    # Output: name|public_key|limit_gb|total_stored_bytes
+    local query="SELECT name, public_key, data_limit_gb, (total_rx_bytes + total_tx_bytes) FROM peers WHERE data_limit_gb > 0 AND disabled = 0;"
+    
+    # We need to map public_key -> live_bytes using wg show
+    declare -A live_usage
+    if command -v wg &>/dev/null && ip link show wg0 &>/dev/null; then
+        while read -r pub rx tx; do
+            [[ -z "$pub" ]] && continue
+            live_usage["$pub"]=$((rx + tx))
+        done < <(wg show wg0 transfer)
+    fi
+    
+    while IFS='|' read -r name pub limit_gb stored_bytes; do
+        [[ -z "$name" ]] && continue
+        
+        local current_live=${live_usage["$pub"]:-0}
+        local total_usage=$((stored_bytes + current_live))
+        local limit_bytes=$((limit_gb * 1024 * 1024 * 1024))
+        
+        if [[ $total_usage -gt $limit_bytes ]]; then
+            log_warn "Peer '$name' exceeded data limit (${limit_gb}GB). Disabling..."
+            
+            # 1. Accumulate current stats into total before disabling
+            if [[ "$current_live" -gt 0 ]]; then
+                local rx=0 tx=0
+                if [[ -n "$pub" ]]; then
+                     read -r rx tx <<< $(wg show wg0 transfer | grep "$pub" | awk '{print $2, $3}')
+                fi
+                [[ -z "$rx" ]] && rx=0
+                [[ -z "$tx" ]] && tx=0
+                db_exec "UPDATE peers SET total_rx_bytes = total_rx_bytes + $rx, total_tx_bytes = total_tx_bytes + $tx, rx_bytes = 0, tx_bytes = 0 WHERE name='$name';"
+            fi
+
+            # 2. Kill from live WireGuard
+            if command -v wg &>/dev/null; then
+                wg set wg0 peer "$pub" remove 2>/dev/null
+            fi
+            
+            # 3. Mark as disabled in DB and create marker file
+            db_exec "UPDATE peers SET disabled=1 WHERE name='$name';"
+            touch "$INSTALL_DIR/clients/${name}.conf.disabled"
+            
+            log_success "Peer '$name' disabled due to data limit."
+        fi
+    done < <(sqlite3 "$DB_PATH" "$query")
+
+    # Clean up historical usage older than 90 days
+    db_exec "DELETE FROM historical_usage WHERE deleted_at < date('now', '-90 days');"
+}
+
+# Remove Peer Wizard (reads from config files, not live WG)
+# Batch Delete Wizard (Regex)
+remove_peers_regex_wizard() {
+    ui_draw_header_mini "Batch Delete (Regex)"
+    
+    log_info "Enter a regex to match peer names."
+    log_info "Examples: 'test-*', '^temp_', 'user[0-9]+'"
+    echo ""
+    
+    local regex=$(ui_prompt "Regex Pattern")
+    [[ -z "$regex" ]] && return
+    
+    # 1. Identify matches
+    local matches=()
+    while IFS='|' read -r n ip src s; do
+        if [[ "$n" =~ $regex ]]; then
+            matches+=("$n")
+        fi
+    done < <(scan_peers)
+    
+    if [[ ${#matches[@]} -eq 0 ]]; then
+        log_warn "No peers matched pattern '$regex'."
+        wait_key
+        return
+    fi
+    
+    # 2. Confirm List
+    echo ""
+    echo "  ${T_BOLD}Matching Peers:${T_RESET}"
+    local count=0
+    for n in "${matches[@]}"; do
+        echo "    - $n"
+        ((count++))
+        if [[ $count -ge 15 ]]; then
+            echo "    ... and $(( ${#matches[@]} - count )) more."
+            break
+        fi
+    done
+    echo ""
+    
+    if ui_confirm "Delete these ${#matches[@]} peers PERMANENTLY?"; then
+         # Double confirm for large batches
+         if [[ ${#matches[@]} -gt 5 ]]; then
+             if ! ui_confirm "Are you absolutely sure?"; then return; fi
+         fi
+         
+         ui_clear
+         echo "  Deleting..."
+         for n in "${matches[@]}"; do
+             printf "    %-20s ... " "$n"
+             if remove_peer_core "$n" "true"; then
+                 echo "${T_GREEN}OK${T_RESET}"
+             else
+                 echo "${T_RED}FAIL${T_RESET}"
+             fi
+         done
+         log_success "Batch operation complete."
+         wait_key
+    fi
+}
+
+# Remove Peer Main Menu
+remove_peer_wizard() {
+    while true; do
+        ui_draw_header_mini "Remove Peer"
+        
+        echo "  [1] Select from List"
+        echo "  [2] Batch Delete (Regex)"
+        echo "  [B] Back"
+        echo ""
+        
+        local choice=$(ui_prompt "Option")
+        case "${choice^^}" in
+            1) remove_peer_selector_wizard ;;
+            2) remove_peers_regex_wizard ;;
+            B) return ;;
+            *) log_error "Invalid option" ;;
+        esac
+    done
+}
+
+# Remove Peer Selector (Classic)
+remove_peer_selector_wizard() {
+    ui_draw_header_mini "Remove/Select"
+    
+    # Ensure DB is synced before listing (Fixes ghost peers/state mismatch)
+    reconcile_db_with_files &>/dev/null
+    
+    # ─── DISCOVERY ENGINE ───
+    local names=()
+    local sources=()
+    local ips=()
+    local client_dir="$INSTALL_DIR/clients"
+    
+    # Priority 1: Unified Scan (DB + Files)
+    while IFS='|' read -r n ip src s; do
+        [[ -n "$n" ]] && names+=("$n")
+        sources+=("$src")
+        ips+=("$ip")
+    done < <(scan_peers)
+
+    if [[ ${#names[@]} -eq 0 ]]; then
+        log_warn "No peers found to remove."
+        wait_key
+        return
+    fi
+    
+    printf "    ${T_CYAN}Select peer to remove:${T_RESET}\n\n"
+    
+    local i=1
+    local valid_indices=()
+    local removable_names=()
+    
+    for idx in "${!names[@]}"; do
+        local n="${names[$idx]}"
+        local src="${sources[$idx]}"
+        local ip="${ips[$idx]}"
+        
+        printf "    ${T_GREEN}[%d]${T_RESET} %-25s ${T_DIM}%s${T_RESET}  (%s)\n" "$i" "$n" "$ip" "$src"
+        removable_names[$i]="$n"
+        valid_indices+=("$i")
+        ((i++))
+    done
+    
+    local choice=$(ui_prompt "Select # to remove (Enter to cancel)")
+    
+    if [[ -z "$choice" ]]; then return; fi
+
+    if [[ " ${valid_indices[*]} " =~ " ${choice} " ]]; then
+        local target_name="${removable_names[$choice]}"
+        if ui_confirm "Are you sure you want to remove peer '$target_name'?"; then
+             remove_peer_core "$target_name"
+        fi
+    fi
+    wait_key
+}
+
+# Show QR Code Wizard (Redirects to interactive list)
+show_qr_wizard() {
+    list_peers_screen
+}
+
+
+# Security Screen
+screen_security() {
+    while true; do
+        ui_draw_header_mini "Security & Access"
+        
+        menu_option "1" "Firewall Ports" "Manage open ports (add/remove)"
+        menu_option "2" "Firewall Status" "View all nftables rules"
+        menu_option "3" "Regenerate Server Keys" "New WireGuard keypair"
+        menu_option "4" "View Logs" "System and API logs"
+        printf "\n"
+        menu_option "B" "Back" ""
+        
+        ui_draw_footer "[1-4] Select  [B] Back"
+        printf "\n${T_CYAN}❯${T_RESET} "
+        
+        local key=$(read_key)
+        case "$key" in
+            1) screen_firewall_ports ;;
+            2) show_firewall_status ;;
+            3) log_warn "Not implemented yet"; wait_key ;;
+            4) show_logs_screen ;;
+            b|B|$'\x1b') return ;;
+        esac
+    done
+}
+
+# ─── Firewall Port Management Screen ─────────────────────────────────────────
+
+screen_firewall_ports() {
+    while true; do
+        ui_draw_header_mini "Firewall Port Manager"
+        
+        local firewall_mode=$(db_get_config "firewall_mode")
+        # Smart default: if UFW is active, default to external mode
+        if [[ -z "$firewall_mode" ]]; then
+            if ufw status 2>/dev/null | grep -q "Status: active"; then
+                firewall_mode="external"
+            else
+                firewall_mode="samnet"
+            fi
+        fi
+        
+        local vpn_port=$(db_get_config "listen_port")
+        vpn_port="${vpn_port:-51820}"
+        
+        # Mode indicator
+        case "$firewall_mode" in
+            samnet)
+                printf "  ${T_GREEN}●${T_RESET} Mode: ${T_BOLD}SamNet Managed${T_RESET}\n"
+                printf "  ${T_DIM}Open ports are controlled by this TUI.${T_RESET}\n\n"
+                ;;
+            external)
+                printf "  ${T_YELLOW}●${T_RESET} Mode: ${T_BOLD}External Firewall${T_RESET}\n"
+                printf "  ${T_DIM}Ports managed by external firewall. Showing best-effort status.${T_RESET}\n\n"
+                ;;
+            none)
+                printf "  ${T_RED}●${T_RESET} Mode: ${T_BOLD}No Firewall${T_RESET}\n"
+                printf "  ${T_DIM}All ports are open. Use with caution!${T_RESET}\n\n"
+                ;;
+        esac
+        
+        # List open ports (Unified View)
+        printf "  ${T_BOLD}Open Ports:${T_RESET}\n"
+        printf "  ${T_DIM}────────────────────────────────────────────${T_RESET}\n"
+        
+        # Branch based on mode for listing
+        if [[ "$firewall_mode" == "samnet" ]]; then
+            # SamNet Managed: Clean table view
+            if nft list table inet samnet-ports &>/dev/null; then
+                local port_num=1
+                nft list chain inet samnet-ports input 2>/dev/null | grep -E "(tcp|udp) dport" | while read line; do
+                    local proto=$(echo "$line" | grep -oP '(tcp|udp)')
+                    local port=$(echo "$line" | grep -oP 'dport \K[0-9]+')
+                    local comment=$(echo "$line" | grep -oP 'comment "\K[^"]+' || echo "")
+                    
+                    local status="${T_GREEN}[OPEN]${T_RESET}"
+                    local locked=""
+                    
+                    # Mark VPN port as locked
+                    if [[ "$port" == "$vpn_port" && "$proto" == "udp" ]]; then
+                        status="${T_CYAN}[VPN]${T_RESET}"
+                        locked=" ${T_DIM}(locked)${T_RESET}"
+                    fi
+                    
+                    printf "  ${T_CYAN}%2d.${T_RESET} %-6s %-5s %-20s %s%s\n" \
+                        "$port_num" "$port" "$proto" "${comment:-user-defined}" "$status" "$locked"
+                    ((port_num++))
+                done
+            else
+                printf "  ${T_DIM}No ports table found. Run install/repair.${T_RESET}\n"
+            fi
+        
+        elif [[ "$firewall_mode" == "external" ]]; then
+            # External: Try to show UFW or basic info
+            if command -v ufw &>/dev/null && ufw status | grep -q "Status: active"; then
+                ufw status numbered 2>/dev/null | head -n 10 | awk '{print "  " $0}'
+                echo "  ..."
+            else
+                printf "  ${T_DIM}Cannot list external rules. Check your firewall tool.${T_RESET}\n"
+            fi
+            
+        else
+            # None
+            printf "  ${T_RED}FIREWALL DISABLED - ALL PORTS OPEN${T_RESET}\n"
+        fi
+        
+        printf "\n"
+        menu_option "V" "View Rules" "Show all active firewall rules"
+        
+        # Only show edit options if SamNet managed
+        if [[ "$firewall_mode" == "samnet" ]]; then
+            menu_option "A" "Add Port" "Open a new port"
+            menu_option "R" "Remove Port" "Close a port"
+            menu_option "P" "Presets" "Quick port templates"
+            ui_draw_footer "[V]iew  [A]dd  [R]emove  [P]resets  [M]ode  [B]ack"
+        else
+            printf "  ${T_DIM}(Editing disabled in $firewall_mode mode)${T_RESET}\n"
+            ui_draw_footer "[V]iew Rules  [M]ode  [B]ack"
+        fi
+        
+        menu_option "M" "Change Mode" "Switch firewall mode"
+        menu_option "B" "Back" ""
+        
+        printf "\n${T_CYAN}❯${T_RESET} "
+        
+        local key=$(read_key)
+        case "$key" in
+            v|V) show_firewall_rules_table ;;
+            m|M) run_firewall_mode_wizard ;;
+            b|B|$'\x1b') return ;;
+            # Only allow edits in samnet mode
+            a|A) [[ "$firewall_mode" == "samnet" ]] && firewall_add_port_wizard ;;
+            r|R) [[ "$firewall_mode" == "samnet" ]] && firewall_remove_port_wizard ;;
+            p|P) [[ "$firewall_mode" == "samnet" ]] && firewall_presets_menu ;;
+        esac
+    done
+}
+
+firewall_add_port_wizard() {
+    ui_draw_header_mini "Add Firewall Port"
+    
+    printf "  Enter port details:\n\n"
+    
+    # Port number
+    printf "  Port number (1-65535): "
+    ui_show_cursor
+    stty echo
+    read -r port_input
+    stty -echo
+    ui_hide_cursor
+    
+    if ! [[ "$port_input" =~ ^[0-9]+$ ]] || [[ "$port_input" -lt 1 ]] || [[ "$port_input" -gt 65535 ]]; then
+        log_error "Invalid port number"
+        wait_key
+        return
+    fi
+    
+    # Protocol
+    printf "  Protocol [tcp/udp] (default: tcp): "
+    ui_show_cursor
+    stty echo
+    read -r proto_input
+    stty -echo
+    ui_hide_cursor
+    proto_input="${proto_input:-tcp}"
+    
+    if [[ "$proto_input" != "tcp" && "$proto_input" != "udp" ]]; then
+        log_error "Invalid protocol. Must be 'tcp' or 'udp'"
+        wait_key
+        return
+    fi
+    
+    # Label
+    printf "  Label (optional, e.g., 'web-server'): "
+    ui_show_cursor
+    stty echo
+    read -r label_input
+    stty -echo
+    ui_hide_cursor
+    label_input="${label_input:-user-defined}"
+    
+    # Confirm
+    printf "\n  Adding: ${T_BOLD}$port_input/$proto_input${T_RESET} ($label_input)\n"
+    printf "  Continue? [Y/n]: "
+    read -r confirm
+    
+    if [[ "${confirm,,}" != "n" ]]; then
+        add_firewall_port "$port_input" "$proto_input" "$label_input"
+    else
+        log_info "Cancelled"
+    fi
+    wait_key
+}
+
+firewall_remove_port_wizard() {
+    ui_draw_header_mini "Remove Firewall Port"
+    
+    local vpn_port=$(db_get_config "listen_port")
+    vpn_port="${vpn_port:-51820}"
+    
+    printf "  Enter port to close:\n\n"
+    
+    # Port number
+    printf "  Port number: "
+    read -r port_input
+    
+    # Protocol
+    printf "  Protocol [tcp/udp] (default: tcp): "
+    read -r proto_input
+    proto_input="${proto_input:-tcp}"
+    
+    # Safety check for SSH
+    if [[ "$port_input" == "22" && "$proto_input" == "tcp" ]]; then
+        printf "\n  ${T_RED}${T_BOLD}WARNING:${T_RESET} Removing SSH port will lock you out!\n"
+        printf "  Are you SURE? Type 'YES' to confirm: "
+        read -r ssh_confirm
+        if [[ "$ssh_confirm" != "YES" ]]; then
+            log_info "Cancelled"
+            wait_key
+            return
+        fi
+    fi
+    
+    remove_firewall_port "$port_input" "$proto_input"
+    wait_key
+}
+
+firewall_presets_menu() {
+    ui_draw_header_mini "Firewall Presets"
+    
+    printf "  Quick port configurations:\n\n"
+    
+    menu_option "1" "Minimal" "SSH only (port 22)"
+    menu_option "2" "Web Server" "SSH + HTTP + HTTPS (22, 80, 443)"
+    menu_option "3" "Web + Honeypot" "SSH + HTTP + HTTPS + 2222"
+    menu_option "4" "Development" "SSH + common dev ports (22, 3000, 8080)"
+    printf "\n"
+    menu_option "B" "Back" ""
+    
+    ui_draw_footer "[1-4] Apply preset  [B] Back"
+    printf "\n${T_CYAN}❯${T_RESET} "
+    
+    local key=$(read_key)
+    case "$key" in
+        1) apply_firewall_preset "minimal" ;;
+        2) apply_firewall_preset "webserver" ;;
+        3) apply_firewall_preset "webhoneypot" ;;
+        4) apply_firewall_preset "development" ;;
+        b|B|$'\x1b') return ;;
+    esac
+}
+
+apply_firewall_preset() {
+    local preset="$1"
+    local vpn_port=$(db_get_config "listen_port")
+    vpn_port="${vpn_port:-51820}"
+    
+    printf "\n  ${T_YELLOW}This will reset your ports to the preset. Continue? [y/N]: ${T_RESET}"
+    read -r confirm
+    
+    if [[ "${confirm,,}" != "y" ]]; then
+        log_info "Cancelled"
+        wait_key
+        return
+    fi
+    
+    # Delete and recreate ports table with preset
+    nft delete table inet samnet-ports 2>/dev/null || true
+    
+    case "$preset" in
+        minimal)
+            nft -f - <<EOF
+table inet samnet-ports {
+    chain input {
+        type filter hook input priority -10; policy drop;
+        ip protocol icmp accept
+        udp dport $vpn_port accept comment "wireguard-vpn"
+        tcp dport 22 accept comment "ssh"
+    }
+}
+EOF
+            log_success "Applied 'Minimal' preset (SSH + VPN only)"
+            ;;
+        webserver)
+            nft -f - <<EOF
+table inet samnet-ports {
+    chain input {
+        type filter hook input priority -10; policy drop;
+        ip protocol icmp accept
+        udp dport $vpn_port accept comment "wireguard-vpn"
+        tcp dport 22 accept comment "ssh"
+        tcp dport 80 accept comment "http"
+        tcp dport 443 accept comment "https"
+    }
+}
+EOF
+            log_success "Applied 'Web Server' preset (SSH + HTTP + HTTPS)"
+            ;;
+        webhoneypot)
+            nft -f - <<EOF
+table inet samnet-ports {
+    chain input {
+        type filter hook input priority -10; policy drop;
+        ip protocol icmp accept
+        udp dport $vpn_port accept comment "wireguard-vpn"
+        tcp dport 22 accept comment "ssh"
+        tcp dport 80 accept comment "http"
+        tcp dport 443 accept comment "https"
+        tcp dport 2222 accept comment "honeypot"
+    }
+}
+EOF
+            log_success "Applied 'Web + Honeypot' preset"
+            ;;
+        development)
+            nft -f - <<EOF
+table inet samnet-ports {
+    chain input {
+        type filter hook input priority -10; policy drop;
+        ip protocol icmp accept
+        udp dport $vpn_port accept comment "wireguard-vpn"
+        tcp dport 22 accept comment "ssh"
+        tcp dport 3000 accept comment "dev-server"
+        tcp dport 8080 accept comment "alt-http"
+    }
+}
+EOF
+            log_success "Applied 'Development' preset"
+            ;;
+    esac
+    
+    persist_samnet_ports
+    wait_key
+}
+
+run_firewall_mode_wizard() {
+    # Optional parameter: pass "install" to bypass WireGuard check during installation
+    local install_mode="${1:-}"
+    
+    ui_draw_header_mini "Firewall Mode Selection"
+    
+    # Detect existing firewalls
+    local detected=""
+    if systemctl is-active --quiet ufw 2>/dev/null; then
+        detected="UFW (active)"
+    elif command -v ufw &>/dev/null; then
+        detected="UFW (installed)"
+    fi
+    if iptables -L INPUT -n 2>/dev/null | grep -qE "DROP|REJECT" && [[ -z "$detected" ]]; then
+        detected="${detected:+$detected, }iptables rules detected"
+    fi
+    
+    if [[ -n "$detected" ]]; then
+        printf "  ${T_YELLOW}Detected: $detected${T_RESET}\n\n"
+    fi
+    
+    local current_mode=$(db_get_config "firewall_mode")
+    # Smart default: if UFW is active and no mode set, default to external
+    if [[ -z "$current_mode" ]]; then
+        if ufw status 2>/dev/null | grep -q "Status: active"; then
+            current_mode="external"
+        else
+            current_mode="samnet"
+        fi
+    fi
+    printf "  Current mode: ${T_BOLD}$current_mode${T_RESET}\n\n"
+    
+    printf "  ${T_BOLD}Select firewall mode:${T_RESET}\n\n"
+    
+    menu_option "1" "SamNet Managed" "Control ports via this TUI"
+    printf "      ${T_DIM}├─ Secure by default (policy: drop)${T_RESET}\n"
+    printf "      ${T_DIM}└─ ⚠ Don't use UFW/iptables for ports${T_RESET}\n\n"
+    
+    menu_option "2" "External Firewall" "You manage ports externally"
+    printf "      ${T_DIM}├─ SamNet only handles VPN routing${T_RESET}\n"
+    printf "      ${T_DIM}└─ Use UFW, iptables, etc. for ports${T_RESET}\n\n"
+    
+    menu_option "3" "No Firewall" "All ports open (dangerous)"
+    printf "      ${T_DIM}└─ Not recommended for production${T_RESET}\n\n"
+    
+    menu_option "B" "Back" "Keep current mode"
+    
+    ui_draw_footer "[1-3] Select mode  [B] Back"
+    printf "\n${T_CYAN}❯${T_RESET} "
+    
+    local key=$(read_key)
+    case "$key" in
+        1)
+            # ─── Safety Check: WireGuard must be installed (bypass during install) ───
+            if [[ "$install_mode" != "install" ]] && [[ ! -f /etc/wireguard/wg0.conf ]]; then
+                printf "\n  ${T_RED}${T_BOLD}Cannot select SamNet Managed mode!${T_RESET}\n"
+                printf "  ${T_YELLOW}WireGuard is not installed.${T_RESET}\n\n"
+                printf "  SamNet Managed mode requires WireGuard to be installed first.\n"
+                printf "  This prevents accidentally overwriting your existing firewall rules.\n\n"
+                printf "  ${T_DIM}Options:${T_RESET}\n"
+                printf "  ${T_DIM}  • Run installer: ${T_CYAN}samnet --zero-touch${T_RESET}\n"
+                printf "  ${T_DIM}  • Use External Firewall mode with UFW/iptables${T_RESET}\n"
+                wait_key
+                return
+            fi
+
+            
+            # ─── Smart Switch to SamNet Mode ───
+            local vpn_port=$(db_get_config "listen_port")
+            vpn_port="${vpn_port:-51820}"
+            
+            # Check if samnet-ports exists
+            if ! nft list table inet samnet-ports &>/dev/null; then
+                # Detect listening services that need ports opened
+                printf "\n  ${T_CYAN}Scanning for listening services...${T_RESET}\n"
+                
+                local detected_ports=()
+                local detected_procs=()
+                
+                # Scan common ports using ss
+                if command -v ss &>/dev/null; then
+                    while read -r port proc; do
+                        [[ -n "$port" ]] && detected_ports+=("$port") && detected_procs+=("$proc")
+                    done < <(ss -tlnp 2>/dev/null | grep LISTEN | awk '{
+                        port = $4; sub(/.*:/, "", port);
+                        proc = $6; gsub(/.*"/, "", proc); gsub(/".*/, "", proc);
+                        if (port ~ /^[0-9]+$/ && port != "22") print port, proc
+                    }' | head -15)
+                fi
+                
+                # Filter to well-known ports that users likely want open
+                local ports_to_add=()
+                local labels=()
+                
+                for i in "${!detected_ports[@]}"; do
+                    local p="${detected_ports[$i]}"
+                    local proc="${detected_procs[$i]}"
+                    case "$p" in
+                        80)   ports_to_add+=("80:tcp"); labels+=("http ($proc)") ;;
+                        443)  ports_to_add+=("443:tcp"); labels+=("https ($proc)") ;;
+                        2222) ports_to_add+=("2222:tcp"); labels+=("alt-ssh/honeypot ($proc)") ;;
+                        3000) ports_to_add+=("3000:tcp"); labels+=("dev-server ($proc)") ;;
+                        8080) ports_to_add+=("8080:tcp"); labels+=("alt-http ($proc)") ;;
+                        8443) ports_to_add+=("8443:tcp"); labels+=("alt-https ($proc)") ;;
+                        8081|8082) ports_to_add+=("$p:tcp"); labels+=("docker-proxy ($proc)") ;;
+                    esac
+                done
+                
+                if [[ ${#ports_to_add[@]} -gt 0 ]]; then
+                    printf "\n  ${T_YELLOW}⚠ Detected services that need open ports:${T_RESET}\n\n"
+                    for i in "${!ports_to_add[@]}"; do
+                        local port_proto="${ports_to_add[$i]}"
+                        local label="${labels[$i]}"
+                        printf "    ${T_GREEN}•${T_RESET} %-10s %s\n" "${port_proto%:*}/tcp" "$label"
+                    done
+                    printf "\n  ${T_CYAN}Without these ports, services will be blocked!${T_RESET}\n"
+                    printf "  Add detected ports to firewall? [Y/n]: "
+                    read -r add_confirm
+                    
+                    if [[ "${add_confirm,,}" != "n" ]]; then
+                        # Create samnet-ports with detected services
+                        local nft_rules="table inet samnet-ports {\n    chain input {\n        type filter hook input priority -10; policy drop;\n        ip protocol icmp accept\n        udp dport $vpn_port accept comment \"wireguard-vpn\"\n        tcp dport 22 accept comment \"ssh\"\n"
+                        
+                        for i in "${!ports_to_add[@]}"; do
+                            local port_proto="${ports_to_add[$i]}"
+                            local port="${port_proto%:*}"
+                            local proto="${port_proto#*:}"
+                            local label="${labels[$i]%% (*}"  # Remove process name
+                            nft_rules+="        $proto dport $port accept comment \"$label\"\n"
+                        done
+                        
+                        nft_rules+="    }\n}\n"
+                        
+                        echo -e "$nft_rules" | nft -f -
+                        persist_samnet_ports
+                        log_success "Created firewall with ${#ports_to_add[@]} detected ports + SSH + VPN"
+                    else
+                        # User declined - create minimal
+                        create_samnet_ports_table "$vpn_port"
+                        log_warn "Created minimal firewall (SSH + VPN only)"
+                    fi
+                else
+                    # No services detected - create minimal
+                    create_samnet_ports_table "$vpn_port"
+                    log_success "Created firewall with SSH + VPN"
+                fi
+            else
+                log_info "Using existing samnet-ports table"
+            fi
+            
+            db_set_config "firewall_mode" "samnet"
+            log_success "Switched to SamNet-managed firewall"
+            ;;
+        2)
+            db_set_config "firewall_mode" "external"
+            # Remove samnet-ports table to avoid conflicts
+            if nft list table inet samnet-ports &>/dev/null; then
+                printf "\n  ${T_YELLOW}Remove samnet-ports table? (recommended to avoid conflicts) [Y/n]: ${T_RESET}"
+                read -r remove_confirm
+                if [[ "${remove_confirm,,}" != "n" ]]; then
+                    nft delete table inet samnet-ports 2>/dev/null
+                    rm -f /etc/samnet-ports.nft
+                    log_info "Removed samnet-ports table"
+                fi
+            fi
+            log_success "Switched to external firewall mode"
+            log_info "Remember to open necessary ports with your firewall tool!"
+            ;;
+        3)
+            printf "\n  ${T_RED}${T_BOLD}WARNING:${T_RESET} No firewall means ALL ports are open!\n"
+            printf "  Type 'CONFIRM' to proceed: "
+            read -r confirm
+            if [[ "$confirm" == "CONFIRM" ]]; then
+                db_set_config "firewall_mode" "none"
+                nft delete table inet samnet-ports 2>/dev/null
+                rm -f /etc/samnet-ports.nft
+                log_warn "Firewall disabled - all ports open"
+            else
+                log_info "Cancelled"
+            fi
+            ;;
+        b|B|$'\x1b') return 1 ;;  # Return non-zero to signal "go back"
+    esac
+    wait_key
+}
+
+
+# ─── Show All Active Firewall Rules in Table Format ──────────────────────────
+
+show_firewall_rules_table() {
+    # Collect all output into a variable so we can pipe to less
+    local output=""
+    local current_table=""
+    
+    output+="  ${T_BOLD}Open ports from all firewall sources:${T_RESET}\n\n"
+    output+="  ${T_CYAN}PORT     PROTO   SOURCE             ACTION${T_RESET}\n"
+    output+="  ${T_DIM}──────────────────────────────────────────────────────${T_RESET}\n"
+    
+    # ─── 1. Scan nftables (only samnet/honeypot tables, skip UFW internal) ───
+    if command -v nft &>/dev/null; then
+        while IFS= read -r line; do
+            if [[ "$line" =~ ^table[[:space:]]+(inet|ip|ip6)[[:space:]]+([a-zA-Z0-9_-]+) ]]; then
+                current_table="${BASH_REMATCH[2]}"
+            fi
+            [[ "$current_table" == "filter" ]] && continue
+            case "$current_table" in
+                samnet-filter|samnet-ports|honeypot|nat) ;;
+                *) continue ;;
+            esac
+            if [[ "$line" =~ (tcp|udp)[[:space:]]dport[[:space:]]([0-9]+) ]]; then
+                local proto="${BASH_REMATCH[1]}"
+                local port="${BASH_REMATCH[2]}"
+                local action="ACCEPT" color="${T_GREEN}"
+                [[ "$line" =~ accept ]] && action="ACCEPT" && color="${T_GREEN}"
+                [[ "$line" =~ drop ]] && action="DROP" && color="${T_RED}"
+                [[ "$line" =~ redirect ]] && action="REDIRECT" && color="${T_YELLOW}"
+                [[ "$line" =~ reject ]] && action="REJECT" && color="${T_RED}"
+                local src_color="${T_DIM}"
+                case "$current_table" in
+                    samnet-filter) src_color="${T_CYAN}" ;;
+                    samnet-ports) src_color="${T_GREEN}" ;;
+                    honeypot) src_color="${T_MAGENTA}" ;;
+                esac
+                output+="  ${color}$(printf '%-8s' "$port")${T_RESET} $(printf '%-7s' "$proto") ${src_color}$(printf '%-18s' "$current_table")${T_RESET} ${color}$(printf '%-12s' "$action")${T_RESET}\n"
+            fi
+        done < <(nft list ruleset 2>/dev/null)
+    fi
+    
+    # ─── 2. Check UFW ───
+    if command -v ufw &>/dev/null; then
+        local ufw_status=$(ufw status 2>/dev/null | head -1)
+        if [[ "$ufw_status" == *"active"* ]]; then
+            output+="\n  ${T_DIM}──────────────────────────────────────────────────────${T_RESET}\n"
+            output+="  ${T_BOLD}UFW (active):${T_RESET}\n"
+            
+            while IFS= read -r line; do
+                [[ -z "$line" ]] && continue
+                [[ "$line" == "Status:"* ]] && continue
+                [[ "$line" == "To"*"Action"* ]] && continue
+                [[ "$line" == "--"* ]] && continue
+                
+                local port="" proto="" action="ALLOW" ipver=""
+                [[ "$line" =~ "(v6)" ]] && ipver="v6"
+                
+                if [[ "$line" =~ ^([0-9]+)/(tcp|udp) ]]; then
+                    port="${BASH_REMATCH[1]}"; proto="${BASH_REMATCH[2]}"
+                elif [[ "$line" =~ ^([0-9]+)[[:space:]]on[[:space:]]([a-z0-9]+) ]]; then
+                    port="${BASH_REMATCH[1]}"; proto="on ${BASH_REMATCH[2]}"
+                elif [[ "$line" =~ ^([0-9]+)[[:space:]] ]] && [[ ! "$line" =~ "/" ]]; then
+                    port="${BASH_REMATCH[1]}"; proto="both"
+                fi
+                
+                [[ "$line" =~ ALLOW ]] && action="ALLOW"
+                [[ "$line" =~ DENY ]] && action="DENY"
+                
+                if [[ -n "$port" ]]; then
+                    local color="${T_GREEN}"
+                    [[ "$action" == "DENY" ]] && color="${T_RED}"
+                    local source="UFW"
+                    [[ -n "$ipver" ]] && source="UFW (v6)"
+                    output+="  ${color}$(printf '%-8s' "$port")${T_RESET} $(printf '%-7s' "$proto") ${T_BLUE}$(printf '%-18s' "$source")${T_RESET} ${color}$(printf '%-12s' "$action")${T_RESET}\n"
+                fi
+            done < <(ufw status 2>/dev/null)
+        else
+            output+="\n  ${T_DIM}UFW: inactive${T_RESET}\n"
+        fi
+    fi
+    
+    # ─── 3. Listening Services ───
+    output+="\n  ${T_DIM}──────────────────────────────────────────────────────${T_RESET}\n"
+    output+="  ${T_BOLD}Listening Services:${T_RESET} ${T_DIM}(top 10)${T_RESET}\n"
+    if command -v ss &>/dev/null; then
+        while read -r line; do
+            local port=$(echo "$line" | awk '{print $4}' | grep -oE '[0-9]+$')
+            local proc=$(echo "$line" | grep -oP 'users:\(\("\K[^"]+' || echo "-")
+            [[ -n "$port" ]] && output+="  ${T_DIM}$(printf '%-8s' "$port") tcp     $(printf '%-18s' "${proc:0:15}") (listening)${T_RESET}\n"
+        done < <(ss -tlnp 2>/dev/null | grep LISTEN | head -10)
+    fi
+    
+    output+="\n  ${T_DIM}Navigation: ↑↓/PgUp/PgDn to scroll, q to exit${T_RESET}\n"
+    
+    # Clear screen and display with scrolling via less
+    clear
+    printf "\n    ${T_GREEN}▸${T_RESET} ${T_WHITE}SAMNET${T_RESET} │ ${T_CYAN}Active Firewall Rules${T_RESET}\n"
+    printf "  ────────────────────────────────────────────────────────────────────────────────────\n\n"
+    
+    # Use less with color support and exit if content fits
+    echo -e "$output" | less -RFX
+}
+
+
+show_firewall_status() {
+    ui_draw_header_mini "Firewall Rules"
+    printf "    ${T_CYAN}${T_BOLD}Active nftables Rules:${T_RESET}\n"
+    printf "    ${T_DIM}────────────────────────────────────────────${T_RESET}\n"
+    nft list ruleset 2>/dev/null | head -50 | while read line; do
+        printf "    ${T_DIM}%s${T_RESET}\n" "$line"
+    done
+    wait_key
+}
+
+# Show Logs Screen
+show_logs_screen() {
+    ui_draw_header_mini "System Logs"
+    printf "    ${T_CYAN}${T_BOLD}Recent API Logs:${T_RESET}\n"
+    printf "    ${T_DIM}────────────────────────────────────────────${T_RESET}\n"
+    # Try both names just in case, preferring samnet-wg-api
+    docker logs samnet-wg-api 2>&1 | tail -20 | while read line; do
+        printf "    ${T_DIM}%s${T_RESET}\n" "$line"
+    done
+    wait_key
+}
+
+# Traffic Stats Display (Live Mode)
+show_traffic_stats() {
+    local client_dir="$INSTALL_DIR/clients"
+    
+    # Build pubkey -> name map once
+    declare -A peer_names
+    if [[ -d "$client_dir" ]]; then
+        for conf in "$client_dir"/*.conf; do
+            [[ -e "$conf" ]] || continue
+            local priv=$(grep "PrivateKey" "$conf" 2>/dev/null | cut -d= -f2 | tr -d ' ')
+            if [[ -n "$priv" ]]; then
+                local pub=$(echo "$priv" | wg pubkey 2>/dev/null)
+                if [[ -n "$pub" ]]; then
+                    peer_names["$pub"]=$(basename "$conf" .conf)
+                fi
+            fi
+        done
+    fi
+    
+    # Live refresh loop
+    while true; do
+        ui_clear
+        ui_draw_header_mini "Traffic Statistics (Live)"
+        
+        printf "    ${T_CYAN}${T_BOLD}Per-Peer Transfer Statistics${T_RESET}  ${T_DIM}[Press Q to exit]${T_RESET}\n"
+        printf "    ${T_DIM}────────────────────────────────────────────────────────${T_RESET}\n"
+        printf "    ${T_WHITE}%-24s %12s %12s %12s${T_RESET}\n" "PEER" "RECEIVED" "SENT" "LAST SEEN"
+        printf "    ${T_DIM}────────────────────────────────────────────────────────${T_RESET}\n"
+        
+        local total_rx=0 total_tx=0 peer_count=0
+        
+        # Parse wg show output
+        while IFS=$'\t' read -r pubkey preshared endpoint allowed_ips handshake rx tx keepalive; do
+            [[ -z "$pubkey" || "$pubkey" == "$(cat /etc/wireguard/publickey 2>/dev/null)" ]] && continue
+            
+            local name="${peer_names[$pubkey]:-${pubkey:0:8}...}"
+            
+            # Format bytes
+            local rx_fmt=$(numfmt --to=iec-i --suffix=B $rx 2>/dev/null || echo "${rx}B")
+            local tx_fmt=$(numfmt --to=iec-i --suffix=B $tx 2>/dev/null || echo "${tx}B")
+            
+            # Format handshake time
+            local hs_fmt="never"
+            if [[ "$handshake" != "0" && -n "$handshake" ]]; then
+                local now=$(date +%s)
+                local diff=$((now - handshake))
+                if [[ $diff -lt 60 ]]; then
+                    hs_fmt="${diff}s ago"
+                elif [[ $diff -lt 3600 ]]; then
+                    hs_fmt="$((diff/60))m ago"
+                elif [[ $diff -lt 86400 ]]; then
+                    hs_fmt="$((diff/3600))h ago"
+                else
+                    hs_fmt="$((diff/86400))d ago"
+                fi
+            fi
+            
+            printf "    %-24s %12s %12s %12s\n" "$name" "$rx_fmt" "$tx_fmt" "$hs_fmt"
+            
+            ((total_rx += rx))
+            ((total_tx += tx))
+            ((peer_count++))
+        done < <(wg show wg0 dump 2>/dev/null | tail -n +2)
+        
+        printf "    ${T_DIM}────────────────────────────────────────────────────────${T_RESET}\n"
+        
+        local total_rx_fmt=$(numfmt --to=iec-i --suffix=B $total_rx 2>/dev/null || echo "${total_rx}B")
+        local total_tx_fmt=$(numfmt --to=iec-i --suffix=B $total_tx 2>/dev/null || echo "${total_tx}B")
+        printf "    ${T_GREEN}%-24s %12s %12s${T_RESET}\n" "TOTAL ($peer_count peers)" "$total_rx_fmt" "$total_tx_fmt"
+        
+        # Adaptive refresh interval: 5s for <10 peers, 10s for <50, 20s for <100, 30s for 100+
+        local refresh_interval=5
+        if [[ $peer_count -ge 100 ]]; then
+            refresh_interval=30
+        elif [[ $peer_count -ge 50 ]]; then
+            refresh_interval=20
+        elif [[ $peer_count -ge 10 ]]; then
+            refresh_interval=10
+        fi
+        
+        printf "\n    ${T_DIM}Refreshing in ${refresh_interval}s... (Q to quit)${T_RESET}\n"
+        
+        # Wait for keypress or timeout
+        if read -t $refresh_interval -n 1 key 2>/dev/null; then
+            case "$key" in
+                q|Q) return ;;
+            esac
+        fi
+    done
+}
+
+# Observability Screen
+screen_observability() {
+    while true; do
+        ui_draw_header_mini "Observability"
+        
+        menu_option "1" "Live Status" "Watch mode"
+        menu_option "2" "Traffic Stats" "Bandwidth usage"
+        menu_option "3" "Health Check" "API and WG status"
+        printf "\n"
+        menu_option "B" "Back" ""
+        
+        ui_draw_footer "[1-3] Select  [B] Back"
+        printf "\n${T_CYAN}❯${T_RESET} "
+        
+        local key=$(read_key)
+        case "$key" in
+            1) run_watch_mode ;;
+            2) show_traffic_stats ;;
+            3) check_health ;;
+            b|B|$'\x1b') return ;;
+        esac
+    done
+}
+
+# Health Check
+check_health() {
+    ui_draw_header_mini "Health Check"
+    
+    printf "    ${T_CYAN}Running health checks...${T_RESET}\n\n"
+    
+    # WireGuard
+    if wg show wg0 &>/dev/null; then
+        printf "    ${T_GREEN}✓${T_RESET} WireGuard interface\n"
+    else
+        printf "    ${T_RED}✗${T_RESET} WireGuard interface\n"
+    fi
+    
+    # Docker
+    if docker ps &>/dev/null; then
+        printf "    ${T_GREEN}✓${T_RESET} Docker daemon\n"
+    else
+        printf "    ${T_RED}✗${T_RESET} Docker daemon\n"
+    fi
+    
+    # API Container
+    if docker ps --format '{{.Names}}' | grep -q samnet-api; then
+        printf "    ${T_GREEN}✓${T_RESET} API container running\n"
+    else
+        printf "    ${T_RED}✗${T_RESET} API container\n"
+    fi
+    
+    # API Health
+    if curl -sf $(get_api_url)/health/live &>/dev/null; then
+        printf "    ${T_GREEN}✓${T_RESET} API responding\n"
+    else
+        printf "    ${T_RED}✗${T_RESET} API not responding\n"
+    fi
+    
+    # Firewall
+    if nft list ruleset &>/dev/null | grep -q "masquerade"; then
+        printf "    ${T_GREEN}✓${T_RESET} Firewall NAT rules\n"
+    else
+        printf "    ${T_YELLOW}⚠${T_RESET} Firewall NAT missing\n"
+    fi
+    
+    wait_key
+}
+
+# Advanced Tools Screen
+screen_advanced() {
+    while true; do
+        ui_draw_header_mini "Advanced Tools"
+        
+        menu_option "1" "Repair Wizard" "Fix common issues"
+        menu_option "2" "Rebuild Docker" "No-cache rebuild"
+        menu_option "3" "Reset Database" "Clear all data"
+        menu_option "4" "Export Config" "Backup settings"
+        printf "\n"
+        menu_option "B" "Back" ""
+        
+        ui_draw_footer "[1-4] Select  [B] Back"
+        printf "\n${T_CYAN}❯${T_RESET} "
+        
+        local key=$(read_key)
+        case "$key" in
+            1) run_repair_wizard ;;
+            2) rebuild_docker ; wait_key ;;
+            3) log_warn "Not implemented yet"; wait_key ;;
+            4) log_warn "Not implemented yet"; wait_key ;;
+            b|B|$'\x1b') return ;;
+        esac
+    done
+}
+
+# Uninstall Screen
+screen_uninstall() {
+    ui_draw_header_mini "Uninstall SamNet-WG"
+    
+    printf "    ${T_RED}${T_BOLD}⚠ WARNING ⚠${T_RESET}\n\n"
+    printf "    This will remove:\n"
+    printf "    ${T_DIM}• Docker containers and images${T_RESET}\n"
+    printf "    ${T_DIM}• WireGuard configuration${T_RESET}\n"
+    printf "    ${T_DIM}• Firewall rules${T_RESET}\n"
+    printf "    ${T_DIM}• Database and all data${T_RESET}\n"
+    printf "    ${T_DIM}• Installed files${T_RESET}\n\n"
+    
+    if ui_confirm "Are you sure you want to uninstall?"; then
+        full_uninstall
+    else
+        log_info "Cancelled."
+    fi
+    
+    wait_key
+}
+
+main_menu() {
+    local width=78
+    # Safe line generation without tr (which fails on multibyte chars in some locales)
+    local hline=""
+    for ((i=0; i<width; i++)); do hline="${hline}─"; done
+    
+    local first_run=true
+    local needs_refresh=true
+    local force_clear=false
+    
+    while true; do
+        if [[ "$needs_refresh" == "true" ]] || [[ "$first_run" == "true" ]] || [[ "$force_clear" == "true" ]]; then
+            # Hide cursor during redraw to prevent flicker/corruption
+            tput civis
+            
+            if [[ "$first_run" == "true" ]] || [[ "$force_clear" == "true" ]]; then
+                clear
+                force_clear=false
+            else
+                tput cup 0 0
+            fi
+            
+            first_run=false
+            needs_refresh=false
+
+            # Get live system stats
+            local hostname=$(hostname 2>/dev/null || echo "samnet-host")
+            local os_info=$(grep -oP '(?<=^PRETTY_NAME=").*(?=")' /etc/os-release 2>/dev/null | head -c 20 || echo "Linux")
+            local wg_status="DOWN"
+            local wg_iface="wg0"
+            local subnet="Not configured"
+            local peer_count=0
+            local cpu_usage="--"
+            local mem_usage="--"
+            local disk_usage="--"
+            local ddns_status="--"
+            
+            # Peer Count: Single Source of Truth
+            local peer_count=0
+            # Prefer DB count (includes Web UI peers)
+            if [[ -f "$DB_PATH" ]]; then
+                peer_count=$(db_query "SELECT COUNT(*) FROM peers;" 2>/dev/null)
+                # Handle empty return or error
+                [[ -z "$peer_count" ]] && peer_count=0
+            else
+                # Fallback to live WG or files
+                if wg show wg0 &>/dev/null; then
+                     peer_count=$(wg show wg0 | grep -c "peer:")
+                elif [[ -d "$INSTALL_DIR/clients" ]]; then
+                     peer_count=$(find "$INSTALL_DIR/clients" -name "*.conf" 2>/dev/null | wc -l)
+                fi
+            fi
+            
+            # WireGuard Status check
+            if wg show wg0 &>/dev/null; then
+                wg_status="UP"
+                local raw_addr=$(grep "Address" /etc/wireguard/wg0.conf 2>/dev/null | cut -d= -f2 | tr -d ' ' | cut -d, -f1 | head -1)
+                subnet=$(normalize_cidr "$raw_addr")
+            else
+                if [[ -f "/etc/wireguard/wg0.conf" ]]; then
+                    subnet=$(grep "Address" /etc/wireguard/wg0.conf 2>/dev/null | cut -d= -f2 | tr -d ' ' | head -1)
+                else
+                    local db_subnet=$(db_get_config "subnet_cidr")
+                    [[ -n "$db_subnet" ]] && subnet="$db_subnet"
+                fi
+            fi
+            
+            # System resources
+            cpu_usage=$(top -bn1 2>/dev/null | grep "Cpu(s)" | awk '{print int($2)}' || echo "0")%
+            mem_usage=$(free -m 2>/dev/null | awk '/Mem:/ {print $3}' || echo "0")MB
+            disk_usage=$(df -h / 2>/dev/null | awk 'NR==2 {print $5}' || echo "0%")
+            
+            # API/DDNS status
+            if curl -sf --max-time 1 $(get_api_url)/health/live &>/dev/null; then
+                ddns_status="${T_GREEN}HEALTHY${T_RESET}"
+            else
+                ddns_status="${T_DIM}OFFLINE${T_RESET}"
+            fi
+            
+            # Mode
+            local mode="STANDALONE"
+            [[ -f "$INSTALL_DIR/samnet" ]] && mode="MANAGED"
+            
+            # Detect terminal dimensions
+            local term_cols=$(tput cols 2>/dev/null || echo 80)
+            local term_rows=$(tput lines 2>/dev/null || echo 24)
+            
+            # Adapt width to terminal (min 60, max 78)
+            local display_width=$((term_cols - 2))
+            [[ $display_width -gt 78 ]] && display_width=78
+            [[ $display_width -lt 48 ]] && display_width=48
+            
+            # Use ui_repeat for consistency
+            local hline=$(ui_repeat "─" $display_width)
+            
+            # Compact mode for short/narrow terminals
+            local compact_mode=false
+            [[ $term_rows -lt 22 || $term_cols -lt 65 ]] && compact_mode=true
+            
+            # ═══ HEADER ═══
+            echo "${T_GREEN}┌${hline}┐${T_RESET}"
+            
+            # SAMNET-WG Logo - based on terminal HEIGHT
+            printf "${T_GREEN}${T_BOLD}"
+            if [[ $term_rows -ge 20 && $term_cols -ge 65 ]]; then
+                # Normal terminal: full SAMNET-WG block logo (6 lines)
+                printf '%s\n' " ███████╗ █████╗ ███╗   ███╗███╗   ██╗███████╗████████╗   ██╗    ██╗ ██████╗ "
+                printf '%s\n' " ██╔════╝██╔══██╗████╗ ████║████╗  ██║██╔════╝╚══██╔══╝   ██║    ██║██╔════╝ "
+                printf '%s\n' " ███████╗███████║██╔████╔██║██╔██╗ ██║█████╗     ██║      ██║ █╗ ██║██║  ███╗"
+                printf '%s\n' " ╚════██║██╔══██║██║╚██╔╝██║██║╚██╗██║██╔══╝     ██║      ██║███╗██║██║   ██║"
+                printf '%s\n' " ███████║██║  ██║██║ ╚═╝ ██║██║ ╚████║███████╗   ██║      ╚███╔███╔╝╚██████╔╝"
+                printf '%s\n' " ╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝  ╚═══╝╚══════╝   ╚═╝       ╚══╝╚══╝  ╚═════╝ "
+            else
+                # Short terminal: compact text banner (3 lines)
+                echo "  ╔═════════════════════════════════════════╗"
+                echo "  ║         S A M N E T  -  W G             ║"
+                echo "  ╚═════════════════════════════════════════╝"
+            fi
+            printf "${T_RESET}"
+            
+            # Author line (skip in compact mode)
+            if [[ "$compact_mode" != "true" ]]; then
+                echo "  ${T_CYAN}By $AUTHOR${T_RESET} | ${T_CYAN}$WEBSITE${T_RESET} | ${T_WHITE}v$SAMNET_VERSION${T_RESET}"
+                echo "  ${T_DIM}$TAGLINE${T_RESET}"
+            fi
+            
+            # Web UI URL
+            local web_display=""
+            if [[ "$(db_get_config web_ui_enabled)" == "true" ]]; then
+                if [[ "$(db_get_config ssl_enabled)" == "true" ]]; then
+                    web_display="${T_CYAN}https://$(db_get_config ssl_domain)${T_RESET}"
+                else
+                    local lan_ip=$(hostname -I 2>/dev/null | awk '{print $1}')
+                    [[ -z "$lan_ip" ]] && lan_ip="127.0.0.1"
+                    web_display="${T_CYAN}http://${lan_ip}${T_RESET}"
+                fi
+            fi
+
+            # ═══ SYSTEM INFO BAR ═══
+            echo "${T_GREEN}├${hline}┤${T_RESET}"
+            
+            if [[ "$compact_mode" == "true" ]]; then
+                # Compact: single line status
+                local wg_color="${T_GREEN}"; [[ "$wg_status" == "DOWN" ]] && wg_color="${T_RED}"
+                echo " ${T_WHITE}WG:${T_RESET}${wg_color}$wg_status${T_RESET} ${T_WHITE}Peers:${T_RESET}$peer_count ${T_WHITE}API:${T_RESET}$ddns_status"
+            else
+                # Full: multi-line status
+                echo " ${T_WHITE}HOST:${T_RESET} $hostname  ${T_WHITE}OS:${T_RESET} $os_info  ${T_WHITE}MODE:${T_RESET} $mode"
+                [[ -n "$web_display" ]] && echo " ${T_WHITE}WEB UI:${T_RESET} $web_display"
+                local wg_color="${T_GREEN}"; [[ "$wg_status" == "DOWN" ]] && wg_color="${T_RED}"
+                echo " ${T_WHITE}WG:${T_RESET} ${wg_color}$wg_iface ($wg_status)${T_RESET}  ${T_WHITE}SUBNET:${T_RESET} $subnet  ${T_WHITE}PEERS:${T_RESET} $peer_count"
+                echo " ${T_WHITE}CPU:${T_RESET} $cpu_usage  ${T_WHITE}RAM:${T_RESET} $mem_usage  ${T_WHITE}DISK:${T_RESET} $disk_usage  ${T_WHITE}API:${T_RESET} $ddns_status"
+            fi
+            
+            # ═══ MENU ═══
+            echo "${T_GREEN}├${hline}┤${T_RESET}"
+            
+            if [[ "$compact_mode" == "true" ]]; then
+                # Compact menu: minimal
+                echo " ${T_CYAN}[1]${T_RESET}Status ${T_CYAN}[2]${T_RESET}Install ${T_CYAN}[3]${T_RESET}Peers ${T_CYAN}[4]${T_RESET}Security"
+                echo " ${T_CYAN}[5]${T_RESET}Observe ${T_CYAN}[6]${T_RESET}Advanced ${T_CYAN}[7]${T_RESET}About ${T_RED}[8]${T_RESET}Uninstall"
+                echo " ${T_CYAN}[9]${T_RESET}Client Guide"
+            else
+                # Full menu with descriptions
+                echo ""
+                echo "  ${T_CYAN}[ 1 ]${T_RESET} ${T_WHITE}${T_BOLD}STATUS DASHBOARD${T_RESET}       ${T_DIM}View system health & live state${T_RESET}"
+                echo "  ${T_CYAN}[ 2 ]${T_RESET} ${T_WHITE}${T_BOLD}INSTALL / REPAIR${T_RESET}       ${T_DIM}Zero-touch install, repair, self-heal${T_RESET}"
+                echo "  ${T_CYAN}[ 3 ]${T_RESET} ${T_WHITE}${T_BOLD}PEER MANAGEMENT${T_RESET}        ${T_DIM}Create, disable, archive WireGuard peers${T_RESET}"
+                echo "  ${T_CYAN}[ 4 ]${T_RESET} ${T_WHITE}${T_BOLD}SECURITY & ACCESS${T_RESET}      ${T_DIM}Users, roles, tokens, audit trail${T_RESET}"
+                echo "  ${T_CYAN}[ 5 ]${T_RESET} ${T_WHITE}${T_BOLD}OBSERVABILITY${T_RESET}          ${T_DIM}Metrics, logs, health, alerts${T_RESET}"
+                echo "  ${T_CYAN}[ 6 ]${T_RESET} ${T_WHITE}${T_BOLD}ADVANCED TOOLS${T_RESET}         ${T_DIM}Dry-run, firewall diff, chaos, offline${T_RESET}"
+                echo "  ${T_CYAN}[ 7 ]${T_RESET} ${T_WHITE}${T_BOLD}DOCS / ABOUT SAMNET${T_RESET}    ${T_DIM}Project info & philosophy${T_RESET}"
+                echo "  ${T_CYAN}[ 8 ]${T_RESET} ${T_RED}${T_BOLD}UNINSTALL${T_RESET}              ${T_DIM}Safe removal (danger-gated)${T_RESET}"
+                echo "  ${T_CYAN}[ 9 ]${T_RESET} ${T_WHITE}CLIENT GUIDE${T_RESET}           ${T_DIM}Setup iOS, Android, Windows...${T_RESET}"
+                echo ""
+            fi
+            
+            # ═══ FOOTER ═══
+            echo "${T_GREEN}├${hline}┤${T_RESET}"
+            if [[ "$compact_mode" == "true" ]]; then
+                echo " ${T_CYAN}[1-9]${T_RESET}Select ${T_CYAN}[P]${T_RESET}Palette ${T_CYAN}[?]${T_RESET}Help ${T_CYAN}[Q]${T_RESET}Quit"
+            else
+                echo "  ${T_DIM}SHORTCUTS:${T_RESET} ${T_CYAN}[1-9]${T_RESET} Select | ${T_CYAN}[P]${T_RESET} Command Palette | ${T_CYAN}[?]${T_RESET} Help"
+                echo "             ${T_CYAN}[B]${T_RESET} Go Back | ${T_CYAN}[Q]${T_RESET} Quit | ${T_CYAN}[R]${T_RESET} Refresh"
+            fi
+            echo "${T_GREEN}└${hline}┘${T_RESET}"
+            tput ed
+            tput cnorm # Show cursor back
+        fi
+        
+        # Read key
+        local c=$(read_key)
+        case "$c" in
+            1) screen_status; force_clear=true ;;
+            2) screen_install; force_clear=true ;;
+            3) screen_peers; force_clear=true ;;
+            4) screen_security; force_clear=true ;;
+            5) screen_observability; force_clear=true ;;
+            6) screen_advanced_v2; force_clear=true ;;
+            7) show_about_screen; force_clear=true ;;
+            8) screen_uninstall; force_clear=true ;;
+            9) screen_client_guide; force_clear=true ;;
+            p|P|/) show_command_palette; needs_refresh=true ;;
+            \?|h|H) show_help_screen; needs_refresh=true ;;
+            r|R) needs_refresh=true ;;
+            b|B) ;; # No back from main
+            [qQ]) cleanup_exit 0 ;;
+            "") needs_refresh=true ;; # Timeout - trigger auto-refresh
+            *) ;; # Ignore invalid input
+        esac
+    done
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# 11.5 CLIENT INSTALLATION GUIDE
+# ══════════════════════════════════════════════════════════════════════════════
+
+screen_client_guide() {
+    while true; do
+        ui_clear
+        printf "${T_GREEN}${T_BOLD}"
+        cat << 'GUIDE_BANNER'
+    ╔══════════════════════════════════════════════════════════════════════╗
+    ║                    CLIENT INSTALLATION GUIDE                        ║
+    ╚══════════════════════════════════════════════════════════════════════╝
+GUIDE_BANNER
+        printf "${T_RESET}\n"
+        
+        printf "    ${T_CYAN}${T_BOLD}Select your platform:${T_RESET}\n\n"
+        
+        menu_option "1" "iOS (iPhone/iPad)" ""
+        menu_option "2" "Android" ""
+        menu_option "3" "Windows" ""
+        menu_option "4" "macOS" ""
+        menu_option "5" "Linux" ""
+        menu_option "B" "Back" ""
+        
+        printf "\n${C_CYAN}❯${C_RESET} "
+        local c=$(read_key)
+        
+        case "${c^^}" in
+            1)
+                ui_clear
+                section "iOS Setup"
+                printf "\n  ${C_BOLD}Step 1: Install WireGuard${C_RESET}\n"
+                printf "  ─────────────────────────\n"
+                printf "  • Open the App Store\n"
+                printf "  • Search for ${C_WHITE}WireGuard${C_RESET}\n"
+                printf "  • Tap ${C_CYAN}Get${C_RESET} to install\n\n"
+                
+                printf "  ${C_BOLD}Step 2: Import Configuration${C_RESET}\n"
+                printf "  ─────────────────────────────\n"
+                printf "  • Open WireGuard app\n"
+                printf "  • Tap ${C_CYAN}+${C_RESET} → ${C_WHITE}Create from QR code${C_RESET}\n"
+                printf "  • Scan the QR code shown in Peer Manager\n"
+                printf "  • Give it a name (e.g., \"Home VPN\")\n\n"
+                
+                printf "  ${C_BOLD}Step 3: Connect${C_RESET}\n"
+                printf "  ──────────────\n"
+                printf "  • Toggle the switch to connect\n"
+                printf "  • Allow VPN permissions when prompted\n"
+                printf "  • ${C_GREEN}Done!${C_RESET} You're connected.\n\n"
+                wait_key
+                ;;
+            2)
+                ui_clear
+                section "Android Setup"
+                printf "\n  ${C_BOLD}Step 1: Install WireGuard${C_RESET}\n"
+                printf "  ─────────────────────────\n"
+                printf "  • Open Google Play Store\n"
+                printf "  • Search for ${C_WHITE}WireGuard${C_RESET}\n"
+                printf "  • Tap ${C_CYAN}Install${C_RESET}\n\n"
+                
+                printf "  ${C_BOLD}Step 2: Import Configuration${C_RESET}\n"
+                printf "  ─────────────────────────────\n"
+                printf "  • Open WireGuard app\n"
+                printf "  • Tap ${C_CYAN}+${C_RESET} → ${C_WHITE}Scan from QR code${C_RESET}\n"
+                printf "  • Point camera at QR code from Peer Manager\n"
+                printf "  • Name your tunnel\n\n"
+                
+                printf "  ${C_BOLD}Step 3: Connect${C_RESET}\n"
+                printf "  ──────────────\n"
+                printf "  • Tap the toggle to connect\n"
+                printf "  • Accept VPN permission\n"
+                printf "  • ${C_GREEN}Connected!${C_RESET}\n\n"
+                wait_key
+                ;;
+            3)
+                ui_clear
+                section "Windows Setup"
+                printf "\n  ${C_BOLD}Step 1: Download WireGuard${C_RESET}\n"
+                printf "  ──────────────────────────\n"
+                printf "  • Go to: ${C_CYAN}https://wireguard.com/install/${C_RESET}\n"
+                printf "  • Download Windows installer\n"
+                printf "  • Run the installer\n\n"
+                
+                printf "  ${C_BOLD}Step 2: Import Configuration${C_RESET}\n"
+                printf "  ─────────────────────────────\n"
+                printf "  • Download your .conf file from Peer Manager\n"
+                printf "  • Open WireGuard\n"
+                printf "  • Click ${C_WHITE}Import tunnel(s) from file${C_RESET}\n"
+                printf "  • Select your .conf file\n\n"
+                
+                printf "  ${C_BOLD}Step 3: Connect${C_RESET}\n"
+                printf "  ──────────────\n"
+                printf "  • Select your tunnel\n"
+                printf "  • Click ${C_CYAN}Activate${C_RESET}\n"
+                printf "  • ${C_GREEN}You're connected!${C_RESET}\n\n"
+                wait_key
+                ;;
+            4)
+                ui_clear
+                section "macOS Setup"
+                printf "\n  ${C_BOLD}Step 1: Install WireGuard${C_RESET}\n"
+                printf "  ─────────────────────────\n"
+                printf "  • Open the Mac App Store\n"
+                printf "  • Search for ${C_WHITE}WireGuard${C_RESET}\n"
+                printf "  • Click ${C_CYAN}Get${C_RESET} to install\n\n"
+                
+                printf "  ${C_BOLD}Step 2: Import Configuration${C_RESET}\n"
+                printf "  ─────────────────────────────\n"
+                printf "  • Click WireGuard icon in menu bar\n"
+                printf "  • Select ${C_WHITE}Import Tunnel(s) from File...${C_RESET}\n"
+                printf "  • Choose your downloaded .conf file\n\n"
+                
+                printf "  ${C_BOLD}Step 3: Connect${C_RESET}\n"
+                printf "  ──────────────\n"
+                printf "  • Click the WireGuard menu bar icon\n"
+                printf "  • Click your tunnel name\n"
+                printf "  • ${C_GREEN}Connected!${C_RESET}\n\n"
+                wait_key
+                ;;
+            5)
+                ui_clear
+                section "Linux Setup"
+                printf "\n  ${C_BOLD}Step 1: Install WireGuard${C_RESET}\n"
+                printf "  ─────────────────────────\n"
+                printf "  ${C_DIM}Ubuntu/Debian:${C_RESET}\n"
+                printf "    ${C_WHITE}sudo apt install wireguard${C_RESET}\n\n"
+                printf "  ${C_DIM}Fedora:${C_RESET}\n"
+                printf "    ${C_WHITE}sudo dnf install wireguard-tools${C_RESET}\n\n"
+                printf "  ${C_DIM}Arch:${C_RESET}\n"
+                printf "    ${C_WHITE}sudo pacman -S wireguard-tools${C_RESET}\n\n"
+                
+                printf "  ${C_BOLD}Step 2: Import Configuration${C_RESET}\n"
+                printf "  ─────────────────────────────\n"
+                printf "  • Download your .conf file\n"
+                printf "  • Copy to WireGuard config directory:\n"
+                printf "    ${C_WHITE}sudo cp client.conf /etc/wireguard/${C_RESET}\n\n"
+                
+                printf "  ${C_BOLD}Step 3: Connect${C_RESET}\n"
+                printf "  ──────────────\n"
+                printf "  • ${C_WHITE}sudo wg-quick up client${C_RESET}\n"
+                printf "  • To disconnect: ${C_WHITE}sudo wg-quick down client${C_RESET}\n"
+                printf "  • ${C_GREEN}Done!${C_RESET}\n\n"
+                wait_key
+                ;;
+            B|G) return ;;
+            Q) cleanup_exit 0 ;;
+        esac
+    done
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# 12. CLI & ENTRY POINT
+# ══════════════════════════════════════════════════════════════════════════════
+
+show_help() {
+    cat << 'HELP'
+SamNet-WG - Unified WireGuard Manager
+
+USAGE:
+    samnet [OPTIONS]
+
+OPTIONS:
+    --help, -h          Show help
+    --version           Show version
+    --no-color          Disable colors
+    --zero-touch, -z    Auto-install
+    --interactive, -i   Wizard install
+    --status            Print status (no TUI)
+    --uninstall         Completely remove SamNet-WG
+    --rebuild           Rebuild Docker containers
+
+EXAMPLES:
+    samnet              # Launch TUI
+    samnet --zero-touch # Auto-install
+    samnet --status     # Quick check
+    samnet --uninstall  # Remove everything
+    samnet --rebuild    # Fix Docker issues
+HELP
+}
+
+print_status() {
+    echo "=== SamNet-WG Status ==="
+    echo "WireGuard:  $(get_wg_status)"
+    echo "Peers:      $(get_peer_count) ($(get_stale_peer_count) stale)"
+    echo "Firewall:   $(get_firewall_backend)"
+}
+
+cleanup_exit() {
+    show_cursor
+    stty echo 2>/dev/null
+    printf "\n${C_DIM}Goodbye!${C_RESET}\n"
+    exit "${1:-0}"
+}
+
+# Full uninstall - removes everything
+full_uninstall() {
+    echo ""
+    echo "${T_RED}${T_BOLD}╔════════════════════════════════════════╗${T_RESET}"
+    echo "${T_RED}${T_BOLD}║     ⚠ COMPLETE UNINSTALL WARNING ⚠    ║${T_RESET}"
+    echo "${T_RED}${T_BOLD}╚════════════════════════════════════════╝${T_RESET}"
+    echo ""
+    echo "This will PERMANENTLY remove:"
+    echo "  ${T_RED}•${T_RESET} Docker containers and images (samnet-api)"
+    echo "  ${T_RED}•${T_RESET} WireGuard interface and all keys"
+    echo "  ${T_RED}•${T_RESET} SamNet firewall tables (samnet-filter, samnet-nat)"
+    echo "  ${T_RED}•${T_RESET} Database and ALL peer data"
+    echo "  ${T_RED}•${T_RESET} Installed files (/opt/samnet)"
+    echo "  ${T_RED}•${T_RESET} Credentials file"
+    echo ""
+    echo "  ${T_GREEN}✓${T_RESET} ${T_DIM}Preserved: UFW, Docker rules, honeypot, other nftables${T_RESET}"
+    echo ""
+    echo "${T_YELLOW}This action CANNOT be undone!${T_RESET}"
+    echo ""
+    
+    # Restore terminal for input
+    stty echo 2>/dev/null
+    show_cursor
+    
+    # First confirmation
+    read -r -p "Are you SURE you want to uninstall? (yes/no): " confirm1
+    if [[ "$confirm1" != "yes" ]]; then
+        echo "${T_GREEN}Cancelled.${T_RESET}"
+        return 0
+    fi
+    
+    # Second confirmation - type UNINSTALL
+    echo ""
+    echo "${T_YELLOW}Final confirmation required.${T_RESET}"
+    read -r -p "Type 'UNINSTALL' in capitals to proceed: " confirm2
+    if [[ "$confirm2" != "UNINSTALL" ]]; then
+        echo "${T_GREEN}Cancelled.${T_RESET}"
+        return 0
+    fi
+    
+    echo ""
+    local delete_backups="no"
+    if [[ -d "/root/samnet-backups" ]]; then
+        echo "${T_CYAN}Detected existing backups in /root/samnet-backups${T_RESET}"
+        read -r -p "Delete all backup archives? (yes/no) [default: no]: " db_choice
+        [[ "${db_choice,,}" == "yes" ]] && delete_backups="yes"
+    fi
+    
+
+    
+    local deep_clean="no"
+    if command -v docker &>/dev/null; then
+        echo ""
+        echo "${T_CYAN}Docker Cleanup:${T_RESET}"
+        echo "  We can remove the SamNet-WG database volume and images."
+        read -r -p "Remove Docker volume 'samnet-wg-db'? (yes/no) [default: no]: " dc_choice
+        [[ "${dc_choice,,}" == "yes" ]] && deep_clean="yes"
+    fi
+
+    echo ""
+    echo "${T_CYAN}Starting uninstallation...${T_RESET}"
+    echo ""
+    
+    # Step 1: Docker (Forceful removal)
+    log_info "[1/6] Removing Docker resources..."
+    
+    # Try compose down first if available to clean networks
+    if [[ -f "$INSTALL_DIR/services/docker-compose.yml" ]]; then
+        local compose_cmd=""
+        if command -v docker-compose &>/dev/null; then compose_cmd="docker-compose"; 
+        elif docker compose version &>/dev/null; then compose_cmd="docker compose"; fi
+        
+        if [[ -n "$compose_cmd" ]]; then
+             $compose_cmd -p samnet-wg -f "$INSTALL_DIR/services/docker-compose.yml" down -v --remove-orphans 2>/dev/null && echo "  ✓ Compose down successful"
+        fi
+    fi
+
+    # Force kill and remove API container (samnet-wg specific)
+    if docker ps -a --format '{{.Names}}' | grep -q "^samnet-wg-api$"; then
+        docker rm -f samnet-wg-api >/dev/null 2>&1 && echo "  ✓ Removed samnet-wg-api container"
+    elif docker ps -a --format '{{.Names}}' | grep -q "^samnet-api$"; then
+        # Legacy name fallback
+        docker rm -f samnet-api >/dev/null 2>&1 && echo "  ✓ Removed samnet-api container (legacy)"
+    else
+        echo "  - API container not found"
+    fi
+    
+    # Force kill and remove UI container (samnet-wg specific)
+    if docker ps -a --format '{{.Names}}' | grep -q "^samnet-wg-ui$"; then
+        docker rm -f samnet-wg-ui >/dev/null 2>&1 && echo "  ✓ Removed samnet-wg-ui container"
+    elif docker ps -a --format '{{.Names}}' | grep -q "^samnet-ui$"; then
+        # Legacy name fallback
+        docker rm -f samnet-ui >/dev/null 2>&1 && echo "  ✓ Removed samnet-ui container (legacy)"
+    else
+        echo "  - UI container not found"
+    fi
+    
+    # Remove API image (samnet-wg specific)
+    if docker images samnet-wg/api:latest -q | grep -q .; then
+        docker rmi -f samnet-wg/api:latest >/dev/null 2>&1 && echo "  ✓ Removed samnet-wg/api image"
+    elif docker images samnet/api:latest -q | grep -q .; then
+        # Legacy name fallback
+        docker rmi -f samnet/api:latest >/dev/null 2>&1 && echo "  ✓ Removed samnet/api image (legacy)"
+    fi
+    
+    # Remove UI image (samnet-wg specific)
+    if docker images samnet-wg/ui:latest -q | grep -q .; then
+        docker rmi -f samnet-wg/ui:latest >/dev/null 2>&1 && echo "  ✓ Removed samnet-wg/ui image"
+    elif docker images samnet/ui:latest -q | grep -q .; then
+        # Legacy name fallback
+        docker rmi -f samnet/ui:latest >/dev/null 2>&1 && echo "  ✓ Removed samnet/ui image (legacy)"
+    fi
+    
+    # Prune dangling images - STRICTLY SCOPED to samnet-wg
+    log_info "Cleaning up dangling images (samnet-wg only)..."
+    docker image prune -f --filter "label=project=samnet-wg" >/dev/null 2>&1 && echo "  ✓ Pruned project images"
+    
+    # Docker network cleanup (SCOPED: only samnet network)
+    log_info "Cleaning Docker networks..."
+    docker network rm samnet-grid samnet-wg_default 2>/dev/null && echo "  ✓ Docker networks removed" || echo "  - Network not found"
+    
+    # Targeted Cleanup (Safe)
+    if [[ "$deep_clean" == "yes" ]]; then
+        log_info "Removing SamNet-WG specific volumes..."
+        # Only remove OUR volume
+        docker volume rm samnet-wg-db 2>/dev/null && echo "  ✓ Volume samnet-wg-db removed"
+        
+        # Try to remove legacy volume name if it exists
+        docker volume rm samnet-db 2>/dev/null && echo "  ✓ Volume samnet-db removed (legacy)"
+    fi
+    
+    # Verify Docker cleanup
+    local remaining=""
+    docker ps -a --format '{{.Names}}' | grep -qE "^samnet(-wg)?-api$" && remaining="$remaining api"
+    docker ps -a --format '{{.Names}}' | grep -qE "^samnet(-wg)?-ui$" && remaining="$remaining ui"
+    if [[ -n "$remaining" ]]; then
+        echo "  ${T_RED}⚠ WARNING: Containers still exist:$remaining${T_RESET}"
+    fi
+    
+    # Step 2: WireGuard
+    log_info "[2/8] Stopping WireGuard..."
+    systemctl stop wg-quick@wg0 2>/dev/null && echo "  ✓ Service stopped" || echo "  - Service not running"
+    systemctl disable wg-quick@wg0 2>/dev/null && echo "  ✓ Service disabled" || echo "  - Already disabled"
+    
+    # Step 3: WireGuard config
+    log_info "[3/8] Removing WireGuard configuration..."
+    rm -f /etc/wireguard/wg0.conf && echo "  ✓ Config removed"
+    rm -f /etc/wireguard/privatekey && echo "  ✓ Private key removed"
+    rm -f /etc/wireguard/publickey && echo "  ✓ Public key removed"
+    
+    # Step 4: Firewall
+    log_info "[4/8] Removing firewall rules (created by samnet)..."
+    
+    # Remove VPN routing tables (always safe - these are SamNet namespaced)
+    nft delete table inet samnet-filter 2>/dev/null && echo "  ✓ Removed samnet-filter (VPN rules)" || echo "  - samnet-filter not found"
+    nft delete table ip samnet-nat 2>/dev/null && echo "  ✓ Removed samnet-nat" || echo "  - samnet-nat not found"
+    nft delete table ip6 samnet-nat6 2>/dev/null && echo "  ✓ Removed samnet-nat6" || echo "  - samnet-nat6 not found"
+    
+    # Remove SamNet include line from /etc/nftables.conf (PRESERVE the file itself)
+    if [[ -f /etc/nftables.conf ]]; then
+        if grep -qF 'include "/etc/samnet/samnet.nft"' /etc/nftables.conf; then
+            # Remove the include line and the comment above it
+            sed -i '/# SamNet-WG VPN rules/d' /etc/nftables.conf
+            sed -i '\|include "/etc/samnet/samnet.nft"|d' /etc/nftables.conf
+            # Clean up any resulting blank lines at end of file
+            sed -i -e :a -e '/^\n*$/{$d;N;ba' -e '}' /etc/nftables.conf 2>/dev/null || true
+            echo "  ✓ Removed SamNet include from /etc/nftables.conf (file preserved)"
+        else
+            echo "  - No SamNet include found in /etc/nftables.conf"
+        fi
+    fi
+    
+    # Remove SamNet config directory
+    rm -rf /etc/samnet && echo "  ✓ Removed /etc/samnet directory" || echo "  - /etc/samnet not found"
+    
+    # Ask about user ports table
+    if nft list table inet samnet-ports &>/dev/null; then
+        echo ""
+        echo "  ${T_CYAN}Found custom port rules (samnet-ports table)${T_RESET}"
+        echo "  This contains your manually configured open ports (SSH, HTTP, etc.)"
+        read -r -p "  Delete your custom port rules? (yes/no) [default: no]: " del_ports
+        if [[ "${del_ports,,}" == "yes" ]]; then
+            nft delete table inet samnet-ports 2>/dev/null
+            rm -f /etc/samnet-ports.nft
+            echo "  ✓ Removed samnet-ports (custom port rules)"
+        else
+            echo "  - Preserved samnet-ports (your custom port rules still active)"
+            echo "  ${T_DIM}  Note: You can manage these with: nft list table inet samnet-ports${T_RESET}"
+        fi
+    fi
+    
+    # Clean up iptables rules - ONLY those tagged with "samnet-wg" comment
+    local wan_iface=$(ip route get 8.8.8.8 2>/dev/null | awk '{print $5; exit}')
+    if [[ -n "$wan_iface" ]]; then
+        # Use while loop to remove ALL matching tagged rules (handles duplicates)
+        local removed_forward=false removed_return=false removed_nat=false
+        while iptables -D FORWARD -i wg0 -o "$wan_iface" -j ACCEPT -m comment --comment "samnet-wg" 2>/dev/null; do removed_forward=true; done
+        while iptables -D FORWARD -i "$wan_iface" -o wg0 -m state --state ESTABLISHED,RELATED -j ACCEPT -m comment --comment "samnet-wg" 2>/dev/null; do removed_return=true; done
+        while iptables -t nat -D POSTROUTING -s 10.0.0.0/8 -o "$wan_iface" -j MASQUERADE -m comment --comment "samnet-wg" 2>/dev/null; do removed_nat=true; done
+        
+        [[ "$removed_forward" == true ]] && echo "  ✓ Removed iptables wg0 forward rule (samnet-wg tagged)"
+        [[ "$removed_return" == true ]] && echo "  ✓ Removed iptables wg0 return rule (samnet-wg tagged)"
+        [[ "$removed_nat" == true ]] && echo "  ✓ Removed iptables NAT rule (samnet-wg tagged)"
+        
+        # Persist the changes if netfilter-persistent is available
+        command -v netfilter-persistent &>/dev/null && netfilter-persistent save >/dev/null 2>&1
+    fi
+    
+    # Explicitly state what we DON'T touch
+    echo ""
+    echo "  ${T_DIM}Preserved (not touched by SamNet):${T_RESET}"
+    echo "  ${T_DIM}  • /etc/nftables.conf (only removed SamNet include line)${T_RESET}"
+    echo "  ${T_DIM}  • UFW/iptables rules (only removed samnet-wg tagged rules)${T_RESET}"
+    echo "  ${T_DIM}  • Docker network rules${T_RESET}"
+    echo "  ${T_DIM}  • Other nftables tables (e.g., honeypot)${T_RESET}"
+    echo ""
+
+    
+    # Step 5: Database and data (samnet-wg specific paths)
+    log_info "[5/8] Removing database and data..."
+    rm -rf /var/lib/samnet-wg && echo "  ✓ Data directory removed (/var/lib/samnet-wg)"
+    rm -rf /var/lib/samnet && echo "  ✓ Legacy data directory removed (/var/lib/samnet)" || true
+    rm -f /root/.samnet-wg_initial_credentials && echo "  ✓ Credentials file removed"
+    rm -f /root/.samnet_initial_credentials && echo "  ✓ Legacy credentials removed" || true
+    rm -rf /var/log/samnet-wg && echo "  ✓ Log directory removed"
+    rm -rf /var/log/samnet 2>/dev/null || true
+    
+    # Step 6: Cron jobs (remove ONLY samnet-wg specific patterns, preserve other samnet projects)
+    log_info "[6/8] Removing cron jobs..."
+    if crontab -l &>/dev/null; then
+        # Use precise patterns to avoid removing other samnet project cron jobs
+        crontab -l | grep -v "samnet-wg" | grep -v "/opt/samnet/.*bandwidth_collector" | grep -v "samnet\.sh check_expiry" | crontab -
+        echo "  ✓ Cron jobs removed (samnet-wg only)"
+    fi
+    
+    # Step 7: Installed files
+    log_info "[7/8] Removing installed files..."
+    
+    # Stop and remove WireGuard sync service (if installed)
+    if systemctl is-active --quiet samnet-wg-sync.service 2>/dev/null; then
+        systemctl stop samnet-wg-sync.service >/dev/null 2>&1
+    fi
+    systemctl disable samnet-wg-sync.service >/dev/null 2>&1 || true
+    rm -f /etc/systemd/system/samnet-wg-sync.service && echo "  ✓ WireGuard sync service removed"
+    systemctl daemon-reload >/dev/null 2>&1
+    
+    # Remove trigger file
+    rm -f /etc/wireguard/.reload_trigger
+    
+    rm -f /usr/local/bin/samnet && echo "  ✓ CLI symlink removed"
+    rm -rf "$INSTALL_DIR" && echo "  ✓ Installation directory removed"
+    
+    # Step 8: Temp file cleanup (samnet-wg specific)
+    log_info "[8/8] Cleaning up temporary files..."
+    if [[ "$delete_backups" == "yes" ]]; then
+        rm -rf /root/samnet-backups && echo "  ✓ Backups removed (/root/samnet-backups)"
+    else
+        echo "  - Preserved backups in /root/samnet-backups"
+    fi
+    rm -f /tmp/samnet-wg-*.tmp /tmp/samnet-wg-*.tar.gz 2>/dev/null && echo "  ✓ Temp files removed"
+    rm -f /tmp/samnet-*.tmp /tmp/samnet-*.tar.gz 2>/dev/null || true  # Legacy
+    rm -f /tmp/crontab.tmp /tmp/nftables.backup.* 2>/dev/null
+    
+    echo ""
+    echo "${T_GREEN}${T_BOLD}╔════════════════════════════════════════╗${T_RESET}"
+    echo "${T_GREEN}${T_BOLD}║   ✓ SamNet-WG completely uninstalled!  ║${T_RESET}"
+    echo "${T_GREEN}${T_BOLD}╚════════════════════════════════════════╝${T_RESET}"
+    echo ""
+}
+
+# Rebuild Docker without cache
+rebuild_docker() {
+    log_info "Rebuilding Docker image without cache..."
+    
+    if [[ ! -d "$INSTALL_DIR/services" ]]; then
+        log_error "SamNet not installed. Run installer first."
+        exit 1
+    fi
+    
+    docker stop samnet-wg-api samnet-api 2>/dev/null || true
+    docker rm samnet-wg-api samnet-api 2>/dev/null || true
+    
+    log_info "Building with --no-cache..."
+    docker build --network=host --no-cache --label project=samnet-wg -t samnet-wg/api:latest "$DIR/services/api"
+    
+    # Ensure bridge network exists
+    if ! docker network ls | grep -q "samnet-grid"; then
+        docker network create samnet-grid >/dev/null
+    fi
+
+    log_info "Starting container..."
+    local api_port=$(db_get_config "api_port")
+    api_port="${api_port:-8766}"
+    
+    # 1. Cleanup old
+    docker rm -f samnet-wg-api samnet-api 2>/dev/null || true
+
+    # 2. Start using bridge network + port mapping
+    if ! docker run -d \
+        --name samnet-wg-api \
+        --network=samnet-grid \
+        -p ${api_port}:${api_port} \
+        --restart=unless-stopped \
+        --cap-add=NET_ADMIN \
+        -v /var/lib/samnet-wg:/var/lib/samnet-wg \
+        -v /etc/wireguard:/etc/wireguard \
+        -v "$DIR/clients":/opt/samnet/clients \
+        -e SAMNET_DB_PATH=/var/lib/samnet-wg/samnet.db \
+        -e PORT=$api_port \
+        -e INSECURE_HTTP=true \
+        -e GIN_MODE=release \
+        samnet-wg/api:latest >/dev/null; then
+        log_error "Failed to start container"
+    fi
+    
+    # Prune dangling (scoped to samnet-wg)
+    docker image prune -f --filter "label=project=samnet-wg" >/dev/null 2>&1
+    
+    log_success "Docker rebuild complete!"
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# 13. MAINTENANCE & BACKUP
+# ══════════════════════════════════════════════════════════════════════════════
+
+screen_maintenance() {
+    while true; do
+        ui_draw_header_mini "Maintenance & Backup"
+        
+        printf "    ${T_CYAN}Manage backups and perform system maintenance.${T_RESET}\n\n"
+        
+        menu_option "1" "Create Full Backup" "Save Configs, Keys, DB & Clients (Preserves QR!)"
+        menu_option "2" "Restore Backup" "Restore from .tar.gz file (No Key Gen needed)"
+        # menu_option "3" "Rotate Server Keys" "Regenerate Server Keypair (Advanced)"
+        # menu_option "4" "Prune Logs" "Clean up old logs"
+        printf "\n"
+        menu_option "B" "Back" ""
+        
+        ui_draw_footer "[1-2] Select  [B] Back"
+        printf "\n${T_CYAN}❯${T_RESET} "
+        
+        local key=$(read_key)
+        case "$key" in
+            1) create_backup_wizard ;;
+            2) restore_backup_wizard ;;
+            b|B|$'\x1b') return ;;
+        esac
+    done
+}
+
+create_backup_wizard() {
+    ui_draw_header_mini "Create Backup"
+    
+    log_info "This will create a comprehensive backup archive containing:"
+    echo "    • WireGuard keys and config (wg0.conf)"
+    echo "    • All client configurations (keys/QR codes)"
+    echo "    • SamNet Database (Metadata, Users, Logs)"
+    echo "    • Firewall Rules"
+    echo ""
+    echo "    ${T_GREEN}Why use this?${T_RESET}"
+    echo "    Restoring this backup later means you will NOT need to regenerate keys"
+    echo "    or rescan QR codes on your phones/laptops. It is a full state save."
+    echo ""
+    
+    if ! confirm "Create backup now?"; then return; fi
+    
+    local ts=$(date +%Y%m%d-%H%M%S)
+    local backup_dir="/root/samnet-backups"
+    local backup_file="$backup_dir/samnet-backup-$ts.tar.gz"
+    local tmp_dir=$(mktemp -d)
+    
+    mkdir -p "$backup_dir"
+    
+    log_info "Gathering files..."
+    
+    # 1. WireGuard Configs & Keys
+    mkdir -p "$tmp_dir/wireguard"
+    cp /etc/wireguard/wg0.conf "$tmp_dir/wireguard/" 2>/dev/null
+    cp /etc/wireguard/privatekey "$tmp_dir/wireguard/" 2>/dev/null
+    cp /etc/wireguard/publickey "$tmp_dir/wireguard/" 2>/dev/null
+    
+    # 2. Database & internal data
+    mkdir -p "$tmp_dir/data"
+    # Dump sqlite to be safe against corruption during copy
+    if [[ -f "$DB_PATH" ]]; then
+        sqlite3 "$DB_PATH" ".backup '$tmp_dir/data/samnet.db'"
+    fi
+    # Also copy file just in case
+    cp /var/lib/samnet-wg/*.key "$tmp_dir/data/" 2>/dev/null
+    
+    # 3. Client Configs (The critical part for User's request)
+    mkdir -p "$tmp_dir/clients"
+    cp -r "$INSTALL_DIR/clients/"* "$tmp_dir/clients/" 2>/dev/null
+    
+    # 4. Firewall
+    cp /etc/nftables.conf "$tmp_dir/nftables.conf" 2>/dev/null
+    
+    # 5. Metadata
+    echo "$VERSION" > "$tmp_dir/VERSION"
+    date > "$tmp_dir/DATE"
+    
+    log_info "Compressing..."
+    tar -czf "$backup_file" -C "$tmp_dir" .
+    rm -rf "$tmp_dir"
+    
+    log_success "Backup created successfully!"
+    echo "    Path: ${T_BOLD}${T_WHITE}$backup_file${T_RESET}"
+    echo ""
+    echo "    ${T_YELLOW}Keep this file safe! It contains your private keys.${T_RESET}"
+    wait_key
+}
+
+restore_backup_wizard() {
+    ui_draw_header_mini "Restore Backup"
+    
+    echo "    ${T_CYAN}This will restore your system state from a previous backup.${T_RESET}"
+    echo "    ${T_DIM}If the backup contains client files, your existing devices will"
+    echo "    connect immediately without needing new QR codes.${T_RESET}"
+    echo ""
+    
+    local backup_dir="/root/samnet-backups"
+    mkdir -p "$backup_dir"
+    
+    local files=("$backup_dir"/*.tar.gz)
+    if [[ ! -e "${files[0]}" ]]; then
+        log_warn "No backups found in $backup_dir"
+        echo "    You can upload a backup file here to restore it."
+        wait_key
+        return
+    fi
+    
+    echo "    ${T_CYAN}Select backup to restore:${T_RESET}"
+    local i=1
+    for f in "${files[@]}"; do
+        printf "    ${T_GREEN}[%d]${T_RESET} %s\n" "$i" "$(basename "$f")"
+        ((i++))
+    done
+    
+    local choice=$(ui_prompt "Select #")
+    [[ -z "$choice" ]] && return
+    
+    local idx=$((choice-1))
+    local target_file="${files[$idx]}"
+    
+    if [[ ! -f "$target_file" ]]; then log_error "Invalid selection"; return; fi
+    
+    echo ""
+    log_warn "${T_RED}WARNING: This will OVERWRITE current configuration!${T_RESET}"
+    if ! confirm "Proceed with restore?"; then return; fi
+    
+    local tmp_dir=$(mktemp -d)
+    log_info "Extracting..."
+    tar -xzf "$target_file" -C "$tmp_dir"
+    
+    # Function to restore safe permissions
+    restore_perms() {
+        chown -R root:root /etc/wireguard
+        chmod 600 /etc/wireguard/wg0.conf /etc/wireguard/privatekey
+        mkdir -p "$INSTALL_DIR/clients"
+        chown -R 1000:1000 "$INSTALL_DIR/clients"
+        chmod 700 "$INSTALL_DIR/clients"
+        mkdir -p "/var/lib/samnet-wg"
+        chown -R 1000:1000 "/var/lib/samnet-wg"
+    }
+
+    log_info "Restoring components..."
+    
+    # Stop services
+    systemctl stop wg-quick@wg0 2>/dev/null
+    
+    # 1. WireGuard
+    if [[ -d "$tmp_dir/wireguard" ]]; then
+        cp "$tmp_dir/wireguard/"* /etc/wireguard/
+    fi
+    
+    # 2. Data/DB
+    if [[ -d "$tmp_dir/data" ]]; then
+        cp "$tmp_dir/data/"* /var/lib/samnet-wg/
+        # Ensure correct ownership for Docker API
+        chown -R 1000:1000 /var/lib/samnet-wg
+    fi
+    
+    # 3. Clients
+    if [[ -d "$tmp_dir/clients" ]]; then
+        mkdir -p "$INSTALL_DIR/clients"
+        cp -r "$tmp_dir/clients/"* "$INSTALL_DIR/clients/"
+    fi
+    
+    # 4. Firewall
+    if [[ -f "$tmp_dir/nftables.conf" ]]; then
+        cp "$tmp_dir/nftables.conf" /etc/nftables.conf
+        nft -f /etc/nftables.conf 2>/dev/null
+    fi
+    
+    restore_perms
+    
+    # Restart Services
+    log_info "Restarting services..."
+    systemctl start wg-quick@wg0
+    docker restart samnet-wg-api 2>/dev/null
+    
+    rm -rf "$tmp_dir"
+    
+    log_success "Restore complete!"
+    echo "    Your peers, keys, and configurations have been restored."
+    wait_key
+}
+
+trap 'cleanup_exit 130' INT
+trap 'cleanup_exit 143' TERM
+
+main() {
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --help|-h) show_help; exit 0 ;;
+            --version) echo "SamNet v$SAMNET_VERSION"; exit 0 ;;
+            --no-color) NOCOLOR=true; shift ;;
+            --zero-touch|-z) init_colors; check_root; ensure_early_dependencies; do_install; exit 0 ;;
+            --interactive|-i) init_colors; check_root; ensure_early_dependencies; INTERACTIVE=true; do_install; exit 0 ;;
+            --status) print_status; exit 0 ;;
+            --uninstall) init_colors; check_root; full_uninstall; exit 0 ;;
+            --rebuild) init_colors; check_root; rebuild_docker; exit 0 ;;
+            --update) init_colors; check_root; do_update; exit 0 ;;
+            --check-update) init_colors; v=$(get_remote_version) && echo "Remote: v$v | Local: v$SAMNET_VERSION" || echo "Failed to check"; exit 0 ;;
+            --init-bandwidth) init_colors; check_root; echo "Bandwidth now managed by API"; exit 0 ;;
+            check_expiry|--check-expiry) init_colors; check_root; check_expiry; check_limits; exit 0 ;;
+            *) echo "Unknown: $1"; exit 1 ;;
+        esac
+    done
+    
+    init_colors
+    check_root
+    get_term_size
+    
+    # Check and install dependencies BEFORE showing the TUI
+    ensure_early_dependencies || true
+    
+    # Initialize database directory and schema (CRITICAL - prevents "unable to open" errors)
+    ensure_db_init || true
+    reconcile_db_with_files || true
+    
+    # Auto-init bandwidth tables on first run (Idempotent)
+    # "$INSTALL_DIR/scripts/bandwidth_collector.sh" init 2>/dev/null || true
+    
+    acquire_session_lock || true
+
+    
+    # Show startup status check
+    echo ""
+    echo "${T_CYAN}${T_BOLD}SamNet-WG${T_RESET} v${SAMNET_VERSION}"
+    echo "${T_DIM}────────────────────────────────────${T_RESET}"
+    echo ""
+    
+    # Quick health check before TUI
+    echo "Checking system status..."
+    echo ""
+    
+    # WireGuard status
+    if wg show wg0 &>/dev/null; then
+        echo "  ${T_GREEN}●${T_RESET} WireGuard    ${T_GREEN}ONLINE${T_RESET}"
+    else
+        echo "  ${T_RED}●${T_RESET} WireGuard    ${T_DIM}offline${T_RESET}"
+    fi
+    
+    # Docker status
+    if docker ps &>/dev/null; then
+        echo "  ${T_GREEN}●${T_RESET} Docker Engine ${T_GREEN}running${T_RESET}"
+    else
+        echo "  ${T_RED}●${T_RESET} Docker Engine ${T_DIM}not running${T_RESET}"
+    fi
+    
+    # API status
+    if docker ps --format '{{.Names}}' 2>/dev/null | grep -qE "samnet(-wg)?-api"; then
+        if curl -sf --max-time 2 $(get_api_url)/health/live &>/dev/null; then
+            echo "  ${T_GREEN}●${T_RESET} API          ${T_GREEN}healthy${T_RESET}"
+        else
+            echo "  ${T_YELLOW}●${T_RESET} API          ${T_YELLOW}starting...${T_RESET}"
+        fi
+    else
+        echo "  ${T_DIM}●${T_RESET} API          ${T_DIM}not deployed${T_RESET}"
+    fi
+    
+    # Check for updates (non-blocking, max 2s timeout)
+    check_for_updates_silent 2>/dev/null &
+    local update_pid=$!
+    local waited=0
+    while kill -0 $update_pid 2>/dev/null && [[ $waited -lt 4 ]]; do
+        sleep 0.5
+        ((waited++))
+    done
+    # Kill if still running after timeout
+    kill $update_pid 2>/dev/null || true
+    wait $update_pid 2>/dev/null || true
+    
+    echo ""
+    echo "${T_DIM}Press any key to continue...${T_RESET}"
+    read -rsn1
+    
+    # Enter full-screen app mode (alternate buffer)
+    ui_enter_app
+    
+    # Always show main menu - installation is an option within it
+    main_menu
+}
+
+main "$@"

@@ -1,1953 +1,2477 @@
-use crate::crypto::block::BlockLayout;
-use crate::crypto::file::{FileDecoder, FileEncoder};
-use crate::crypto::ssl::SslCipher;
-use base64::Engine;
-use base64::engine::general_purpose::STANDARD_NO_PAD;
-use fuse_mt::{
-    CallbackResult, CreatedEntry, DirectoryEntry, FileAttr, FileType, FilesystemMT, RequestInfo,
-    ResultCreate, ResultEmpty, ResultEntry, ResultOpen, ResultReaddir, ResultSlice, ResultStatfs,
-    ResultWrite, Statfs, Xattr,
+/*!
+A high-level, safe, zero-allocation font parser for:
+* [TrueType](https://docs.microsoft.com/en-us/typography/truetype/),
+* [OpenType](https://docs.microsoft.com/en-us/typography/opentype/spec/), and
+* [AAT](https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6AATIntro.html)
+  fonts.
+
+Font parsing starts with a [`Face`].
+
+## Features
+
+- A high-level API for most common properties, hiding all parsing and data resolving logic.
+- A low-level, but safe API to access TrueType tables data.
+- Highly configurable. You can disable most of the features, reducing binary size.
+  You can also parse TrueType tables separately, without loading the whole font/face.
+- Zero heap allocations.
+- Zero unsafe.
+- Zero dependencies.
+- `no_std`/WASM compatible.
+- Fast.
+- Stateless. All parsing methods are immutable.
+- Simple and maintainable code (no magic numbers).
+
+## Safety
+
+- The library must not panic. Any panic considered as a critical bug and should be reported.
+- The library forbids unsafe code.
+- No heap allocations, so crash due to OOM is not possible.
+- All recursive methods have a depth limit.
+- Technically, should use less than 64KiB of stack in worst case scenario.
+- Most of arithmetic operations are checked.
+- Most of numeric casts are checked.
+*/
+
+#![no_std]
+#![forbid(unsafe_code)]
+#![warn(missing_docs)]
+#![warn(missing_copy_implementations)]
+#![warn(missing_debug_implementations)]
+#![allow(clippy::get_first)] // we use it for readability
+#![allow(clippy::identity_op)] // we use it for readability
+#![allow(clippy::too_many_arguments)]
+#![allow(clippy::collapsible_else_if)]
+#![allow(clippy::field_reassign_with_default)]
+#![allow(clippy::upper_case_acronyms)]
+#![allow(clippy::bool_assert_comparison)]
+
+#[cfg(feature = "std")]
+#[macro_use]
+extern crate std;
+
+#[cfg(feature = "alloc")]
+extern crate alloc;
+
+#[cfg(not(any(feature = "std", feature = "no-std-float")))]
+compile_error!("You have to activate either the `std` or the `no-std-float` feature.");
+
+#[cfg(not(feature = "std"))]
+use core_maths::CoreFloat;
+
+#[cfg(feature = "apple-layout")]
+mod aat;
+#[cfg(feature = "variable-fonts")]
+mod delta_set;
+#[cfg(feature = "opentype-layout")]
+mod ggg;
+mod language;
+mod parser;
+mod tables;
+#[cfg(feature = "variable-fonts")]
+mod var_store;
+
+use head::IndexToLocationFormat;
+pub use parser::{Fixed, FromData, LazyArray16, LazyArray32, LazyArrayIter16, LazyArrayIter32};
+use parser::{NumFrom, Offset, Offset32, Stream, TryNumFrom};
+
+#[cfg(feature = "variable-fonts")]
+pub use fvar::VariationAxis;
+
+pub use language::Language;
+pub use name::{PlatformId, name_id};
+pub use os2::{Permissions, ScriptMetrics, Style, UnicodeRanges, Weight, Width};
+pub use tables::CFFError;
+#[cfg(feature = "apple-layout")]
+pub use tables::{ankr, feat, kerx, morx, trak};
+#[cfg(feature = "variable-fonts")]
+pub use tables::{avar, cff2, fvar, gvar, hvar, mvar, vvar};
+pub use tables::{cbdt, cblc, cff1 as cff, vhea};
+pub use tables::{
+    cmap, colr, cpal, glyf, head, hhea, hmtx, kern, loca, maxp, name, os2, post, sbix, stat, svg,
+    vorg,
 };
-use libc;
-use log::{debug, error, warn};
-use std::collections::HashMap;
-use std::ffi::{CString, OsStr};
-use std::fs::{self, File};
-use std::io::{BufReader, BufWriter, Read, Write};
-use std::os::unix::ffi::OsStrExt;
-use std::os::unix::fs::{FileExt, FileTypeExt, MetadataExt};
-use std::os::unix::io::AsRawFd;
-use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::{Arc, Mutex};
-use std::time::{Duration, SystemTime};
+#[cfg(feature = "opentype-layout")]
+pub use tables::{gdef, gpos, gsub, math};
 
-struct FileHandle {
-    file: File,
-    file_iv: u64,
+#[cfg(feature = "opentype-layout")]
+pub mod opentype_layout {
+    //! This module contains
+    //! [OpenType Layout](https://docs.microsoft.com/en-us/typography/opentype/spec/chapter2#overview)
+    //! supplementary tables implementation.
+    pub use crate::ggg::*;
 }
 
-struct PathInfo<'a> {
-    logical: &'a Path,
-    physical: &'a Path,
-    iv: u64,
+#[cfg(feature = "apple-layout")]
+pub mod apple_layout {
+    //! This module contains
+    //! [Apple Advanced Typography Layout](
+    //! https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6AATIntro.html)
+    //! supplementary tables implementation.
+    pub use crate::aat::*;
 }
 
-/// The main FUSE filesystem implementation.
+/// A type-safe wrapper for glyph ID.
+#[repr(transparent)]
+#[derive(Clone, Copy, Ord, PartialOrd, Eq, PartialEq, Default, Debug, Hash)]
+pub struct GlyphId(pub u16);
+
+impl FromData for GlyphId {
+    const SIZE: usize = 2;
+
+    #[inline]
+    fn parse(data: &[u8]) -> Option<Self> {
+        u16::parse(data).map(GlyphId)
+    }
+}
+
+/// A TrueType font magic.
 ///
-/// Handles mapping of FUSE operations to the underlying encrypted directory.
-/// Stores file handles and the cipher instance.
-pub struct EncFs {
-    pub root: PathBuf,
-    pub cipher: SslCipher,
-    handles: Mutex<HashMap<u64, Arc<FileHandle>>>,
-    next_fh: AtomicU64,
-    pub config: crate::config::EncfsConfig,
+/// https://docs.microsoft.com/en-us/typography/opentype/spec/otff#organization-of-an-opentype-font
+#[derive(Clone, Copy, PartialEq, Debug)]
+enum Magic {
+    TrueType,
+    OpenType,
+    FontCollection,
 }
 
-impl EncFs {
-    pub fn new(root: PathBuf, cipher: SslCipher, config: crate::config::EncfsConfig) -> Self {
-        Self {
-            root,
-            cipher,
-            handles: Mutex::new(HashMap::new()),
-            next_fh: AtomicU64::new(1),
-            config,
+impl FromData for Magic {
+    const SIZE: usize = 4;
+
+    #[inline]
+    fn parse(data: &[u8]) -> Option<Self> {
+        match u32::parse(data)? {
+            0x00010000 | 0x74727565 => Some(Magic::TrueType),
+            0x4F54544F => Some(Magic::OpenType),
+            0x74746366 => Some(Magic::FontCollection),
+            _ => None,
         }
     }
+}
 
-    fn handles_guard(&self) -> std::sync::MutexGuard<'_, HashMap<u64, Arc<FileHandle>>> {
-        self.handles.lock().unwrap_or_else(|e| e.into_inner())
-    }
+/// A variation coordinate in a normalized coordinate system.
+///
+/// Basically any number in a -1.0..1.0 range.
+/// Where 0 is a default value.
+///
+/// The number is stored as f2.16
+#[repr(transparent)]
+#[derive(Clone, Copy, PartialEq, Eq, Default, Debug)]
+pub struct NormalizedCoordinate(i16);
 
-    /// Encrypts a plaintext path (from FUSE request) to an encrypted path (on disk).
+impl From<i16> for NormalizedCoordinate {
+    /// Creates a new coordinate.
     ///
-    /// This walks the path component by component, encrypting each filename.
-    /// If IV chaining is enabled (standard), the IV of a directory is derived from
-    /// its parent's IV and its encrypted filename.
-    /// Returns the full encrypted path and the IV of the final directory.
-    fn encrypt_path(&self, path: &Path) -> Result<(PathBuf, u64), libc::c_int> {
-        let mut encrypted_path = PathBuf::new();
-        let mut iv = 0u64;
-        for component in path.components() {
-            match component {
-                std::path::Component::RootDir => {}
-                std::path::Component::CurDir => {}
-                std::path::Component::Normal(name) => {
-                    let name_bytes = name.as_bytes();
-                    let (encrypted_name, new_iv) =
-                        self.cipher.encrypt_filename(name_bytes, iv).map_err(|e| {
-                            error!("Encrypt filename failed: {}", e);
-                            libc::EIO
-                        })?;
-                    encrypted_path.push(encrypted_name);
-                    if self.config.chained_name_iv {
-                        iv = new_iv;
-                    }
-                }
-                _ => return Err(libc::EINVAL),
-            }
-        }
-        Ok((self.root.join(encrypted_path), iv))
-    }
-
-    /// Decrypts a full path from the encrypted root.
-    /// Used primarily for testing/verification and potential future features
-    /// (e.g. reverse mode or tools), as the FUSE filesystem mostly maps
-    /// plaintext requests to encrypted paths via `encrypt_path`.
-    pub fn decrypt_path(&self, encrypted_path: &Path) -> Result<(PathBuf, u64), libc::c_int> {
-        let mut decrypted_path = PathBuf::new();
-        let mut iv = 0u64;
-        for component in encrypted_path.components() {
-            match component {
-                std::path::Component::RootDir => {}
-                std::path::Component::Normal(name) => {
-                    let name_str = name.to_str().ok_or(libc::EILSEQ)?;
-                    let (decrypted_name_bytes, new_iv) =
-                        self.cipher.decrypt_filename(name_str, iv).map_err(|e| {
-                            error!("Failed to decrypt filename {}: {}", name_str, e);
-                            libc::EIO
-                        })?;
-                    decrypted_path.push(OsStr::from_bytes(&decrypted_name_bytes));
-                    if self.config.chained_name_iv {
-                        iv = new_iv;
-                    }
-                }
-                _ => return Err(libc::EINVAL),
-            }
-        }
-        Ok((decrypted_path, iv))
-    }
-
-    fn rename_internal(
-        &self,
-        _req: RequestInfo,
-        parent: &Path,
-        name: &OsStr,
-        newparent: &Path,
-        newname: &OsStr,
-    ) -> ResultEmpty {
-        debug!(
-            "rename: {:?}/{:?} -> {:?}/{:?}",
-            parent, name, newparent, newname
-        );
-        let source = parent.join(name);
-        let dest = newparent.join(newname);
-
-        let (real_source, _) = self.encrypt_path(&source)?;
-        let (real_dest, _) = self.encrypt_path(&dest)?;
-
-        let meta = fs::symlink_metadata(&real_source)
-            .map_err(|e| e.raw_os_error().unwrap_or(libc::EIO))?;
-
-        if (meta.is_dir() && (self.config.chained_name_iv || self.config.external_iv_chaining))
-            || (meta.is_file() && self.config.external_iv_chaining)
-        {
-            let (_, source_iv) = self.encrypt_path(&source)?;
-            let (_, dest_iv) = self.encrypt_path(&dest)?;
-
-            if let Err(e) = self.copy_recursive(
-                PathInfo {
-                    logical: &source,
-                    physical: &real_source,
-                    iv: source_iv,
-                },
-                PathInfo {
-                    logical: &dest,
-                    physical: &real_dest,
-                    iv: dest_iv,
-                },
-                &meta,
-            ) {
-                // Best-effort cleanup on failure
-                if meta.is_dir() {
-                    let _ = fs::remove_dir_all(real_dest);
-                } else {
-                    let _ = fs::remove_file(real_dest);
-                }
-                return Err(e);
-            }
-
-            if meta.is_dir() {
-                return fs::remove_dir_all(real_source)
-                    .map_err(|e| e.raw_os_error().unwrap_or(libc::EIO));
-            } else {
-                return fs::remove_file(real_source)
-                    .map_err(|e| e.raw_os_error().unwrap_or(libc::EIO));
-            }
-        }
-
-        // Symlink targets are encrypted using a path-derived IV (see `symlink`/`readlink`).
-        // If the symlink name changes while `chained_name_iv` is enabled, the IV used to
-        // decrypt/encrypt the symlink target changes. A plain `rename` would therefore
-        // break `readlink`. Rewrite the symlink target under the destination IV.
-        if meta.is_symlink() {
-            if self.config.external_iv_chaining {
-                warn!("Renaming symlinks with external IV chaining is not supported");
-                return Err(libc::ENOSYS);
-            }
-
-            if self.config.chained_name_iv {
-                let (_, source_iv) = self.encrypt_path(&source)?;
-                let (_, dest_iv) = self.encrypt_path(&dest)?;
-
-                let target = fs::read_link(&real_source)
-                    .map_err(|e| e.raw_os_error().unwrap_or(libc::EIO))?;
-                let target_str = target.to_str().ok_or(libc::EILSEQ)?;
-
-                let (plain_target, _) = self
-                    .cipher
-                    .decrypt_filename(target_str, source_iv)
-                    .map_err(|e| {
-                        error!("Failed to decrypt symlink target during rename: {}", e);
-                        libc::EIO
-                    })?;
-
-                let (enc_target, _) = self
-                    .cipher
-                    .encrypt_filename(&plain_target, dest_iv)
-                    .map_err(|e| {
-                        error!("Failed to encrypt symlink target during rename: {}", e);
-                        libc::EIO
-                    })?;
-
-                // Best-effort remove existing destination (rename(2) would replace).
-                match fs::remove_file(&real_dest) {
-                    Ok(_) => {}
-                    Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
-                    Err(e) => return Err(e.raw_os_error().unwrap_or(libc::EIO)),
-                }
-
-                std::os::unix::fs::symlink(Path::new(&enc_target), &real_dest)
-                    .map_err(|e| e.raw_os_error().unwrap_or(libc::EIO))?;
-
-                // Remove source symlink.
-                fs::remove_file(&real_source).map_err(|e| e.raw_os_error().unwrap_or(libc::EIO))?;
-
-                return Ok(());
-            }
-        }
-
-        fs::rename(real_source, real_dest).map_err(|e| e.raw_os_error().unwrap_or(libc::EIO))
-    }
-
-    fn copy_recursive(
-        &self,
-        source: PathInfo,
-        dest: PathInfo,
-        meta: &std::fs::Metadata,
-    ) -> ResultEmpty {
-        if meta.is_dir() {
-            // Create dest dir
-            if let Err(e) = fs::create_dir(dest.physical) {
-                if e.kind() == std::io::ErrorKind::AlreadyExists {
-                    // Check empty
-                    let mut iter = fs::read_dir(dest.physical)
-                        .map_err(|e| e.raw_os_error().unwrap_or(libc::EIO))?;
-                    if iter.next().is_some() {
-                        return Err(libc::ENOTEMPTY);
-                    }
-                } else {
-                    return Err(e.raw_os_error().unwrap_or(libc::EIO));
-                }
-            }
-
-            // Iterate children
-            // source_iv is the IV of the directory 'source', used for decrypting children
-            let entries =
-                fs::read_dir(source.physical).map_err(|e| e.raw_os_error().unwrap_or(libc::EIO))?;
-
-            for entry in entries {
-                let entry = entry.map_err(|e| e.raw_os_error().unwrap_or(libc::EIO))?;
-                let fname = entry.file_name();
-                let fname_bytes = fname.as_bytes();
-
-                if fname_bytes == b"." || fname_bytes == b".." || fname_bytes.starts_with(b".") {
-                    continue;
-                }
-
-                // fname is the ENCRYPTED filename (string usually, but treating as str for legacy reasons mostly)
-                // Encrypted filenames ARE strings (base64 subset), so to_str() is generally safe for THEM.
-                let fname_utf8 = match fname.to_str() {
-                    Some(s) => s,
-                    None => {
-                        error!("Skipping invalid filename in recursive copy: {:?}", fname);
-                        continue;
-                    }
-                };
-
-                let (plain_name_bytes, _) =
-                    match self.cipher.decrypt_filename(fname_utf8, source.iv) {
-                        Ok(res) => res,
-                        Err(e) => {
-                            warn!("Skipping undecryptable child {:?}: {}", fname, e);
-                            continue;
-                        }
-                    };
-
-                let child_name = OsStr::from_bytes(&plain_name_bytes);
-                let child_source = source.logical.join(child_name);
-                let child_dest = dest.logical.join(child_name);
-
-                let (child_real_source, child_source_iv) = self.encrypt_path(&child_source)?;
-                let (child_real_dest, child_dest_iv) = self.encrypt_path(&child_dest)?;
-
-                let child_meta = fs::symlink_metadata(&child_real_source)
-                    .map_err(|e| e.raw_os_error().unwrap_or(libc::EIO))?;
-
-                self.copy_recursive(
-                    PathInfo {
-                        logical: &child_source,
-                        physical: &child_real_source,
-                        iv: child_source_iv,
-                    },
-                    PathInfo {
-                        logical: &child_dest,
-                        physical: &child_real_dest,
-                        iv: child_dest_iv,
-                    },
-                    &child_meta,
-                )?;
-            }
-        } else if self.config.external_iv_chaining && meta.is_file() {
-            self.copy_file_with_header_rewrite(source.physical, dest.physical, source.iv, dest.iv)?;
-        } else if meta.is_symlink() {
-            // Handle symlinks during recursive directory copies.
-            // When chained_name_iv is enabled, symlink targets are encrypted using
-            // the path IV of the symlink. If the symlink's path changes (due to parent
-            // directory rename), we need to re-encrypt the target with the new IV.
-            if self.config.external_iv_chaining {
-                // External IV chaining for symlinks is not supported
-                return Err(libc::ENOSYS);
-            }
-
-            if self.config.chained_name_iv {
-                // Re-encrypt symlink target with the new path IV
-                let target = fs::read_link(source.physical)
-                    .map_err(|e| e.raw_os_error().unwrap_or(libc::EIO))?;
-                let target_str = target.to_str().ok_or(libc::EILSEQ)?;
-
-                let (plain_target, _) = self
-                    .cipher
-                    .decrypt_filename(target_str, source.iv)
-                    .map_err(|e| {
-                        error!(
-                            "Failed to decrypt symlink target during recursive copy: {}",
-                            e
-                        );
-                        libc::EIO
-                    })?;
-
-                let (enc_target, _) = self
-                    .cipher
-                    .encrypt_filename(&plain_target, dest.iv)
-                    .map_err(|e| {
-                        error!(
-                            "Failed to encrypt symlink target during recursive copy: {}",
-                            e
-                        );
-                        libc::EIO
-                    })?;
-
-                // Remove existing destination if present
-                match fs::remove_file(dest.physical) {
-                    Ok(_) => {}
-                    Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
-                    Err(e) => return Err(e.raw_os_error().unwrap_or(libc::EIO)),
-                }
-
-                std::os::unix::fs::symlink(Path::new(&enc_target), dest.physical)
-                    .map_err(|e| e.raw_os_error().unwrap_or(libc::EIO))?;
-            } else {
-                // No IV chaining - just copy the symlink as-is
-                let target = fs::read_link(source.physical)
-                    .map_err(|e| e.raw_os_error().unwrap_or(libc::EIO))?;
-                std::os::unix::fs::symlink(&target, dest.physical)
-                    .map_err(|e| e.raw_os_error().unwrap_or(libc::EIO))?;
-            }
-        } else {
-            // Standard copy for regular files without external IV chaining
-            fs::copy(source.physical, dest.physical)
-                .map_err(|e| e.raw_os_error().unwrap_or(libc::EIO))?;
-            // Best effort metadata copy
-            let _ = fs::set_permissions(dest.physical, meta.permissions());
-        }
-        Ok(())
-    }
-
-    fn copy_file_with_header_rewrite(
-        &self,
-        real_src: &Path,
-        real_dest: &Path,
-        src_iv: u64,
-        dst_iv: u64,
-    ) -> ResultEmpty {
-        // 1. Open source
-        let mut src_f = File::open(real_src).map_err(|e| e.raw_os_error().unwrap_or(libc::EIO))?;
-
-        let metadata = src_f.metadata().ok();
-
-        // 2. Read header
-        let header_size = self.config.header_size();
-        let mut header = vec![0u8; header_size as usize];
-        if header_size > 0 {
-            src_f
-                .read_exact(&mut header)
-                .map_err(|e| e.raw_os_error().unwrap_or(libc::EIO))?;
-
-            // 3. Decrypt header
-            let file_iv = self
-                .cipher
-                .decrypt_header(&mut header, src_iv)
-                .map_err(|_| libc::EIO)?;
-
-            // 4. Encrypt header with new path IV
-            let new_header = self
-                .cipher
-                .encrypt_header_with_iv(file_iv, dst_iv)
-                .map_err(|_| libc::EIO)?;
-
-            // 5. Create dest
-            let mut dst_f =
-                File::create(real_dest).map_err(|e| e.raw_os_error().unwrap_or(libc::EIO))?;
-
-            // 6. Write new header
-            dst_f
-                .write_all(&new_header)
-                .map_err(|e| e.raw_os_error().unwrap_or(libc::EIO))?;
-
-            // 7. Copy body
-            let mut reader = BufReader::new(src_f);
-            let mut writer = BufWriter::new(dst_f);
-
-            std::io::copy(&mut reader, &mut writer)
-                .map_err(|e| e.raw_os_error().unwrap_or(libc::EIO))?;
-
-            writer
-                .flush()
-                .map_err(|e| e.raw_os_error().unwrap_or(libc::EIO))?;
-        } else {
-            // 5. Create dest
-            let dst_f =
-                File::create(real_dest).map_err(|e| e.raw_os_error().unwrap_or(libc::EIO))?;
-
-            // 7. Copy body (no header to copy/rewrite)
-            let mut reader = BufReader::new(src_f);
-            let mut writer = BufWriter::new(dst_f);
-
-            std::io::copy(&mut reader, &mut writer)
-                .map_err(|e| e.raw_os_error().unwrap_or(libc::EIO))?;
-
-            writer
-                .flush()
-                .map_err(|e| e.raw_os_error().unwrap_or(libc::EIO))?;
-        }
-
-        // 8. Copy permissions
-        if let Some(meta) = metadata {
-            let _ = fs::set_permissions(real_dest, meta.permissions());
-        }
-
-        Ok(())
+    /// The provided number will be clamped to the -16384..16384 range.
+    #[inline]
+    fn from(n: i16) -> Self {
+        NormalizedCoordinate(parser::i16_bound(-16384, n, 16384))
     }
 }
 
-/// Map std::fs::Metadata file type to FUSE FileType (for getattr/readdir).
-fn metadata_to_file_type(metadata: &std::fs::Metadata) -> FileType {
-    if metadata.is_dir() {
-        FileType::Directory
-    } else if metadata.is_symlink() {
-        FileType::Symlink
-    } else {
-        let ft = metadata.file_type();
-        if ft.is_fifo() {
-            FileType::NamedPipe
-        } else if ft.is_char_device() {
-            FileType::CharDevice
-        } else if ft.is_block_device() {
-            FileType::BlockDevice
-        } else if ft.is_socket() {
-            FileType::Socket
-        } else {
-            FileType::RegularFile
-        }
+impl From<f32> for NormalizedCoordinate {
+    /// Creates a new coordinate.
+    ///
+    /// The provided number will be clamped to the -1.0..1.0 range.
+    #[inline]
+    fn from(n: f32) -> Self {
+        NormalizedCoordinate((parser::f32_bound(-1.0, n, 1.0) * 16384.0) as i16)
     }
 }
 
-fn headerless_file_iv(header_size: u64, external_iv: u64) -> u64 {
-    if header_size == 0 { external_iv } else { 0 }
+impl NormalizedCoordinate {
+    /// Returns the coordinate value as f2.14.
+    #[inline]
+    pub fn get(self) -> i16 {
+        self.0
+    }
 }
 
-impl EncFs {
-    /// POSIX utime permission check: owner and root may always set; others may set to
-    /// current time only if they have write access; setting explicit time requires owner or root.
-    fn utimens_permission_check(
-        &self,
-        req: &RequestInfo,
-        file_uid: u32,
-        file_gid: u32,
-        mode: u32,
-        atime: Option<SystemTime>,
-        mtime: Option<SystemTime>,
-    ) -> Result<(), libc::c_int> {
-        if req.uid == 0 {
-            return Ok(());
-        }
-        if req.uid == file_uid {
-            return Ok(());
-        }
-        let setting_atime = atime.is_some();
-        let setting_mtime = mtime.is_some();
-        if !setting_atime && !setting_mtime {
-            return Ok(());
-        }
-        let now = SystemTime::now();
-        // FUSE passes UTIME_NOW as SystemTime::now() at callback time; explicit times (e.g.
-        // utime $now $now) can be tens of ms in the past. Use 10ms to distinguish.
-        let near_now = |t: SystemTime| {
-            now.duration_since(t).unwrap_or(Duration::MAX) < Duration::from_millis(10)
-                || t.duration_since(now).unwrap_or(Duration::MAX) < Duration::from_millis(10)
-        };
-        let setting_to_current = atime.is_none_or(near_now) && mtime.is_none_or(near_now);
-        if setting_to_current {
-            let has_write = (req.uid == file_uid && (mode & 0o200) != 0)
-                || (req.gid == file_gid && (mode & 0o020) != 0)
-                || (mode & 0o002) != 0;
-            if has_write {
-                return Ok(());
-            }
-            return Err(libc::EACCES);
-        }
-        Err(libc::EPERM)
+/// A font variation value.
+///
+/// # Example
+///
+/// ```
+/// use ttf_parser::{Variation, Tag};
+///
+/// Variation { axis: Tag::from_bytes(b"wght"), value: 500.0 };
+/// ```
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub struct Variation {
+    /// An axis tag name.
+    pub axis: Tag,
+    /// An axis value.
+    pub value: f32,
+}
+
+/// A 4-byte tag.
+#[repr(transparent)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct Tag(pub u32);
+
+impl Tag {
+    /// Creates a `Tag` from bytes.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// println!("{}", ttf_parser::Tag::from_bytes(b"name"));
+    /// ```
+    #[inline]
+    pub const fn from_bytes(bytes: &[u8; 4]) -> Self {
+        Tag(((bytes[0] as u32) << 24)
+            | ((bytes[1] as u32) << 16)
+            | ((bytes[2] as u32) << 8)
+            | (bytes[3] as u32))
     }
 
-    /// Sets ownership to req.uid/req.gid if different from current process.
-    /// Skips chown when already correct; ignores EPERM for unprivileged mounts.
-    fn set_ownership_fd(
-        &self,
-        fd: std::os::unix::io::RawFd,
-        req: &RequestInfo,
-    ) -> Result<(), libc::c_int> {
-        let uid = unsafe { libc::getuid() };
-        let gid = unsafe { libc::getgid() };
-        if req.uid == uid && req.gid == gid {
-            return Ok(());
+    /// Creates a `Tag` from bytes.
+    ///
+    /// In case of empty data will return `Tag` set to 0.
+    ///
+    /// When `bytes` are shorter than 4, will set missing bytes to ` `.
+    ///
+    /// Data after first 4 bytes is ignored.
+    #[inline]
+    pub fn from_bytes_lossy(bytes: &[u8]) -> Self {
+        if bytes.is_empty() {
+            return Tag::from_bytes(&[0, 0, 0, 0]);
         }
-        if unsafe { libc::fchown(fd, req.uid as libc::uid_t, req.gid as libc::gid_t) } == -1 {
-            let errno = std::io::Error::last_os_error()
-                .raw_os_error()
-                .unwrap_or(libc::EIO);
-            if errno != libc::EPERM {
-                return Err(errno);
-            }
-        }
-        Ok(())
+
+        let mut iter = bytes.iter().cloned().chain(core::iter::repeat(b' '));
+        Tag::from_bytes(&[
+            iter.next().unwrap(),
+            iter.next().unwrap(),
+            iter.next().unwrap(),
+            iter.next().unwrap(),
+        ])
     }
 
-    fn physical_size_for_logical(&self, logical_size: u64, header_size: u64) -> u64 {
-        FileEncoder::<File>::calculate_physical_size_with_mode(
-            logical_size,
-            header_size,
-            self.config.block_size as u64,
-            self.config.block_mac_bytes as u64,
-            self.config.block_mode(),
+    /// Returns tag as 4-element byte array.
+    #[inline]
+    pub const fn to_bytes(self) -> [u8; 4] {
+        [
+            (self.0 >> 24 & 0xff) as u8,
+            (self.0 >> 16 & 0xff) as u8,
+            (self.0 >> 8 & 0xff) as u8,
+            (self.0 >> 0 & 0xff) as u8,
+        ]
+    }
+
+    /// Returns tag as 4-element byte array.
+    #[inline]
+    pub const fn to_chars(self) -> [char; 4] {
+        [
+            (self.0 >> 24 & 0xff) as u8 as char,
+            (self.0 >> 16 & 0xff) as u8 as char,
+            (self.0 >> 8 & 0xff) as u8 as char,
+            (self.0 >> 0 & 0xff) as u8 as char,
+        ]
+    }
+
+    /// Checks if tag is null / `[0, 0, 0, 0]`.
+    #[inline]
+    pub const fn is_null(&self) -> bool {
+        self.0 == 0
+    }
+
+    /// Returns tag value as `u32` number.
+    #[inline]
+    pub const fn as_u32(&self) -> u32 {
+        self.0
+    }
+}
+
+impl core::fmt::Debug for Tag {
+    #[inline]
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "Tag({})", self)
+    }
+}
+
+impl core::fmt::Display for Tag {
+    #[inline]
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        let b = self.to_chars();
+        write!(
+            f,
+            "{}{}{}{}",
+            b.get(0).unwrap_or(&' '),
+            b.get(1).unwrap_or(&' '),
+            b.get(2).unwrap_or(&' '),
+            b.get(3).unwrap_or(&' ')
         )
     }
+}
 
-    fn truncate_expand(
-        &self,
-        file_ref: &File,
-        file_iv: u64,
-        header_size: u64,
-        current_logical_size: u64,
-        new_logical_size: u64,
-        block_layout: BlockLayout,
-    ) -> ResultEmpty {
-        if new_logical_size <= current_logical_size {
-            return Ok(());
-        }
+impl FromData for Tag {
+    const SIZE: usize = 4;
 
-        let encoder = FileEncoder::new_from_config(
-            &self.cipher,
-            file_ref,
-            file_iv,
-            &self.config.file_codec_params(),
-        );
-
-        let data_block_size = block_layout.data_size_per_block();
-        let mut filled_until = current_logical_size;
-        let tail_in_block = current_logical_size % data_block_size;
-        if tail_in_block > 0 {
-            let to_block_end = data_block_size - tail_in_block;
-            let top_up = std::cmp::min(to_block_end, new_logical_size - current_logical_size);
-            if top_up > 0 {
-                let zeros = vec![0u8; top_up as usize];
-                encoder
-                    .write_at(&zeros, current_logical_size)
-                    .map_err(|e| e.raw_os_error().unwrap_or(libc::EIO))?;
-                filled_until += top_up;
-            }
-        }
-
-        if filled_until >= new_logical_size {
-            return Ok(());
-        }
-
-        if self.config.allow_holes {
-            let physical_size = self.physical_size_for_logical(new_logical_size, header_size);
-            file_ref
-                .set_len(physical_size)
-                .map_err(|e| e.raw_os_error().unwrap_or(libc::EIO))?;
-            return Ok(());
-        }
-
-        // Holes are not allowed, so write a bunch of zeros.
-        const CHUNK_SIZE: usize = 128 * 1024;
-        let mut remaining = new_logical_size - filled_until;
-        let mut offset = filled_until;
-        let zeros = vec![0u8; CHUNK_SIZE];
-
-        while remaining > 0 {
-            let write_len = std::cmp::min(remaining, CHUNK_SIZE as u64);
-            encoder
-                .write_at(&zeros[..write_len as usize], offset)
-                .map_err(|e| e.raw_os_error().unwrap_or(libc::EIO))?;
-            remaining -= write_len;
-            offset += write_len;
-        }
-
-        Ok(())
-    }
-
-    fn truncate_shrink(
-        &self,
-        file_ref: &File,
-        file_iv: u64,
-        header_size: u64,
-        new_logical_size: u64,
-        block_layout: BlockLayout,
-    ) -> ResultEmpty {
-        let physical_size = self.physical_size_for_logical(new_logical_size, header_size);
-        let data_block_size = block_layout.data_size_per_block();
-        let offset_in_block = new_logical_size % data_block_size;
-
-        if offset_in_block == 0 {
-            file_ref
-                .set_len(physical_size)
-                .map_err(|e| e.raw_os_error().unwrap_or(libc::EIO))?;
-            return Ok(());
-        }
-
-        let block_start = new_logical_size - offset_in_block;
-        let decoder = FileDecoder::new_from_config(
-            &self.cipher,
-            file_ref,
-            file_iv,
-            &self.config.file_codec_params(),
-            false,
-        );
-
-        let mut buf = vec![0u8; data_block_size as usize];
-        let bytes_read = decoder
-            .read_at(&mut buf, block_start)
-            .map_err(|e| e.raw_os_error().unwrap_or(libc::EIO))?;
-        if (bytes_read as u64) < offset_in_block {
-            return Err(libc::EIO);
-        }
-        buf.truncate(offset_in_block as usize);
-
-        // Shrink first so re-encryption writes exactly the target last block.
-        file_ref
-            .set_len(physical_size)
-            .map_err(|e| e.raw_os_error().unwrap_or(libc::EIO))?;
-
-        let encoder = FileEncoder::new_from_config(
-            &self.cipher,
-            file_ref,
-            file_iv,
-            &self.config.file_codec_params(),
-        );
-        encoder
-            .write_at(&buf, block_start)
-            .map_err(|e| e.raw_os_error().unwrap_or(libc::EIO))?;
-
-        Ok(())
-    }
-
-    /// Sets ownership to req.uid/req.gid if different from current process.
-    /// Skips chown when already correct; ignores EPERM for unprivileged mounts.
-    fn set_ownership_path(&self, path: &Path, req: &RequestInfo) -> Result<(), libc::c_int> {
-        let uid = unsafe { libc::getuid() };
-        let gid = unsafe { libc::getgid() };
-        if req.uid == uid && req.gid == gid {
-            return Ok(());
-        }
-        let c_path = CString::new(path.as_os_str().as_bytes()).map_err(|_| libc::EINVAL)?;
-        if unsafe {
-            libc::chown(
-                c_path.as_ptr(),
-                req.uid as libc::uid_t,
-                req.gid as libc::gid_t,
-            )
-        } == -1
-        {
-            let errno = std::io::Error::last_os_error()
-                .raw_os_error()
-                .unwrap_or(libc::EIO);
-            if errno != libc::EPERM {
-                return Err(errno);
-            }
-        }
-        Ok(())
+    #[inline]
+    fn parse(data: &[u8]) -> Option<Self> {
+        u32::parse(data).map(Tag)
     }
 }
 
-impl FilesystemMT for EncFs {
-    fn init(&self, _req: RequestInfo) -> Result<(), libc::c_int> {
-        debug!("init");
-        Ok(())
+/// A line metrics.
+///
+/// Used for underline and strikeout.
+#[repr(C)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub struct LineMetrics {
+    /// Line position.
+    pub position: i16,
+
+    /// Line thickness.
+    pub thickness: i16,
+}
+
+/// A rectangle.
+///
+/// Doesn't guarantee that `x_min` <= `x_max` and/or `y_min` <= `y_max`.
+#[repr(C)]
+#[allow(missing_docs)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub struct Rect {
+    pub x_min: i16,
+    pub y_min: i16,
+    pub x_max: i16,
+    pub y_max: i16,
+}
+
+impl Rect {
+    #[inline]
+    fn zero() -> Self {
+        Self {
+            x_min: 0,
+            y_min: 0,
+            x_max: 0,
+            y_max: 0,
+        }
     }
 
-    fn statfs(&self, _req: RequestInfo, path: &Path) -> ResultStatfs {
-        debug!("statfs: {:?}", path);
-        // Check underlying filesystem of the root
-        let c_path =
-            std::ffi::CString::new(self.root.as_os_str().as_bytes()).map_err(|_| libc::EINVAL)?;
-        let mut stat: libc::statvfs = unsafe { std::mem::zeroed() };
+    /// Returns rect's width.
+    #[inline]
+    pub fn width(&self) -> i16 {
+        self.x_max - self.x_min
+    }
 
-        let res = unsafe { libc::statvfs(c_path.as_ptr(), &mut stat) };
-        if res != 0 {
-            return Err(std::io::Error::last_os_error()
-                .raw_os_error()
-                .unwrap_or(libc::EIO));
+    /// Returns rect's height.
+    #[inline]
+    pub fn height(&self) -> i16 {
+        self.y_max - self.y_min
+    }
+}
+
+/// A rectangle described by the left-lower and upper-right points.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct RectF {
+    /// The horizontal minimum of the rect.
+    pub x_min: f32,
+    /// The vertical minimum of the rect.
+    pub y_min: f32,
+    /// The horizontal maximum of the rect.
+    pub x_max: f32,
+    /// The vertical maximum of the rect.
+    pub y_max: f32,
+}
+
+impl RectF {
+    #[inline]
+    fn new() -> Self {
+        RectF {
+            x_min: f32::MAX,
+            y_min: f32::MAX,
+            x_max: f32::MIN,
+            y_max: f32::MIN,
+        }
+    }
+
+    #[inline]
+    fn is_default(&self) -> bool {
+        self.x_min == f32::MAX
+            && self.y_min == f32::MAX
+            && self.x_max == f32::MIN
+            && self.y_max == f32::MIN
+    }
+
+    #[inline]
+    fn extend_by(&mut self, x: f32, y: f32) {
+        self.x_min = self.x_min.min(x);
+        self.y_min = self.y_min.min(y);
+        self.x_max = self.x_max.max(x);
+        self.y_max = self.y_max.max(y);
+    }
+
+    #[inline]
+    fn to_rect(self) -> Option<Rect> {
+        Some(Rect {
+            x_min: i16::try_num_from(self.x_min)?,
+            y_min: i16::try_num_from(self.y_min)?,
+            x_max: i16::try_num_from(self.x_max)?,
+            y_max: i16::try_num_from(self.y_max)?,
+        })
+    }
+}
+
+/// An affine transform.
+#[derive(Clone, Copy, PartialEq)]
+pub struct Transform {
+    /// The 'a' component of the transform.
+    pub a: f32,
+    /// The 'b' component of the transform.
+    pub b: f32,
+    /// The 'c' component of the transform.
+    pub c: f32,
+    /// The 'd' component of the transform.
+    pub d: f32,
+    /// The 'e' component of the transform.
+    pub e: f32,
+    /// The 'f' component of the transform.
+    pub f: f32,
+}
+
+impl Transform {
+    /// Creates a new transform with the specified components.
+    #[inline]
+    pub fn new(a: f32, b: f32, c: f32, d: f32, e: f32, f: f32) -> Self {
+        Transform { a, b, c, d, e, f }
+    }
+
+    /// Creates a new translation transform.
+    #[inline]
+    pub fn new_translate(tx: f32, ty: f32) -> Self {
+        Transform::new(1.0, 0.0, 0.0, 1.0, tx, ty)
+    }
+
+    /// Creates a new rotation transform.
+    #[inline]
+    pub fn new_rotate(angle: f32) -> Self {
+        let cc = (angle * core::f32::consts::PI).cos();
+        let ss = (angle * core::f32::consts::PI).sin();
+
+        Transform::new(cc, ss, -ss, cc, 0.0, 0.0)
+    }
+
+    /// Creates a new skew transform.
+    #[inline]
+    pub fn new_skew(skew_x: f32, skew_y: f32) -> Self {
+        let x = (skew_x * core::f32::consts::PI).tan();
+        let y = (skew_y * core::f32::consts::PI).tan();
+
+        Transform::new(1.0, y, -x, 1.0, 0.0, 0.0)
+    }
+
+    /// Creates a new scale transform.
+    #[inline]
+    pub fn new_scale(sx: f32, sy: f32) -> Self {
+        Transform::new(sx, 0.0, 0.0, sy, 0.0, 0.0)
+    }
+
+    /// Combines two transforms with each other.
+    #[inline]
+    pub fn combine(ts1: Self, ts2: Self) -> Self {
+        Transform {
+            a: ts1.a * ts2.a + ts1.c * ts2.b,
+            b: ts1.b * ts2.a + ts1.d * ts2.b,
+            c: ts1.a * ts2.c + ts1.c * ts2.d,
+            d: ts1.b * ts2.c + ts1.d * ts2.d,
+            e: ts1.a * ts2.e + ts1.c * ts2.f + ts1.e,
+            f: ts1.b * ts2.e + ts1.d * ts2.f + ts1.f,
+        }
+    }
+
+    #[inline]
+    fn apply_to(&self, x: &mut f32, y: &mut f32) {
+        let tx = *x;
+        let ty = *y;
+        *x = self.a * tx + self.c * ty + self.e;
+        *y = self.b * tx + self.d * ty + self.f;
+    }
+
+    /// Checks whether a transform is the identity transform.
+    #[inline]
+    pub fn is_default(&self) -> bool {
+        // A direct float comparison is fine in our case.
+        self.a == 1.0
+            && self.b == 0.0
+            && self.c == 0.0
+            && self.d == 1.0
+            && self.e == 0.0
+            && self.f == 0.0
+    }
+}
+
+impl Default for Transform {
+    #[inline]
+    fn default() -> Self {
+        Transform {
+            a: 1.0,
+            b: 0.0,
+            c: 0.0,
+            d: 1.0,
+            e: 0.0,
+            f: 0.0,
+        }
+    }
+}
+
+impl core::fmt::Debug for Transform {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+        write!(
+            f,
+            "Transform({} {} {} {} {} {})",
+            self.a, self.b, self.c, self.d, self.e, self.f
+        )
+    }
+}
+
+/// A float point.
+#[derive(Clone, Copy, Debug)]
+pub struct PointF {
+    /// The X-axis coordinate.
+    pub x: f32,
+    /// The Y-axis coordinate.
+    pub y: f32,
+}
+
+/// Phantom points.
+///
+/// Available only for variable fonts with the `gvar` table.
+#[derive(Clone, Copy, Debug)]
+pub struct PhantomPoints {
+    /// Left side bearing point.
+    pub left: PointF,
+    /// Right side bearing point.
+    pub right: PointF,
+    /// Top side bearing point.
+    pub top: PointF,
+    /// Bottom side bearing point.
+    pub bottom: PointF,
+}
+
+/// A RGBA color in the sRGB color space.
+#[allow(missing_docs)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub struct RgbaColor {
+    pub red: u8,
+    pub green: u8,
+    pub blue: u8,
+    pub alpha: u8,
+}
+
+impl RgbaColor {
+    /// Creates a new `RgbaColor`.
+    #[inline]
+    pub fn new(red: u8, green: u8, blue: u8, alpha: u8) -> Self {
+        Self {
+            blue,
+            green,
+            red,
+            alpha,
+        }
+    }
+
+    pub(crate) fn apply_alpha(&mut self, alpha: f32) {
+        self.alpha = (((f32::from(self.alpha) / 255.0) * alpha) * 255.0) as u8;
+    }
+}
+
+/// A trait for glyph outline construction.
+pub trait OutlineBuilder {
+    /// Appends a MoveTo segment.
+    ///
+    /// Start of a contour.
+    fn move_to(&mut self, x: f32, y: f32);
+
+    /// Appends a LineTo segment.
+    fn line_to(&mut self, x: f32, y: f32);
+
+    /// Appends a QuadTo segment.
+    fn quad_to(&mut self, x1: f32, y1: f32, x: f32, y: f32);
+
+    /// Appends a CurveTo segment.
+    fn curve_to(&mut self, x1: f32, y1: f32, x2: f32, y2: f32, x: f32, y: f32);
+
+    /// Appends a ClosePath segment.
+    ///
+    /// End of a contour.
+    fn close(&mut self);
+}
+
+struct DummyOutline;
+impl OutlineBuilder for DummyOutline {
+    fn move_to(&mut self, _: f32, _: f32) {}
+    fn line_to(&mut self, _: f32, _: f32) {}
+    fn quad_to(&mut self, _: f32, _: f32, _: f32, _: f32) {}
+    fn curve_to(&mut self, _: f32, _: f32, _: f32, _: f32, _: f32, _: f32) {}
+    fn close(&mut self) {}
+}
+
+/// A glyph raster image format.
+#[allow(missing_docs)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum RasterImageFormat {
+    PNG,
+
+    /// A monochrome bitmap.
+    ///
+    /// The most significant bit of the first byte corresponds to the top-left pixel, proceeding
+    /// through succeeding bits moving left to right. The data for each row is padded to a byte
+    /// boundary, so the next row begins with the most significant bit of a new byte. 1 corresponds
+    /// to black, and 0 to white.
+    BitmapMono,
+
+    /// A packed monochrome bitmap.
+    ///
+    /// The most significant bit of the first byte corresponds to the top-left pixel, proceeding
+    /// through succeeding bits moving left to right. Data is tightly packed with no padding. 1
+    /// corresponds to black, and 0 to white.
+    BitmapMonoPacked,
+
+    /// A grayscale bitmap with 2 bits per pixel.
+    ///
+    /// The most significant bits of the first byte corresponds to the top-left pixel, proceeding
+    /// through succeeding bits moving left to right. The data for each row is padded to a byte
+    /// boundary, so the next row begins with the most significant bit of a new byte.
+    BitmapGray2,
+
+    /// A packed grayscale bitmap with 2 bits per pixel.
+    ///
+    /// The most significant bits of the first byte corresponds to the top-left pixel, proceeding
+    /// through succeeding bits moving left to right. Data is tightly packed with no padding.
+    BitmapGray2Packed,
+
+    /// A grayscale bitmap with 4 bits per pixel.
+    ///
+    /// The most significant bits of the first byte corresponds to the top-left pixel, proceeding
+    /// through succeeding bits moving left to right. The data for each row is padded to a byte
+    /// boundary, so the next row begins with the most significant bit of a new byte.
+    BitmapGray4,
+
+    /// A packed grayscale bitmap with 4 bits per pixel.
+    ///
+    /// The most significant bits of the first byte corresponds to the top-left pixel, proceeding
+    /// through succeeding bits moving left to right. Data is tightly packed with no padding.
+    BitmapGray4Packed,
+
+    /// A grayscale bitmap with 8 bits per pixel.
+    ///
+    /// The first byte corresponds to the top-left pixel, proceeding through succeeding bytes
+    /// moving left to right.
+    BitmapGray8,
+
+    /// A color bitmap with 32 bits per pixel.
+    ///
+    /// The first group of four bytes corresponds to the top-left pixel, proceeding through
+    /// succeeding pixels moving left to right. Each byte corresponds to a color channel and the
+    /// channels within a pixel are in blue, green, red, alpha order. Color values are
+    /// pre-multiplied by the alpha. For example, the color "full-green with half translucency"
+    /// is encoded as `\x00\x80\x00\x80`, and not `\x00\xFF\x00\x80`.
+    BitmapPremulBgra32,
+}
+
+/// A glyph's raster image.
+///
+/// Note, that glyph metrics are in pixels and not in font units.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub struct RasterGlyphImage<'a> {
+    /// Horizontal offset.
+    pub x: i16,
+
+    /// Vertical offset.
+    pub y: i16,
+
+    /// Image width.
+    ///
+    /// It doesn't guarantee that this value is the same as set in the `data`.
+    pub width: u16,
+
+    /// Image height.
+    ///
+    /// It doesn't guarantee that this value is the same as set in the `data`.
+    pub height: u16,
+
+    /// A pixels per em of the selected strike.
+    pub pixels_per_em: u16,
+
+    /// An image format.
+    pub format: RasterImageFormat,
+
+    /// A raw image data. It's up to the caller to decode it.
+    pub data: &'a [u8],
+}
+
+/// A raw table record.
+#[derive(Clone, Copy, Debug)]
+#[allow(missing_docs)]
+pub struct TableRecord {
+    pub tag: Tag,
+    #[allow(dead_code)]
+    pub check_sum: u32,
+    pub offset: u32,
+    pub length: u32,
+}
+
+impl FromData for TableRecord {
+    const SIZE: usize = 16;
+
+    #[inline]
+    fn parse(data: &[u8]) -> Option<Self> {
+        let mut s = Stream::new(data);
+        Some(TableRecord {
+            tag: s.read::<Tag>()?,
+            check_sum: s.read::<u32>()?,
+            offset: s.read::<u32>()?,
+            length: s.read::<u32>()?,
+        })
+    }
+}
+
+#[cfg(feature = "variable-fonts")]
+const MAX_VAR_COORDS: usize = 64;
+
+#[cfg(feature = "variable-fonts")]
+#[derive(Clone)]
+struct VarCoords {
+    data: [NormalizedCoordinate; MAX_VAR_COORDS],
+    len: u8,
+}
+
+#[cfg(feature = "variable-fonts")]
+impl Default for VarCoords {
+    fn default() -> Self {
+        Self {
+            data: [NormalizedCoordinate::default(); MAX_VAR_COORDS],
+            len: u8::default(),
+        }
+    }
+}
+
+#[cfg(feature = "variable-fonts")]
+impl VarCoords {
+    #[inline]
+    fn as_slice(&self) -> &[NormalizedCoordinate] {
+        &self.data[0..usize::from(self.len)]
+    }
+
+    #[inline]
+    fn as_mut_slice(&mut self) -> &mut [NormalizedCoordinate] {
+        let end = usize::from(self.len);
+        &mut self.data[0..end]
+    }
+}
+
+/// A list of font face parsing errors.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum FaceParsingError {
+    /// An attempt to read out of bounds detected.
+    ///
+    /// Should occur only on malformed fonts.
+    MalformedFont,
+
+    /// Face data must start with `0x00010000`, `0x74727565`, `0x4F54544F` or `0x74746366`.
+    UnknownMagic,
+
+    /// The face index is larger than the number of faces in the font.
+    FaceIndexOutOfBounds,
+
+    /// The `head` table is missing or malformed.
+    NoHeadTable,
+
+    /// The `hhea` table is missing or malformed.
+    NoHheaTable,
+
+    /// The `maxp` table is missing or malformed.
+    NoMaxpTable,
+}
+
+impl core::fmt::Display for FaceParsingError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            FaceParsingError::MalformedFont => write!(f, "malformed font"),
+            FaceParsingError::UnknownMagic => write!(f, "unknown magic"),
+            FaceParsingError::FaceIndexOutOfBounds => write!(f, "face index is out of bounds"),
+            FaceParsingError::NoHeadTable => write!(f, "the head table is missing or malformed"),
+            FaceParsingError::NoHheaTable => write!(f, "the hhea table is missing or malformed"),
+            FaceParsingError::NoMaxpTable => write!(f, "the maxp table is missing or malformed"),
+        }
+    }
+}
+
+impl core::error::Error for FaceParsingError {}
+
+/// A raw font face.
+///
+/// You are probably looking for [`Face`]. This is a low-level type.
+///
+/// Unlike [`Face`], [`RawFace`] parses only face table records.
+/// Meaning all you can get from this type is a raw (`&[u8]`) data of a requested table.
+/// Then you can either parse just a singe table from a font/face or populate [`RawFaceTables`]
+/// manually before passing it to [`Face::from_raw_tables`].
+#[derive(Clone, Copy)]
+pub struct RawFace<'a> {
+    /// The input font file data.
+    pub data: &'a [u8],
+    /// An array of table records.
+    pub table_records: LazyArray16<'a, TableRecord>,
+}
+
+impl<'a> RawFace<'a> {
+    /// Creates a new [`RawFace`] from a raw data.
+    ///
+    /// `index` indicates the specific font face in a font collection.
+    /// Use [`fonts_in_collection`] to get the total number of font faces.
+    /// Set to 0 if unsure.
+    ///
+    /// While we do reuse [`FaceParsingError`], `No*Table` errors will not be throws.
+    #[deprecated(since = "0.16.0", note = "use `parse` instead")]
+    pub fn from_slice(data: &'a [u8], index: u32) -> Result<Self, FaceParsingError> {
+        Self::parse(data, index)
+    }
+
+    /// Creates a new [`RawFace`] from a raw data.
+    ///
+    /// `index` indicates the specific font face in a font collection.
+    /// Use [`fonts_in_collection`] to get the total number of font faces.
+    /// Set to 0 if unsure.
+    ///
+    /// While we do reuse [`FaceParsingError`], `No*Table` errors will not be throws.
+    pub fn parse(data: &'a [u8], index: u32) -> Result<Self, FaceParsingError> {
+        // https://docs.microsoft.com/en-us/typography/opentype/spec/otff#organization-of-an-opentype-font
+
+        let mut s = Stream::new(data);
+
+        // Read **font** magic.
+        let magic = s.read::<Magic>().ok_or(FaceParsingError::UnknownMagic)?;
+        if magic == Magic::FontCollection {
+            s.skip::<u32>(); // version
+            let number_of_faces = s.read::<u32>().ok_or(FaceParsingError::MalformedFont)?;
+            let offsets = s
+                .read_array32::<Offset32>(number_of_faces)
+                .ok_or(FaceParsingError::MalformedFont)?;
+
+            let face_offset = offsets
+                .get(index)
+                .ok_or(FaceParsingError::FaceIndexOutOfBounds)?;
+            // Face offset is from the start of the font data,
+            // so we have to adjust it to the current parser offset.
+            let face_offset = face_offset
+                .to_usize()
+                .checked_sub(s.offset())
+                .ok_or(FaceParsingError::MalformedFont)?;
+            s.advance_checked(face_offset)
+                .ok_or(FaceParsingError::MalformedFont)?;
+
+            // Read **face** magic.
+            // Each face in a font collection also starts with a magic.
+            let magic = s.read::<Magic>().ok_or(FaceParsingError::UnknownMagic)?;
+            // And face in a font collection can't be another collection.
+            if magic == Magic::FontCollection {
+                return Err(FaceParsingError::UnknownMagic);
+            }
+        } else {
+            // When reading from a regular font (not a collection) disallow index to be non-zero
+            // Basically treat the font as a one-element collection
+            if index != 0 {
+                return Err(FaceParsingError::FaceIndexOutOfBounds);
+            }
         }
 
-        Ok(Statfs {
-            blocks: stat.f_blocks,
-            bfree: stat.f_bfree,
-            bavail: stat.f_bavail,
-            files: stat.f_files,
-            ffree: stat.f_ffree,
-            bsize: stat.f_bsize as u32,
-            namelen: self.cipher.max_plaintext_name_len(stat.f_namemax as u32),
-            frsize: stat.f_frsize as u32,
+        let num_tables = s.read::<u16>().ok_or(FaceParsingError::MalformedFont)?;
+        s.advance(6); // searchRange (u16) + entrySelector (u16) + rangeShift (u16)
+        let table_records = s
+            .read_array16::<TableRecord>(num_tables)
+            .ok_or(FaceParsingError::MalformedFont)?;
+
+        Ok(RawFace {
+            data,
+            table_records,
         })
     }
 
-    fn chmod(&self, _req: RequestInfo, path: &Path, _fh: Option<u64>, mode: u32) -> ResultEmpty {
-        debug!("chmod: {:?} mode={:o}", path, mode);
-        let (real_path, _) = self.encrypt_path(path)?;
-
-        // Convert mode to Permissions.
-        // Note: fs::set_permissions takes std::fs::Permissions.
-        // We use PermissionsExt to construct it from u32 mode.
-        use std::os::unix::fs::PermissionsExt;
-        let perms = std::fs::Permissions::from_mode(mode);
-
-        fs::set_permissions(real_path, perms).map_err(|e| e.raw_os_error().unwrap_or(libc::EIO))
+    /// Returns the raw data of a selected table.
+    pub fn table(&self, tag: Tag) -> Option<&'a [u8]> {
+        let (_, table) = self
+            .table_records
+            .binary_search_by(|record| record.tag.cmp(&tag))?;
+        let offset = usize::num_from(table.offset);
+        let length = usize::num_from(table.length);
+        let end = offset.checked_add(length)?;
+        self.data.get(offset..end)
     }
+}
 
-    fn chown(
-        &self,
-        _req: RequestInfo,
-        path: &Path,
-        _fh: Option<u64>,
-        uid: Option<u32>,
-        gid: Option<u32>,
-    ) -> ResultEmpty {
-        debug!("chown: {:?} uid={:?} gid={:?}", path, uid, gid);
-        let (real_path, _) = self.encrypt_path(path)?;
-
-        let c_path =
-            std::ffi::CString::new(real_path.as_os_str().as_bytes()).map_err(|_| libc::EINVAL)?;
-
-        let ret = unsafe {
-            libc::lchown(
-                c_path.as_ptr(),
-                uid.unwrap_or(u32::MAX), // -1 in u32 is u32::MAX? No, lchown takes uid_t (u32).
-                // chown(2): "If the owner or group is specified as -1, then that ID is not changed."
-                // uid_t is u32. -1 is casting.
-                gid.unwrap_or(u32::MAX),
-            )
-        };
-
-        if ret == 0 {
-            Ok(())
-        } else {
-            Err(std::io::Error::last_os_error()
-                .raw_os_error()
-                .unwrap_or(libc::EIO))
-        }
+impl core::fmt::Debug for RawFace<'_> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "RawFace {{ ... }}")
     }
+}
 
-    /// Check if the requesting process has the requested access to the path.
+/// A list of all supported tables as raw data.
+///
+/// This type should be used in tandem with
+/// [`Face::from_raw_tables()`](struct.Face.html#method.from_raw_tables).
+///
+/// This allows loading font faces not only from TrueType font files,
+/// but from any source. Mainly used for parsing WOFF.
+#[allow(missing_debug_implementations)]
+#[derive(Clone, Default)]
+pub struct RawFaceTables<'a> {
+    // Mandatory tables.
+    /// Font Header, global information about the font, version number, creation and modification dates, revision number, and basic typographic data.
+    pub head: &'a [u8],
+    /// Horizontal Header, information needed to layout fonts whose characters are written horizontally.
+    pub hhea: &'a [u8],
+    /// Maximum Profile, establishes the memory requirements for a font.
+    pub maxp: &'a [u8],
+
+    /// Bitmap data table
+    pub bdat: Option<&'a [u8]>,
+    /// Bitmap Location, availability of bitmaps at requested point sizes.
+    pub bloc: Option<&'a [u8]>,
+    /// Color Bitmap Data, used to embed color bitmap glyph data.
+    pub cbdt: Option<&'a [u8]>,
+    /// Color Bitmap Location, provides locators for embedded color bitmaps.
+    pub cblc: Option<&'a [u8]>,
+    /// Compact Font Format 1
+    pub cff: Option<&'a [u8]>,
+    /// Character to Glyph Mapping, maps character codes to glyph indices.
+    pub cmap: Option<&'a [u8]>,
+    /// Color, adds support for multi-colored glyphs.
+    pub colr: Option<&'a [u8]>,
+    /// Color Palette, a set of one or more color palettes.
+    pub cpal: Option<&'a [u8]>,
+    /// Embedded Bitmap Data, embed monochrome or grayscale bitmap glyph data.
+    pub ebdt: Option<&'a [u8]>,
+    /// Embedded Bitmap Location, provides embedded bitmap locators.
+    pub eblc: Option<&'a [u8]>,
+    /// Glyph Outline, data that defines the appearance of the glyphs.
+    pub glyf: Option<&'a [u8]>,
+    /// Horizontal Metrics, metric information for the horizontal layout each of the glyphs.
+    pub hmtx: Option<&'a [u8]>,
+    /// Kern, values that adjust the intercharacter spacing for glyphs.
+    pub kern: Option<&'a [u8]>,
+    /// Glyph Data Location, stores the offsets to the locations of the glyphs.
+    pub loca: Option<&'a [u8]>,
+    /// Font Names, human-readable names for features and settings, copyright, font names, style names, and other information.
+    pub name: Option<&'a [u8]>,
+    /// OS/2 Compatibility, a set of metrics that are required by Windows.
+    pub os2: Option<&'a [u8]>,
+    /// Glyph Name and PostScript Font, information needed to use a TrueType font on a PostScript printer.
+    pub post: Option<&'a [u8]>,
+    /// Extended Bitmaps, provides access to bitmap data in a standard graphics format (such as PNG, JPEG, TIFF).
+    pub sbix: Option<&'a [u8]>,
+    /// Style Attributes, describes design attributes that distinguish font-style variants within a font family.
+    pub stat: Option<&'a [u8]>,
+    /// Scalable Vector Graphics, contains SVG descriptions for some or all of the glyphs in the font.
+    pub svg: Option<&'a [u8]>,
+    /// Vertical Header, information needed for vertical fonts.
+    pub vhea: Option<&'a [u8]>,
+    /// Vertical Metrics, specifies the vertical spacing for each glyph in an AAT vertical font.
+    pub vmtx: Option<&'a [u8]>,
+    /// Vertical Origin, the y coordinate of a glyph’s vertical origin, this can only be used in CFF or CFF2 fonts.
+    pub vorg: Option<&'a [u8]>,
+
+    /// Glyph Definition, provides various glyph properties used in OpenType Layout processing.
+    #[cfg(feature = "opentype-layout")]
+    pub gdef: Option<&'a [u8]>,
+    /// Glyph Positioning, precise control over glyph placement for sophisticated text layout in each supported script.
+    #[cfg(feature = "opentype-layout")]
+    pub gpos: Option<&'a [u8]>,
+    /// Glyph Substitution, provides data for substitution of glyphs for appropriate rendering of different scripts.
+    #[cfg(feature = "opentype-layout")]
+    pub gsub: Option<&'a [u8]>,
+    /// Mathematical Typesetting, font-specific information necessary for math formula layout.
+    #[cfg(feature = "opentype-layout")]
+    pub math: Option<&'a [u8]>,
+
+    /// Anchor Point Table, defines anchor points.
+    #[cfg(feature = "apple-layout")]
+    pub ankr: Option<&'a [u8]>,
+    /// Feature Name Table, font's text features.
+    #[cfg(feature = "apple-layout")]
+    pub feat: Option<&'a [u8]>,
+    /// Kerx, extended kerning table.
+    #[cfg(feature = "apple-layout")]
+    pub kerx: Option<&'a [u8]>,
+    /// Extended Glyph Metamorphosis, specifies a set of transformations that can apply to the glyphs of your font.
+    #[cfg(feature = "apple-layout")]
+    pub morx: Option<&'a [u8]>,
+    /// Tracking, allows AAT fonts to adjust to normal interglyph spacing.
+    #[cfg(feature = "apple-layout")]
+    pub trak: Option<&'a [u8]>,
+
+    /// Axis Variation Table, allows the font to modify the mapping between axis values and these normalized values.
+    #[cfg(feature = "variable-fonts")]
+    pub avar: Option<&'a [u8]>,
+    /// Compact Font Format 2
+    #[cfg(feature = "variable-fonts")]
+    pub cff2: Option<&'a [u8]>,
+    /// Font Variations Table, global information of which variation axes are included in the font.
+    #[cfg(feature = "variable-fonts")]
+    pub fvar: Option<&'a [u8]>,
+    /// Glyph Variations Table, includes all of the data required for stylizing the glyphs.
+    #[cfg(feature = "variable-fonts")]
+    pub gvar: Option<&'a [u8]>,
+    /// Horizontal Metrics Variations Table, used in variable fonts to provide glyph variations for horizontal glyph metrics values.
+    #[cfg(feature = "variable-fonts")]
+    pub hvar: Option<&'a [u8]>,
+    /// Metrics Variations Table, used in variable fonts to provide glyph variations for font-wide metric values found in other font tables.
+    #[cfg(feature = "variable-fonts")]
+    pub mvar: Option<&'a [u8]>,
+    /// Vertical Metrics Variations Table, used in variable fonts to provide glyph variations for vertical glyph metric values.
+    #[cfg(feature = "variable-fonts")]
+    pub vvar: Option<&'a [u8]>,
+}
+
+/// Parsed face tables.
+///
+/// Unlike [`Face`], provides a low-level parsing abstraction over TrueType tables.
+/// Useful when you need a direct access to tables data.
+///
+/// Also, used when high-level API is problematic to implement.
+/// A good example would be OpenType layout tables (GPOS/GSUB).
+#[allow(missing_docs)]
+#[allow(missing_debug_implementations)]
+#[derive(Clone)]
+pub struct FaceTables<'a> {
+    // Mandatory tables.
+    pub head: head::Table,
+    pub hhea: hhea::Table,
+    pub maxp: maxp::Table,
+
+    pub bdat: Option<cbdt::Table<'a>>,
+    pub cbdt: Option<cbdt::Table<'a>>,
+    pub cff: Option<cff::Table<'a>>,
+    pub cmap: Option<cmap::Table<'a>>,
+    pub colr: Option<colr::Table<'a>>,
+    pub ebdt: Option<cbdt::Table<'a>>,
+    pub glyf: Option<glyf::Table<'a>>,
+    pub hmtx: Option<hmtx::Table<'a>>,
+    pub kern: Option<kern::Table<'a>>,
+    pub name: Option<name::Table<'a>>,
+    pub os2: Option<os2::Table<'a>>,
+    pub post: Option<post::Table<'a>>,
+    pub sbix: Option<sbix::Table<'a>>,
+    pub stat: Option<stat::Table<'a>>,
+    pub svg: Option<svg::Table<'a>>,
+    pub vhea: Option<vhea::Table>,
+    pub vmtx: Option<hmtx::Table<'a>>,
+    pub vorg: Option<vorg::Table<'a>>,
+
+    #[cfg(feature = "opentype-layout")]
+    pub gdef: Option<gdef::Table<'a>>,
+    #[cfg(feature = "opentype-layout")]
+    pub gpos: Option<opentype_layout::LayoutTable<'a>>,
+    #[cfg(feature = "opentype-layout")]
+    pub gsub: Option<opentype_layout::LayoutTable<'a>>,
+    #[cfg(feature = "opentype-layout")]
+    pub math: Option<math::Table<'a>>,
+
+    #[cfg(feature = "apple-layout")]
+    pub ankr: Option<ankr::Table<'a>>,
+    #[cfg(feature = "apple-layout")]
+    pub feat: Option<feat::Table<'a>>,
+    #[cfg(feature = "apple-layout")]
+    pub kerx: Option<kerx::Table<'a>>,
+    #[cfg(feature = "apple-layout")]
+    pub morx: Option<morx::Table<'a>>,
+    #[cfg(feature = "apple-layout")]
+    pub trak: Option<trak::Table<'a>>,
+
+    #[cfg(feature = "variable-fonts")]
+    pub avar: Option<avar::Table<'a>>,
+    #[cfg(feature = "variable-fonts")]
+    pub cff2: Option<cff2::Table<'a>>,
+    #[cfg(feature = "variable-fonts")]
+    pub fvar: Option<fvar::Table<'a>>,
+    #[cfg(feature = "variable-fonts")]
+    pub gvar: Option<gvar::Table<'a>>,
+    #[cfg(feature = "variable-fonts")]
+    pub hvar: Option<hvar::Table<'a>>,
+    #[cfg(feature = "variable-fonts")]
+    pub mvar: Option<mvar::Table<'a>>,
+    #[cfg(feature = "variable-fonts")]
+    pub vvar: Option<vvar::Table<'a>>,
+}
+
+/// A font face.
+///
+/// Provides a high-level API for working with TrueType fonts.
+/// If you're not familiar with how TrueType works internally, you should use this type.
+/// If you do know and want a bit more low-level access - checkout [`FaceTables`].
+///
+/// Note that `Face` doesn't own the font data and doesn't allocate anything in heap.
+/// Therefore you cannot "store" it. The idea is that you should parse the `Face`
+/// when needed, get required data and forget about it.
+/// That's why the initial parsing is highly optimized and should not become a bottleneck.
+///
+/// If you still want to store `Face` - checkout
+/// [owned_ttf_parser](https://crates.io/crates/owned_ttf_parser). Requires `unsafe`.
+///
+/// While `Face` is technically copyable, we disallow it because it's almost 2KB big.
+#[derive(Clone)]
+pub struct Face<'a> {
+    raw_face: RawFace<'a>,
+    tables: FaceTables<'a>, // Parsed tables.
+    #[cfg(feature = "variable-fonts")]
+    coordinates: VarCoords,
+}
+
+impl<'a> Face<'a> {
+    /// Creates a new [`Face`] from a raw data.
     ///
-    /// Uses the file's stored uid, gid, and mode from the backend and the request's
-    /// uid/gid to apply standard Unix permission checks. Root (uid 0) is always allowed.
-    /// Only the primary gid is considered (no supplementary groups).
-    fn access(&self, req: RequestInfo, path: &Path, mask: u32) -> ResultEmpty {
-        debug!(
-            "access: {:?} mask={:#o} uid={} gid={}",
-            path, mask, req.uid, req.gid
-        );
-
-        let (real_path, _) = self.encrypt_path(path)?;
-        let metadata =
-            fs::symlink_metadata(&real_path).map_err(|e| e.raw_os_error().unwrap_or(libc::EIO))?;
-
-        // F_OK (0): existence only
-        if mask == 0 {
-            return Ok(());
-        }
-
-        // Superuser bypasses permission checks
-        if req.uid == 0 {
-            return Ok(());
-        }
-
-        let mode = metadata.mode();
-        let file_uid = metadata.uid();
-        let file_gid = metadata.gid();
-
-        // Pick the applicable mode triplet: owner (7-5), group (4-2), other (1-0)
-        let effective = if req.uid == file_uid {
-            (mode >> 6) & 0o7
-        } else if req.gid == file_gid {
-            (mode >> 3) & 0o7
-        } else {
-            mode & 0o7
-        };
-
-        // Map R_OK=4, W_OK=2, X_OK=1 to mode bits: read=4, write=2, execute=1
-        let need = mask & 0o7;
-        if (effective & need) == need {
-            Ok(())
-        } else {
-            Err(libc::EACCES)
-        }
+    /// `index` indicates the specific font face in a font collection.
+    /// Use [`fonts_in_collection`] to get the total number of font faces.
+    /// Set to 0 if unsure.
+    ///
+    /// This method will do some parsing and sanitization,
+    /// but in general can be considered free. No significant performance overhead.
+    ///
+    /// Required tables: `head`, `hhea` and `maxp`.
+    ///
+    /// If an optional table has invalid data it will be skipped.
+    #[deprecated(since = "0.16.0", note = "use `parse` instead")]
+    pub fn from_slice(data: &'a [u8], index: u32) -> Result<Self, FaceParsingError> {
+        Self::parse(data, index)
     }
 
-    fn truncate(&self, _req: RequestInfo, path: &Path, fh: Option<u64>, size: u64) -> ResultEmpty {
-        debug!("truncate: {:?} size={}", path, size);
+    /// Creates a new [`Face`] from a raw data.
+    ///
+    /// `index` indicates the specific font face in a font collection.
+    /// Use [`fonts_in_collection`] to get the total number of font faces.
+    /// Set to 0 if unsure.
+    ///
+    /// This method will do some parsing and sanitization,
+    /// but in general can be considered free. No significant performance overhead.
+    ///
+    /// Required tables: `head`, `hhea` and `maxp`.
+    ///
+    /// If an optional table has invalid data it will be skipped.
+    pub fn parse(data: &'a [u8], index: u32) -> Result<Self, FaceParsingError> {
+        let raw_face = RawFace::parse(data, index)?;
+        let raw_tables = Self::collect_tables(raw_face);
 
-        let handle: Option<Arc<FileHandle>> =
-            fh.and_then(|fh| self.handles_guard().get(&fh).cloned());
-        if fh.is_some() && handle.is_none() {
-            return Err(libc::EBADF);
+        #[allow(unused_mut)]
+        let mut face = Face {
+            raw_face,
+            #[cfg(feature = "variable-fonts")]
+            coordinates: VarCoords::default(),
+            tables: Self::parse_tables(raw_tables)?,
+        };
+
+        #[cfg(feature = "variable-fonts")]
+        {
+            if let Some(ref fvar) = face.tables.fvar {
+                face.coordinates.len = fvar.axes.len().min(MAX_VAR_COORDS as u16) as u8;
+            }
         }
 
-        let owned_file: Option<File> = if handle.is_none() {
-            let (real_path, _) = self.encrypt_path(path)?;
-            Some(
-                fs::OpenOptions::new()
-                    .read(true)
-                    .write(true)
-                    .open(real_path)
-                    .map_err(|e| e.raw_os_error().unwrap_or(libc::EIO))?,
-            )
+        Ok(face)
+    }
+
+    fn collect_tables(raw_face: RawFace<'a>) -> RawFaceTables<'a> {
+        let mut tables = RawFaceTables::default();
+
+        for record in raw_face.table_records {
+            let start = usize::num_from(record.offset);
+            let end = match start.checked_add(usize::num_from(record.length)) {
+                Some(v) => v,
+                None => continue,
+            };
+
+            let table_data = raw_face.data.get(start..end);
+            match &record.tag.to_bytes() {
+                b"bdat" => tables.bdat = table_data,
+                b"bloc" => tables.bloc = table_data,
+                b"CBDT" => tables.cbdt = table_data,
+                b"CBLC" => tables.cblc = table_data,
+                b"CFF " => tables.cff = table_data,
+                #[cfg(feature = "variable-fonts")]
+                b"CFF2" => tables.cff2 = table_data,
+                b"COLR" => tables.colr = table_data,
+                b"CPAL" => tables.cpal = table_data,
+                b"EBDT" => tables.ebdt = table_data,
+                b"EBLC" => tables.eblc = table_data,
+                #[cfg(feature = "opentype-layout")]
+                b"GDEF" => tables.gdef = table_data,
+                #[cfg(feature = "opentype-layout")]
+                b"GPOS" => tables.gpos = table_data,
+                #[cfg(feature = "opentype-layout")]
+                b"GSUB" => tables.gsub = table_data,
+                #[cfg(feature = "opentype-layout")]
+                b"MATH" => tables.math = table_data,
+                #[cfg(feature = "variable-fonts")]
+                b"HVAR" => tables.hvar = table_data,
+                #[cfg(feature = "variable-fonts")]
+                b"MVAR" => tables.mvar = table_data,
+                b"OS/2" => tables.os2 = table_data,
+                b"SVG " => tables.svg = table_data,
+                b"VORG" => tables.vorg = table_data,
+                #[cfg(feature = "variable-fonts")]
+                b"VVAR" => tables.vvar = table_data,
+                #[cfg(feature = "apple-layout")]
+                b"ankr" => tables.ankr = table_data,
+                #[cfg(feature = "variable-fonts")]
+                b"avar" => tables.avar = table_data,
+                b"cmap" => tables.cmap = table_data,
+                #[cfg(feature = "apple-layout")]
+                b"feat" => tables.feat = table_data,
+                #[cfg(feature = "variable-fonts")]
+                b"fvar" => tables.fvar = table_data,
+                b"glyf" => tables.glyf = table_data,
+                #[cfg(feature = "variable-fonts")]
+                b"gvar" => tables.gvar = table_data,
+                b"head" => tables.head = table_data.unwrap_or_default(),
+                b"hhea" => tables.hhea = table_data.unwrap_or_default(),
+                b"hmtx" => tables.hmtx = table_data,
+                b"kern" => tables.kern = table_data,
+                #[cfg(feature = "apple-layout")]
+                b"kerx" => tables.kerx = table_data,
+                b"loca" => tables.loca = table_data,
+                b"maxp" => tables.maxp = table_data.unwrap_or_default(),
+                #[cfg(feature = "apple-layout")]
+                b"morx" => tables.morx = table_data,
+                b"name" => tables.name = table_data,
+                b"post" => tables.post = table_data,
+                b"sbix" => tables.sbix = table_data,
+                b"STAT" => tables.stat = table_data,
+                #[cfg(feature = "apple-layout")]
+                b"trak" => tables.trak = table_data,
+                b"vhea" => tables.vhea = table_data,
+                b"vmtx" => tables.vmtx = table_data,
+                _ => {}
+            }
+        }
+
+        tables
+    }
+
+    /// Creates a new [`Face`] from provided [`RawFaceTables`].
+    pub fn from_raw_tables(raw_tables: RawFaceTables<'a>) -> Result<Self, FaceParsingError> {
+        #[allow(unused_mut)]
+        let mut face = Face {
+            raw_face: RawFace {
+                data: &[],
+                table_records: LazyArray16::default(),
+            },
+            #[cfg(feature = "variable-fonts")]
+            coordinates: VarCoords::default(),
+            tables: Self::parse_tables(raw_tables)?,
+        };
+
+        #[cfg(feature = "variable-fonts")]
+        {
+            if let Some(ref fvar) = face.tables.fvar {
+                face.coordinates.len = fvar.axes.len().min(MAX_VAR_COORDS as u16) as u8;
+            }
+        }
+
+        Ok(face)
+    }
+
+    fn parse_tables(raw_tables: RawFaceTables<'a>) -> Result<FaceTables<'a>, FaceParsingError> {
+        let head = head::Table::parse(raw_tables.head).ok_or(FaceParsingError::NoHeadTable)?;
+        let hhea = hhea::Table::parse(raw_tables.hhea).ok_or(FaceParsingError::NoHheaTable)?;
+        let maxp = maxp::Table::parse(raw_tables.maxp).ok_or(FaceParsingError::NoMaxpTable)?;
+
+        let hmtx = raw_tables.hmtx.and_then(|data| {
+            hmtx::Table::parse(hhea.number_of_metrics, maxp.number_of_glyphs, data)
+        });
+
+        let vhea = raw_tables.vhea.and_then(vhea::Table::parse);
+        let vmtx = if let Some(vhea) = vhea {
+            raw_tables.vmtx.and_then(|data| {
+                hmtx::Table::parse(vhea.number_of_metrics, maxp.number_of_glyphs, data)
+            })
         } else {
             None
         };
 
-        let file_ref: &File = match (&handle, &owned_file) {
-            (Some(h), _) => &h.file,
-            (None, Some(f)) => f,
-            (None, None) => return Err(libc::EIO),
+        let loca = raw_tables.loca.and_then(|data| {
+            loca::Table::parse(maxp.number_of_glyphs, head.index_to_location_format, data)
+        });
+        let glyf = if let Some(loca) = loca {
+            raw_tables
+                .glyf
+                .and_then(|data| glyf::Table::parse(loca, data))
+        } else {
+            None
         };
 
-        let header_size = self.config.header_size();
-        let metadata = file_ref
-            .metadata()
-            .map_err(|e| e.raw_os_error().unwrap_or(libc::EIO))?;
-        let block_layout = BlockLayout::new(
-            self.config.block_mode(),
-            self.config.block_size as u64,
-            self.config.block_mac_bytes as u64,
-        )
-        .map_err(|_| libc::EINVAL)?;
-        let current_logical_size = FileDecoder::<File>::calculate_logical_size_with_mode(
-            metadata.len(),
-            header_size,
-            self.config.block_size as u64,
-            self.config.block_mac_bytes as u64,
-            self.config.block_mode(),
-        );
-        if size == current_logical_size {
-            return Ok(());
-        }
-
-        let file_iv = if let Some(h) = &handle {
-            h.file_iv
-        } else if header_size > 0 {
-            let mut header = vec![0u8; header_size as usize];
-            file_ref
-                .read_exact_at(&mut header, 0)
-                .map_err(|e| e.raw_os_error().unwrap_or(libc::EIO))?;
-            let (_, path_iv) = self.encrypt_path(path)?;
-            let external_iv = if self.config.external_iv_chaining {
-                path_iv
-            } else {
-                0
-            };
-            self.cipher
-                .decrypt_header(&mut header, external_iv)
-                .map_err(|_| libc::EIO)?
-        } else if self.config.external_iv_chaining {
-            let (_, path_iv) = self.encrypt_path(path)?;
-            path_iv
+        let bdat = if let Some(bloc) = raw_tables.bloc.and_then(cblc::Table::parse) {
+            raw_tables
+                .bdat
+                .and_then(|data| cbdt::Table::parse(bloc, data))
         } else {
-            0
+            None
         };
 
-        if size > current_logical_size {
-            self.truncate_expand(
-                file_ref,
-                file_iv,
-                header_size,
-                current_logical_size,
-                size,
-                block_layout,
-            )?;
+        let cbdt = if let Some(cblc) = raw_tables.cblc.and_then(cblc::Table::parse) {
+            raw_tables
+                .cbdt
+                .and_then(|data| cbdt::Table::parse(cblc, data))
         } else {
-            self.truncate_shrink(file_ref, file_iv, header_size, size, block_layout)?;
-        }
+            None
+        };
 
-        Ok(())
+        let ebdt = if let Some(eblc) = raw_tables.eblc.and_then(cblc::Table::parse) {
+            raw_tables
+                .ebdt
+                .and_then(|data| cbdt::Table::parse(eblc, data))
+        } else {
+            None
+        };
+
+        let cpal = raw_tables.cpal.and_then(cpal::Table::parse);
+        let colr = if let Some(cpal) = cpal {
+            raw_tables
+                .colr
+                .and_then(|data| colr::Table::parse(cpal, data))
+        } else {
+            None
+        };
+
+        Ok(FaceTables {
+            head,
+            hhea,
+            maxp,
+
+            bdat,
+            cbdt,
+            cff: raw_tables
+                .cff
+                .and_then(|data| cff::Table::parse_with_upem(data, head.units_per_em)),
+            cmap: raw_tables.cmap.and_then(cmap::Table::parse),
+            colr,
+            ebdt,
+            glyf,
+            hmtx,
+            kern: raw_tables.kern.and_then(kern::Table::parse),
+            name: raw_tables.name.and_then(name::Table::parse),
+            os2: raw_tables.os2.and_then(os2::Table::parse),
+            post: raw_tables.post.and_then(post::Table::parse),
+            sbix: raw_tables
+                .sbix
+                .and_then(|data| sbix::Table::parse(maxp.number_of_glyphs, data)),
+            stat: raw_tables.stat.and_then(stat::Table::parse),
+            svg: raw_tables.svg.and_then(svg::Table::parse),
+            vhea,
+            vmtx,
+            vorg: raw_tables.vorg.and_then(vorg::Table::parse),
+
+            #[cfg(feature = "opentype-layout")]
+            gdef: raw_tables.gdef.and_then(gdef::Table::parse),
+            #[cfg(feature = "opentype-layout")]
+            gpos: raw_tables
+                .gpos
+                .and_then(opentype_layout::LayoutTable::parse),
+            #[cfg(feature = "opentype-layout")]
+            gsub: raw_tables
+                .gsub
+                .and_then(opentype_layout::LayoutTable::parse),
+            #[cfg(feature = "opentype-layout")]
+            math: raw_tables.math.and_then(math::Table::parse),
+
+            #[cfg(feature = "apple-layout")]
+            ankr: raw_tables
+                .ankr
+                .and_then(|data| ankr::Table::parse(maxp.number_of_glyphs, data)),
+            #[cfg(feature = "apple-layout")]
+            feat: raw_tables.feat.and_then(feat::Table::parse),
+            #[cfg(feature = "apple-layout")]
+            kerx: raw_tables
+                .kerx
+                .and_then(|data| kerx::Table::parse(maxp.number_of_glyphs, data)),
+            #[cfg(feature = "apple-layout")]
+            morx: raw_tables
+                .morx
+                .and_then(|data| morx::Table::parse(maxp.number_of_glyphs, data)),
+            #[cfg(feature = "apple-layout")]
+            trak: raw_tables.trak.and_then(trak::Table::parse),
+
+            #[cfg(feature = "variable-fonts")]
+            avar: raw_tables.avar.and_then(avar::Table::parse),
+            #[cfg(feature = "variable-fonts")]
+            cff2: raw_tables.cff2.and_then(cff2::Table::parse),
+            #[cfg(feature = "variable-fonts")]
+            fvar: raw_tables.fvar.and_then(fvar::Table::parse),
+            #[cfg(feature = "variable-fonts")]
+            gvar: raw_tables.gvar.and_then(gvar::Table::parse),
+            #[cfg(feature = "variable-fonts")]
+            hvar: raw_tables.hvar.and_then(hvar::Table::parse),
+            #[cfg(feature = "variable-fonts")]
+            mvar: raw_tables.mvar.and_then(mvar::Table::parse),
+            #[cfg(feature = "variable-fonts")]
+            vvar: raw_tables.vvar.and_then(vvar::Table::parse),
+        })
     }
 
-    fn utimens(
-        &self,
-        req: RequestInfo,
-        path: &Path,
-        fh: Option<u64>,
-        atime: Option<std::time::SystemTime>,
-        mtime: Option<std::time::SystemTime>,
-    ) -> ResultEmpty {
-        debug!("utimens: {:?} atime={:?} mtime={:?}", path, atime, mtime);
+    /// Returns low-level face tables.
+    #[inline]
+    pub fn tables(&self) -> &FaceTables<'a> {
+        &self.tables
+    }
 
-        // Get file metadata for permission check (owner/group/mode).
-        let metadata = if let Some(fh) = fh {
-            let handles = self.handles_guard();
-            handles.get(&fh).and_then(|h| h.file.metadata().ok())
-        } else {
-            let (real_path, _) = self.encrypt_path(path)?;
-            fs::symlink_metadata(real_path).ok()
-        };
+    /// Returns the `RawFace` used to create this `Face`.
+    ///
+    /// Useful if you want to parse the data manually.
+    ///
+    /// Available only for faces created using [`Face::parse()`](struct.Face.html#method.parse).
+    #[inline]
+    pub fn raw_face(&self) -> &RawFace<'a> {
+        &self.raw_face
+    }
 
-        let setting_times = atime.is_some() || mtime.is_some();
-        if setting_times && req.uid != 0 {
-            let meta = metadata.as_ref().ok_or(libc::EACCES)?;
-            self.utimens_permission_check(&req, meta.uid(), meta.gid(), meta.mode(), atime, mtime)?
-        } else if let Some(ref meta) = metadata {
-            self.utimens_permission_check(&req, meta.uid(), meta.gid(), meta.mode(), atime, mtime)?;
+    /// Returns the raw data of a selected table.
+    ///
+    /// Useful if you want to parse the data manually.
+    ///
+    /// Available only for faces created using [`Face::parse()`](struct.Face.html#method.parse).
+    #[deprecated(since = "0.16.0", note = "use `self.raw_face().table()` instead")]
+    #[inline]
+    pub fn table_data(&self, tag: Tag) -> Option<&'a [u8]> {
+        self.raw_face.table(tag)
+    }
+
+    /// Returns a list of names.
+    ///
+    /// Contains face name and other strings.
+    #[inline]
+    pub fn names(&self) -> name::Names<'a> {
+        self.tables.name.unwrap_or_default().names
+    }
+
+    /// Checks that face is marked as *Regular*.
+    ///
+    /// Returns `false` when OS/2 table is not present.
+    #[inline]
+    pub fn is_regular(&self) -> bool {
+        self.style() == Style::Normal
+    }
+
+    /// Checks that face is marked as *Italic*.
+    ///
+    /// Consults `OS/2.fsSelection`'s ITALIC bit (and, for OS/2 version 4+, its
+    /// OBLIQUE bit — see [`Face::style()`]) and `head.macStyle`'s Italic bit
+    /// (bit 1). These are the two italic flags the OpenType spec treats as
+    /// authoritative.
+    #[inline]
+    pub fn is_italic(&self) -> bool {
+        // `post.italicAngle` is intentionally not consulted: the spec says it
+        // "should" be 0 for upright fonts, but real fonts violate this while
+        // remaining visually regular (see issue #202), so treating a nonzero
+        // angle as italic causes false positives. ~keep
+        self.style() == Style::Italic || self.tables.head.is_italic
+    }
+
+    /// Checks that face is marked as *Bold*.
+    ///
+    /// Returns `false` when OS/2 table is not present.
+    #[inline]
+    pub fn is_bold(&self) -> bool {
+        self.tables.os2.map(|os2| os2.is_bold()).unwrap_or(false)
+    }
+
+    /// Checks that face is marked as *Oblique*.
+    ///
+    /// Returns `false` when OS/2 table is not present or when its version is < 4.
+    #[inline]
+    pub fn is_oblique(&self) -> bool {
+        self.style() == Style::Oblique
+    }
+
+    /// Returns face style.
+    ///
+    /// Returns `Style::Normal` when OS/2 table is not present.
+    #[inline]
+    pub fn style(&self) -> Style {
+        self.tables.os2.map(|os2| os2.style()).unwrap_or_default()
+    }
+
+    /// Checks that face is marked as *Monospaced*.
+    ///
+    /// Returns `false` when `post` table is not present.
+    #[inline]
+    pub fn is_monospaced(&self) -> bool {
+        self.tables
+            .post
+            .map(|post| post.is_monospaced)
+            .unwrap_or(false)
+    }
+
+    /// Checks that face is variable.
+    ///
+    /// Simply checks the presence of a `fvar` table.
+    #[inline]
+    pub fn is_variable(&self) -> bool {
+        #[cfg(feature = "variable-fonts")]
+        {
+            // `fvar::Table::parse` already checked that `axisCount` is non-zero.
+            self.tables.fvar.is_some()
         }
-        // If metadata failed and we're root or not setting times, proceed and let utimensat/futimens return the error.
 
-        // Map Option<SystemTime> to kernel timespec. None means UTIME_OMIT (leave timestamp
-        // unchanged). Some(t) is either an explicit time or UTIME_NOW (fuse_mt converts UTIME_NOW
-        // to Some(SystemTime::now()) before calling us).
-        let to_timespec = |t: Option<std::time::SystemTime>| -> libc::timespec {
-            match t {
-                Some(ts) => {
-                    let d = ts
-                        .duration_since(std::time::UNIX_EPOCH)
-                        .unwrap_or(Duration::ZERO);
-                    libc::timespec {
-                        tv_sec: d.as_secs() as i64,
-                        tv_nsec: d.subsec_nanos() as i64,
-                    }
-                }
-                None => libc::timespec {
-                    tv_sec: 0,
-                    tv_nsec: libc::UTIME_OMIT,
-                },
+        #[cfg(not(feature = "variable-fonts"))]
+        {
+            false
+        }
+    }
+
+    /// Returns face's weight.
+    ///
+    /// Returns `Weight::Normal` when OS/2 table is not present.
+    #[inline]
+    pub fn weight(&self) -> Weight {
+        self.tables.os2.map(|os2| os2.weight()).unwrap_or_default()
+    }
+
+    /// Returns face's width.
+    ///
+    /// Returns `Width::Normal` when OS/2 table is not present or when value is invalid.
+    #[inline]
+    pub fn width(&self) -> Width {
+        self.tables.os2.map(|os2| os2.width()).unwrap_or_default()
+    }
+
+    /// Returns face's italic angle.
+    ///
+    /// Returns `0.0` when `post` table is not present.
+    #[inline]
+    pub fn italic_angle(&self) -> f32 {
+        self.tables
+            .post
+            .map(|table| table.italic_angle)
+            .unwrap_or(0.0)
+    }
+
+    // Read https://github.com/freetype/freetype/blob/49270c17011491227ec7bd3fb73ede4f674aa065/src/sfnt/sfobjs.c#L1279
+    // to learn more about the logic behind the following functions.
+
+    /// Returns a horizontal face ascender.
+    ///
+    /// This method is affected by variation axes.
+    #[inline]
+    pub fn ascender(&self) -> i16 {
+        if let Some(os_2) = self.tables.os2 {
+            if os_2.use_typographic_metrics() {
+                let value = os_2.typographic_ascender();
+                return self.apply_metrics_variation(Tag::from_bytes(b"hasc"), value);
             }
-        };
+        }
 
-        let times = [to_timespec(atime), to_timespec(mtime)];
-
-        if let Some(fh) = fh {
-            let handle = {
-                let handles = self.handles_guard();
-                handles.get(&fh).cloned()
-            };
-            if let Some(handle) = handle {
-                use std::os::fd::AsRawFd;
-                let ret = unsafe { libc::futimens(handle.file.as_raw_fd(), times.as_ptr()) };
-                if ret == 0 {
-                    return Ok(());
+        let mut value = self.tables.hhea.ascender;
+        if value == 0 {
+            if let Some(os_2) = self.tables.os2 {
+                value = os_2.typographic_ascender();
+                if value == 0 {
+                    value = os_2.windows_ascender();
+                    value = self.apply_metrics_variation(Tag::from_bytes(b"hcla"), value);
                 } else {
-                    return Err(std::io::Error::last_os_error()
-                        .raw_os_error()
-                        .unwrap_or(libc::EIO));
+                    value = self.apply_metrics_variation(Tag::from_bytes(b"hasc"), value);
                 }
             }
         }
 
-        let (real_path, _) = self.encrypt_path(path)?;
-        let c_path =
-            std::ffi::CString::new(real_path.as_os_str().as_bytes()).map_err(|_| libc::EINVAL)?;
-
-        let ret = unsafe {
-            libc::utimensat(
-                libc::AT_FDCWD,
-                c_path.as_ptr(),
-                times.as_ptr(),
-                libc::AT_SYMLINK_NOFOLLOW,
-            )
-        };
-
-        if ret == 0 {
-            Ok(())
-        } else {
-            Err(std::io::Error::last_os_error()
-                .raw_os_error()
-                .unwrap_or(libc::EIO))
-        }
+        value
     }
 
-    fn readlink(&self, _req: RequestInfo, path: &Path) -> Result<Vec<u8>, libc::c_int> {
-        debug!("readlink: {:?}", path);
-        let (real_path, path_iv) = self.encrypt_path(path)?;
-
-        let target = fs::read_link(real_path).map_err(|e| e.raw_os_error().unwrap_or(libc::EIO))?;
-
-        // target on disk is encrypted (base64). So it should be valid string.
-        let target_str = target.to_str().ok_or(libc::EILSEQ)?;
-
-        let (plain_target_bytes, _) = self
-            .cipher
-            .decrypt_filename(target_str, path_iv) // Decrypt takes base64 string
-            .map_err(|e| {
-                error!("Failed to decrypt symlink target: {}", e);
-                libc::EIO
-            })?;
-
-        Ok(plain_target_bytes)
-    }
-
-    fn link(
-        &self,
-        req: RequestInfo,
-        path: &Path,
-        newparent: &Path,
-        newname: &OsStr,
-    ) -> ResultEntry {
-        debug!("link: {:?} -> {:?}/{:?}", path, newparent, newname);
-
-        if self.config.external_iv_chaining {
-            return Err(libc::EPERM);
-        }
-
-        let new_path = newparent.join(newname);
-        let (real_path, _) = self.encrypt_path(path)?;
-        let (real_new_path, _) = self.encrypt_path(&new_path)?;
-
-        if let Err(e) = std::fs::hard_link(&real_path, &real_new_path) {
-            return Err(e.raw_os_error().unwrap_or(libc::EIO));
-        }
-
-        self.getattr(req, &new_path, None)
-    }
-
-    fn symlink(
-        &self,
-        req: RequestInfo,
-        parent: &Path,
-        name: &std::ffi::OsStr,
-        target: &std::path::Path,
-    ) -> ResultEntry {
-        debug!("symlink: {:?}/{:?} -> {:?}", parent, name, target);
-
-        let path = parent.join(name);
-        let (real_path, path_iv) = self.encrypt_path(&path)?;
-
-        let target_bytes = target.as_os_str().as_bytes();
-        let (enc_target, _) = self
-            .cipher
-            .encrypt_filename(target_bytes, path_iv)
-            .map_err(|e| {
-                error!("Failed to encrypt symlink target: {}", e);
-                libc::EIO
-            })?;
-
-        let enc_target_path = Path::new(&enc_target);
-
-        let c_target = std::ffi::CString::new(enc_target_path.as_os_str().as_bytes())
-            .map_err(|_| libc::EINVAL)?;
-        let c_linkpath =
-            std::ffi::CString::new(real_path.as_os_str().as_bytes()).map_err(|_| libc::EINVAL)?;
-
-        let ret = unsafe { libc::symlink(c_target.as_ptr(), c_linkpath.as_ptr()) };
-
-        if ret == 0 {
-            // Need to return lookup of new entry.
-            // But fuse_mt::ResultEntry expects a DirectoryEntry.
-            // We can reuse lookup or construct it.
-            // For simplicity, let's just lookup what we created.
-            // Actually fuse_mt requires we return the entry.
-            // Let's do a lookup.
-            self.getattr(req, &path, None)
-        } else {
-            Err(std::io::Error::last_os_error()
-                .raw_os_error()
-                .unwrap_or(libc::EIO))
-        }
-    }
-
-    fn getattr(&self, _req: RequestInfo, path: &Path, fh: Option<u64>) -> ResultEntry {
-        debug!("getattr: {:?} fh={:?}", path, fh);
-
-        let metadata = if let Some(fh) = fh {
-            let handle = {
-                let handles = self.handles_guard();
-                handles.get(&fh).cloned()
-            };
-
-            if let Some(handle) = handle {
-                handle.file.metadata().ok()
-            } else {
-                None
+    /// Returns a horizontal face descender.
+    ///
+    /// This method is affected by variation axes.
+    #[inline]
+    pub fn descender(&self) -> i16 {
+        if let Some(os_2) = self.tables.os2 {
+            if os_2.use_typographic_metrics() {
+                let value = os_2.typographic_descender();
+                return self.apply_metrics_variation(Tag::from_bytes(b"hdsc"), value);
             }
-        } else {
-            None
-        };
-
-        let metadata = if let Some(m) = metadata {
-            m
-        } else {
-            let (real_path, _) = self.encrypt_path(path)?;
-            debug!("real_path: {:?}", real_path);
-            fs::symlink_metadata(&real_path).map_err(|e| e.raw_os_error().unwrap_or(libc::EIO))?
-        };
-
-        let mut size = metadata.len();
-        // Adjust size for header and MAC
-        let header_size = self.config.header_size();
-        if metadata.is_file() {
-            size = FileDecoder::<std::fs::File>::calculate_logical_size_with_mode(
-                metadata.len(),
-                header_size,
-                self.config.block_size as u64,
-                self.config.block_mac_bytes as u64,
-                self.config.block_mode(),
-            );
         }
 
-        let attr = FileAttr {
-            size,
-            blocks: metadata.blocks(),
-            atime: SystemTime::UNIX_EPOCH
-                + Duration::new(metadata.atime() as u64, metadata.atime_nsec() as u32),
-            mtime: SystemTime::UNIX_EPOCH
-                + Duration::new(metadata.mtime() as u64, metadata.mtime_nsec() as u32),
-            ctime: SystemTime::UNIX_EPOCH
-                + Duration::new(metadata.ctime() as u64, metadata.ctime_nsec() as u32),
-            crtime: SystemTime::UNIX_EPOCH,
-            kind: metadata_to_file_type(&metadata),
-            perm: metadata.mode() as u16,
-            nlink: metadata.nlink() as u32,
-            uid: metadata.uid(),
-            gid: metadata.gid(),
-            rdev: metadata.rdev() as u32,
-            flags: 0,
-        };
+        let mut value = self.tables.hhea.descender;
+        if value == 0 {
+            if let Some(os_2) = self.tables.os2 {
+                value = os_2.typographic_descender();
+                if value == 0 {
+                    value = os_2.windows_descender();
+                    value = self.apply_metrics_variation(Tag::from_bytes(b"hcld"), value);
+                } else {
+                    value = self.apply_metrics_variation(Tag::from_bytes(b"hdsc"), value);
+                }
+            }
+        }
 
-        Ok((Duration::from_secs(1), attr))
+        value
     }
 
-    fn readdir(&self, _req: RequestInfo, path: &Path, _fh: u64) -> ResultReaddir {
-        debug!("readdir: {:?}", path);
-        let (real_path, dir_iv) = self.encrypt_path(path)?;
+    /// Returns face's height.
+    ///
+    /// This method is affected by variation axes.
+    #[inline]
+    pub fn height(&self) -> i16 {
+        self.ascender() - self.descender()
+    }
 
-        let entries = fs::read_dir(real_path).map_err(|e| e.raw_os_error().unwrap_or(libc::EIO))?;
+    /// Returns a horizontal face line gap.
+    ///
+    /// This method is affected by variation axes.
+    #[inline]
+    pub fn line_gap(&self) -> i16 {
+        if let Some(os_2) = self.tables.os2 {
+            if os_2.use_typographic_metrics() {
+                let value = os_2.typographic_line_gap();
+                return self.apply_metrics_variation(Tag::from_bytes(b"hlgp"), value);
+            }
+        }
 
-        let mut result = Vec::new();
+        let mut value = self.tables.hhea.line_gap;
+        // For line gap, we have to check that ascender or descender are 0, not line gap itself.
+        if self.tables.hhea.ascender == 0 || self.tables.hhea.descender == 0 {
+            if let Some(os_2) = self.tables.os2 {
+                if os_2.typographic_ascender() != 0 || os_2.typographic_descender() != 0 {
+                    value = os_2.typographic_line_gap();
+                    value = self.apply_metrics_variation(Tag::from_bytes(b"hlgp"), value);
+                } else {
+                    value = 0;
+                }
+            }
+        }
 
-        // Rust's fs::read_dir doesn't include . and .. entries, so add them explicitly
-        result.push(DirectoryEntry {
-            name: OsStr::new(".").to_os_string(),
-            kind: FileType::Directory,
-        });
-        result.push(DirectoryEntry {
-            name: OsStr::new("..").to_os_string(),
-            kind: FileType::Directory,
-        });
+        value
+    }
 
-        for entry in entries {
-            let entry = entry.map_err(|e| e.raw_os_error().unwrap_or(libc::EIO))?;
-            let file_name = entry.file_name();
-            let name_str = file_name.to_str().ok_or(libc::EILSEQ)?;
+    /// Returns a horizontal typographic face ascender.
+    ///
+    /// Prefer `Face::ascender` unless you explicitly want this. This is a more
+    /// low-level alternative.
+    ///
+    /// This method is affected by variation axes.
+    ///
+    /// Returns `None` when OS/2 table is not present.
+    #[inline]
+    pub fn typographic_ascender(&self) -> Option<i16> {
+        self.tables.os2.map(|table| {
+            let v = table.typographic_ascender();
+            self.apply_metrics_variation(Tag::from_bytes(b"hasc"), v)
+        })
+    }
 
-            // Skip filenames starting with ".", since it isn't a valid encrypted filename.
-            // Allows skipping over config files.
-            if name_str.starts_with('.') {
+    /// Returns a horizontal typographic face descender.
+    ///
+    /// Prefer `Face::descender` unless you explicitly want this. This is a more
+    /// low-level alternative.
+    ///
+    /// This method is affected by variation axes.
+    ///
+    /// Returns `None` when OS/2 table is not present.
+    #[inline]
+    pub fn typographic_descender(&self) -> Option<i16> {
+        self.tables.os2.map(|table| {
+            let v = table.typographic_descender();
+            self.apply_metrics_variation(Tag::from_bytes(b"hdsc"), v)
+        })
+    }
+
+    /// Returns a horizontal typographic face line gap.
+    ///
+    /// Prefer `Face::line_gap` unless you explicitly want this. This is a more
+    /// low-level alternative.
+    ///
+    /// This method is affected by variation axes.
+    ///
+    /// Returns `None` when OS/2 table is not present.
+    #[inline]
+    pub fn typographic_line_gap(&self) -> Option<i16> {
+        self.tables.os2.map(|table| {
+            let v = table.typographic_line_gap();
+            self.apply_metrics_variation(Tag::from_bytes(b"hlgp"), v)
+        })
+    }
+
+    /// Returns a vertical face ascender.
+    ///
+    /// This method is affected by variation axes.
+    #[inline]
+    pub fn vertical_ascender(&self) -> Option<i16> {
+        self.tables
+            .vhea
+            .map(|vhea| vhea.ascender)
+            .map(|v| self.apply_metrics_variation(Tag::from_bytes(b"vasc"), v))
+    }
+
+    /// Returns a vertical face descender.
+    ///
+    /// This method is affected by variation axes.
+    #[inline]
+    pub fn vertical_descender(&self) -> Option<i16> {
+        self.tables
+            .vhea
+            .map(|vhea| vhea.descender)
+            .map(|v| self.apply_metrics_variation(Tag::from_bytes(b"vdsc"), v))
+    }
+
+    /// Returns a vertical face height.
+    ///
+    /// This method is affected by variation axes.
+    #[inline]
+    pub fn vertical_height(&self) -> Option<i16> {
+        Some(self.vertical_ascender()? - self.vertical_descender()?)
+    }
+
+    /// Returns a vertical face line gap.
+    ///
+    /// This method is affected by variation axes.
+    #[inline]
+    pub fn vertical_line_gap(&self) -> Option<i16> {
+        self.tables
+            .vhea
+            .map(|vhea| vhea.line_gap)
+            .map(|v| self.apply_metrics_variation(Tag::from_bytes(b"vlgp"), v))
+    }
+
+    /// Returns face's units per EM.
+    ///
+    /// Guarantee to be in a 16..=16384 range.
+    #[inline]
+    pub fn units_per_em(&self) -> u16 {
+        self.tables.head.units_per_em
+    }
+
+    /// Returns face's x height.
+    ///
+    /// This method is affected by variation axes.
+    ///
+    /// Returns `None` when OS/2 table is not present or when its version is < 2.
+    #[inline]
+    pub fn x_height(&self) -> Option<i16> {
+        self.tables
+            .os2
+            .and_then(|os_2| os_2.x_height())
+            .map(|v| self.apply_metrics_variation(Tag::from_bytes(b"xhgt"), v))
+    }
+
+    /// Returns face's capital height.
+    ///
+    /// This method is affected by variation axes.
+    ///
+    /// Returns `None` when OS/2 table is not present or when its version is < 2.
+    #[inline]
+    pub fn capital_height(&self) -> Option<i16> {
+        self.tables
+            .os2
+            .and_then(|os_2| os_2.capital_height())
+            .map(|v| self.apply_metrics_variation(Tag::from_bytes(b"cpht"), v))
+    }
+
+    /// Returns face's underline metrics.
+    ///
+    /// This method is affected by variation axes.
+    ///
+    /// Returns `None` when `post` table is not present.
+    #[inline]
+    pub fn underline_metrics(&self) -> Option<LineMetrics> {
+        let mut metrics = self.tables.post?.underline_metrics;
+
+        if self.is_variable() {
+            self.apply_metrics_variation_to(Tag::from_bytes(b"undo"), &mut metrics.position);
+            self.apply_metrics_variation_to(Tag::from_bytes(b"unds"), &mut metrics.thickness);
+        }
+
+        Some(metrics)
+    }
+
+    /// Returns face's strikeout metrics.
+    ///
+    /// This method is affected by variation axes.
+    ///
+    /// Returns `None` when OS/2 table is not present.
+    #[inline]
+    pub fn strikeout_metrics(&self) -> Option<LineMetrics> {
+        let mut metrics = self.tables.os2?.strikeout_metrics();
+
+        if self.is_variable() {
+            self.apply_metrics_variation_to(Tag::from_bytes(b"stro"), &mut metrics.position);
+            self.apply_metrics_variation_to(Tag::from_bytes(b"strs"), &mut metrics.thickness);
+        }
+
+        Some(metrics)
+    }
+
+    /// Returns face's subscript metrics.
+    ///
+    /// This method is affected by variation axes.
+    ///
+    /// Returns `None` when OS/2 table is not present.
+    #[inline]
+    pub fn subscript_metrics(&self) -> Option<ScriptMetrics> {
+        let mut metrics = self.tables.os2?.subscript_metrics();
+
+        if self.is_variable() {
+            self.apply_metrics_variation_to(Tag::from_bytes(b"sbxs"), &mut metrics.x_size);
+            self.apply_metrics_variation_to(Tag::from_bytes(b"sbys"), &mut metrics.y_size);
+            self.apply_metrics_variation_to(Tag::from_bytes(b"sbxo"), &mut metrics.x_offset);
+            self.apply_metrics_variation_to(Tag::from_bytes(b"sbyo"), &mut metrics.y_offset);
+        }
+
+        Some(metrics)
+    }
+
+    /// Returns face's superscript metrics.
+    ///
+    /// This method is affected by variation axes.
+    ///
+    /// Returns `None` when OS/2 table is not present.
+    #[inline]
+    pub fn superscript_metrics(&self) -> Option<ScriptMetrics> {
+        let mut metrics = self.tables.os2?.superscript_metrics();
+
+        if self.is_variable() {
+            self.apply_metrics_variation_to(Tag::from_bytes(b"spxs"), &mut metrics.x_size);
+            self.apply_metrics_variation_to(Tag::from_bytes(b"spys"), &mut metrics.y_size);
+            self.apply_metrics_variation_to(Tag::from_bytes(b"spxo"), &mut metrics.x_offset);
+            self.apply_metrics_variation_to(Tag::from_bytes(b"spyo"), &mut metrics.y_offset);
+        }
+
+        Some(metrics)
+    }
+
+    /// Returns face permissions.
+    ///
+    /// Returns `None` in case of a malformed value.
+    #[inline]
+    pub fn permissions(&self) -> Option<Permissions> {
+        self.tables.os2?.permissions()
+    }
+
+    /// Checks if the face allows embedding a subset, further restricted by [`Self::permissions`].
+    #[inline]
+    pub fn is_subsetting_allowed(&self) -> bool {
+        self.tables
+            .os2
+            .map(|t| t.is_subsetting_allowed())
+            .unwrap_or(false)
+    }
+
+    /// Checks if the face allows outline data to be embedded.
+    ///
+    /// If false, only bitmaps may be embedded in accordance with [`Self::permissions`].
+    ///
+    /// If the font contains no bitmaps and this flag is not set, it implies no embedding is allowed.
+    #[inline]
+    pub fn is_outline_embedding_allowed(&self) -> bool {
+        self.tables
+            .os2
+            .map(|t| t.is_outline_embedding_allowed())
+            .unwrap_or(false)
+    }
+
+    /// Returns [Unicode Ranges](https://docs.microsoft.com/en-us/typography/opentype/spec/os2#ur).
+    #[inline]
+    pub fn unicode_ranges(&self) -> UnicodeRanges {
+        self.tables
+            .os2
+            .map(|t| t.unicode_ranges())
+            .unwrap_or_default()
+    }
+
+    /// Returns a total number of glyphs in the face.
+    ///
+    /// Never zero.
+    ///
+    /// The value was already parsed, so this function doesn't involve any parsing.
+    #[inline]
+    pub fn number_of_glyphs(&self) -> u16 {
+        self.tables.maxp.number_of_glyphs.get()
+    }
+
+    /// Resolves a Glyph ID for a code point.
+    ///
+    /// Returns `None` instead of `0` when glyph is not found.
+    ///
+    /// All subtable formats except Mixed Coverage (8) are supported.
+    ///
+    /// If you need a more low-level control, prefer `Face::tables().cmap`.
+    #[inline]
+    pub fn glyph_index(&self, code_point: char) -> Option<GlyphId> {
+        for subtable in self.tables.cmap?.subtables {
+            if !subtable.is_unicode() {
                 continue;
             }
 
-            match self.cipher.decrypt_filename(name_str, dir_iv) {
-                Ok((decrypted_name, _)) => {
-                    let metadata = entry
-                        .metadata()
-                        .map_err(|e| e.raw_os_error().unwrap_or(libc::EIO))?;
-                    result.push(DirectoryEntry {
-                        name: OsStr::from_bytes(&decrypted_name).to_os_string(),
-                        kind: metadata_to_file_type(&metadata),
-                    });
-                }
-                Err(e) => {
-                    warn!("Failed to decrypt filename {}: {}", name_str, e);
-                }
+            if let Some(id) = subtable.glyph_index(u32::from(code_point)) {
+                return Some(id);
             }
         }
 
-        Ok(result)
+        None
     }
 
-    fn opendir(&self, _req: RequestInfo, path: &Path, _flags: u32) -> ResultOpen {
-        debug!("opendir: {:?}", path);
-        let fh = self.next_fh.fetch_add(1, Ordering::SeqCst);
-        Ok((fh, 0))
-    }
-
-    fn releasedir(
-        &self,
-        _req: RequestInfo,
-        _path: &Path,
-        fh: u64,
-        _flags: u32,
-    ) -> Result<(), libc::c_int> {
-        debug!("releasedir: fh={}", fh);
-        Ok(())
-    }
-
-    fn open(&self, _req: RequestInfo, path: &Path, flags: u32) -> ResultOpen {
-        debug!("open: {:?}", path);
-        let (real_path, path_iv) = self.encrypt_path(path)?;
-
-        // Respect requested open flags. In particular, writes must open the backing file with
-        // write permissions; otherwise later `write`/`truncate` operations will fail with EBADF.
-        let want_write = (flags as i32 & libc::O_WRONLY) != 0 || (flags as i32 & libc::O_RDWR) != 0;
-        let want_trunc = (flags as i32 & libc::O_TRUNC) != 0;
-
-        let mut opts = fs::OpenOptions::new();
-        opts.read(true);
-        if want_write {
-            opts.write(true);
-        }
-        if want_trunc && want_write {
-            opts.truncate(true);
-        }
-
-        let file = opts
-            .open(&real_path)
-            .map_err(|e| e.raw_os_error().unwrap_or(libc::EIO))?;
-
-        let header_size = self.config.header_size();
-        let external_iv = if self.config.external_iv_chaining {
-            path_iv
-        } else {
-            0
-        };
-        let mut file_iv = headerless_file_iv(header_size, external_iv);
-
-        if want_trunc && want_write {
-            // If the file was truncated, we must generate and write a new header (if header_size > 0).
-            if header_size > 0 {
-                let (header, iv) = self.cipher.encrypt_header(external_iv).map_err(|e| {
-                    error!("Failed to generate header: {}", e);
-                    libc::EIO
-                })?;
-
-                use std::io::Write;
-                let mut file_ref = &file;
-                file_ref
-                    .write_all(&header)
-                    .map_err(|e| e.raw_os_error().unwrap_or(libc::EIO))?;
-                file_iv = iv;
-            } else {
-                // Ensure physical file is truncated to 0 if header_size is 0
-                let file_ref = &file;
-                file_ref
-                    .set_len(0)
-                    .map_err(|e| e.raw_os_error().unwrap_or(libc::EIO))?;
-            }
-        } else {
-            // Read header if exists, or initialize empty file (e.g. created via mknod)
-            let physical_size = file
-                .metadata()
-                .map_err(|e| e.raw_os_error().unwrap_or(libc::EIO))?
-                .len();
-
-            if header_size > 0 && physical_size < header_size {
-                // Empty or undersized backing file (e.g. from mknod). Write header so
-                // subsequent writes use correct physical offset and file format.
-                if want_write {
-                    let (header, iv) = self.cipher.encrypt_header(external_iv).map_err(|e| {
-                        error!("Failed to generate header: {}", e);
-                        libc::EIO
-                    })?;
-
-                    use std::io::Write;
-                    let mut file_ref = &file;
-                    file_ref
-                        .write_all(&header)
-                        .map_err(|e| e.raw_os_error().unwrap_or(libc::EIO))?;
-                    file_iv = iv;
-                } else {
-                    // Opening for read but file too small to have valid header
-                    return Err(libc::EIO);
-                }
-            } else if header_size > 0 {
-                let mut header = vec![0u8; header_size as usize];
-                let bytes_read = file
-                    .read_at(&mut header, 0)
-                    .map_err(|e| e.raw_os_error().unwrap_or(libc::EIO))?;
-
-                if bytes_read == header_size as usize {
-                    // Decrypt header
-                    if let Ok(iv) = self.cipher.decrypt_header(&mut header, external_iv) {
-                        file_iv = iv;
-                    } else {
-                        warn!("Failed to decrypt file header for {:?}", path);
-                        return Err(libc::EIO);
-                    }
-                }
-            }
-        }
-
-        let fh = self.next_fh.fetch_add(1, Ordering::SeqCst);
-        let handle = Arc::new(FileHandle { file, file_iv });
-
-        self.handles_guard().insert(fh, handle);
-
-        Ok((fh, 0))
-    }
-
-    fn read(
-        &self,
-        _req: RequestInfo,
-        path: &Path,
-        fh: u64,
-        offset: u64,
-        size: u32,
-        callback: impl FnOnce(ResultSlice<'_>) -> CallbackResult,
-    ) -> CallbackResult {
-        debug!("read: {:?} offset={} size={}", path, offset, size);
-
-        let handle = {
-            let handles = self.handles_guard();
-            match handles.get(&fh).cloned() {
-                Some(h) => h,
-                None => return callback(Err(libc::EBADF)),
-            }
-        };
-
-        let decoder = FileDecoder::new_from_config(
-            &self.cipher,
-            &handle.file,
-            handle.file_iv,
-            &self.config.file_codec_params(),
-            false,
-        );
-
-        const MAX_READ_SIZE: u32 = 1024 * 1024;
-        let size = std::cmp::min(size, MAX_READ_SIZE);
-        let mut result_data = vec![0u8; size as usize];
-
-        match decoder.read_at(&mut result_data, offset) {
-            Ok(bytes_read) => {
-                result_data.truncate(bytes_read);
-                callback(Ok(&result_data))
-            }
-            Err(e) => {
-                error!("Read failed on {:?}: {}", path, e);
-                let err = e.raw_os_error().unwrap_or(libc::EIO);
-                callback(Err(err))
-            }
-        }
-    }
-
-    fn release(
-        &self,
-        _req: RequestInfo,
-        _path: &Path,
-        fh: u64,
-        _flags: u32,
-        _lock_owner: u64,
-        _flush: bool,
-    ) -> Result<(), libc::c_int> {
-        debug!("release: fh={}", fh);
-        self.handles_guard().remove(&fh);
-        Ok(())
-    }
-
-    fn write(
-        &self,
-        _req: RequestInfo,
-        path: &Path,
-        fh: u64,
-        offset: u64,
-        data: Vec<u8>,
-        _flags: u32,
-    ) -> ResultWrite {
-        debug!("write: {:?} offset={} size={}", path, offset, data.len());
-
-        let handle = {
-            let handles = self.handles_guard();
-            match handles.get(&fh).cloned() {
-                Some(h) => h,
-                None => return Err(libc::EBADF),
-            }
-        };
-
-        let encoder = FileEncoder::new_from_config(
-            &self.cipher,
-            &handle.file,
-            handle.file_iv,
-            &self.config.file_codec_params(),
-        );
-
-        match encoder.write_at(&data, offset) {
-            Ok(written) => Ok(written as u32),
-            Err(e) => {
-                error!("Write failed: {}", e);
-                Err(e.raw_os_error().unwrap_or(libc::EIO))
-            }
-        }
-    }
-
-    fn create(
-        &self,
-        req: RequestInfo,
-        parent: &Path,
-        name: &OsStr,
-        mode: u32,
-        flags: u32,
-    ) -> ResultCreate {
-        debug!(
-            "create: {:?}/{:?} flags={} mode={}",
-            parent, name, flags, mode
-        );
-        let path = parent.join(name);
-        let (real_path, path_iv) = self.encrypt_path(&path)?;
-
-        // O_EXCL: fail if file already exists (POSIX open(2)).
-        if (flags as i32 & libc::O_EXCL) != 0 && real_path.exists() {
-            return Err(libc::EEXIST);
-        }
-
-        use std::os::unix::fs::OpenOptionsExt;
-        let mut file = fs::OpenOptions::new()
-            .read(true)
-            .write(true)
-            .create(true)
-            .truncate(true)
-            .mode(mode)
-            .open(&real_path)
-            .map_err(|e| e.raw_os_error().unwrap_or(libc::EIO))?;
-
-        // Encrypt and write header if header_size > 0
-        let header_size = self.config.header_size();
-        let external_iv = if self.config.external_iv_chaining {
-            path_iv
-        } else {
-            0
-        };
-        let mut file_iv = headerless_file_iv(header_size, external_iv);
-
-        if header_size > 0 {
-            let external_iv = if self.config.external_iv_chaining {
-                path_iv
-            } else {
-                0
-            };
-
-            let (header, iv) = self.cipher.encrypt_header(external_iv).map_err(|e| {
-                error!("Failed to generate header: {}", e);
-                libc::EIO
-            })?;
-            file_iv = iv;
-
-            use std::io::Write;
-            file.write_all(&header)
-                .map_err(|e| e.raw_os_error().unwrap_or(libc::EIO))?;
-        }
-
-        self.set_ownership_fd(file.as_raw_fd(), &req)?;
-
-        let fh = self.next_fh.fetch_add(1, Ordering::SeqCst);
-        let handle = Arc::new(FileHandle { file, file_iv });
-
-        self.handles_guard().insert(fh, handle);
-
-        // We need to return CreatedEntry which includes FileAttr
-        // We can get attributes from the open file or construct them
-        let attr = FileAttr {
-            size: 0,
-            blocks: 1, // Header block
-            atime: SystemTime::now(),
-            mtime: SystemTime::now(),
-            ctime: SystemTime::now(),
-            crtime: SystemTime::now(),
-            kind: FileType::RegularFile,
-            perm: mode as u16,
-            nlink: 1,
-            uid: req.uid,
-            gid: req.gid,
-            rdev: 0,
-            flags: 0,
-        };
-
-        Ok(CreatedEntry {
-            ttl: Duration::from_secs(1),
-            attr,
-            fh,
-            flags: 0,
-        })
-    }
-
-    fn unlink(&self, _req: RequestInfo, parent: &Path, name: &OsStr) -> ResultEmpty {
-        let path = parent.join(name);
-        debug!("unlink: {:?}", path);
-        let (real_path, _) = self.encrypt_path(&path)?;
-        fs::remove_file(real_path).map_err(|e| e.raw_os_error().unwrap_or(libc::EIO))
-    }
-
-    fn mkdir(&self, req: RequestInfo, parent: &Path, name: &OsStr, mode: u32) -> ResultEntry {
-        let path = parent.join(name);
-        debug!("mkdir: {:?} mode={:o}", path, mode);
-        let (real_path, _) = self.encrypt_path(&path)?;
-
-        use std::os::unix::fs::DirBuilderExt;
-        std::fs::DirBuilder::new()
-            .mode(mode)
-            .create(&real_path)
-            .map_err(|e| e.raw_os_error().unwrap_or(libc::EIO))?;
-
-        self.set_ownership_path(&real_path, &req)?;
-
-        self.getattr(req, &path, None)
-    }
-
-    fn mknod(
-        &self,
-        req: RequestInfo,
-        parent: &Path,
-        name: &OsStr,
-        mode: u32,
-        rdev: u32,
-    ) -> ResultEntry {
-        let path = parent.join(name);
-        debug!("mknod: {:?} mode={:o} rdev={}", path, mode, rdev);
-        let (real_path, path_iv) = self.encrypt_path(&path)?;
-
-        let c_path = CString::new(real_path.as_os_str().as_bytes()).map_err(|_| libc::EINVAL)?;
-
-        let mode_bits = mode & libc::S_IFMT;
-        let res = if mode_bits == libc::S_IFIFO {
-            unsafe { libc::mkfifo(c_path.as_ptr(), mode) }
-        } else if mode_bits == libc::S_IFCHR
-            || mode_bits == libc::S_IFBLK
-            || mode_bits == libc::S_IFSOCK
+    /// Resolves a Glyph ID for a glyph name.
+    ///
+    /// Uses the `post` and `CFF` tables as sources.
+    ///
+    /// Returns `None` when no name is associated with a `glyph`.
+    #[cfg(feature = "glyph-names")]
+    #[inline]
+    pub fn glyph_index_by_name(&self, name: &str) -> Option<GlyphId> {
+        if let Some(name) = self
+            .tables
+            .post
+            .and_then(|post| post.glyph_index_by_name(name))
         {
-            unsafe { libc::mknod(c_path.as_ptr(), mode, rdev as libc::dev_t) }
-        } else if mode_bits == libc::S_IFREG {
-            use std::io::Write;
-            use std::os::unix::fs::OpenOptionsExt;
-            let header_size = self.config.header_size();
-            let external_iv = if self.config.external_iv_chaining {
-                path_iv
-            } else {
-                0
-            };
-            match fs::OpenOptions::new()
-                .write(true)
-                .create_new(true)
-                .mode(mode)
-                .open(&real_path)
-            {
-                Ok(mut f) => {
-                    if header_size > 0 {
-                        let (header, _iv) =
-                            self.cipher.encrypt_header(external_iv).map_err(|e| {
-                                error!("Failed to generate header for mknod: {}", e);
-                                libc::EIO
-                            })?;
-                        f.write_all(&header)
-                            .map_err(|e| e.raw_os_error().unwrap_or(libc::EIO))?;
-                    }
-                    drop(f);
-                    0
-                }
-                Err(e) => {
-                    return Err(e.raw_os_error().unwrap_or(libc::EIO));
-                }
-            }
-        } else {
-            return Err(libc::EINVAL);
-        };
-
-        if res == -1 {
-            return Err(std::io::Error::last_os_error()
-                .raw_os_error()
-                .unwrap_or(libc::EIO));
+            return Some(name);
         }
 
-        self.set_ownership_path(&real_path, &req)?;
+        if let Some(name) = self
+            .tables
+            .cff
+            .as_ref()
+            .and_then(|cff| cff.glyph_index_by_name(name))
+        {
+            return Some(name);
+        }
 
-        self.getattr(req, &path, None)
+        None
     }
 
-    fn rmdir(&self, _req: RequestInfo, parent: &Path, name: &OsStr) -> ResultEmpty {
-        let path = parent.join(name);
-        debug!("rmdir: {:?}", path);
-        let (real_path, _) = self.encrypt_path(&path)?;
-        fs::remove_dir(real_path).map_err(|e| e.raw_os_error().unwrap_or(libc::EIO))
+    /// Resolves a variation of a Glyph ID from two code points.
+    ///
+    /// Implemented according to
+    /// [Unicode Variation Sequences](
+    /// https://docs.microsoft.com/en-us/typography/opentype/spec/cmap#format-14-unicode-variation-sequences).
+    ///
+    /// Returns `None` instead of `0` when glyph is not found.
+    #[inline]
+    pub fn glyph_variation_index(&self, code_point: char, variation: char) -> Option<GlyphId> {
+        for subtable in self.tables.cmap?.subtables {
+            if let cmap::Format::UnicodeVariationSequences(ref table) = subtable.format {
+                return match table.glyph_index(u32::from(code_point), u32::from(variation))? {
+                    cmap::GlyphVariationResult::Found(v) => Some(v),
+                    cmap::GlyphVariationResult::UseDefault => self.glyph_index(code_point),
+                };
+            }
+        }
+
+        None
     }
 
-    fn rename(
+    /// Returns glyph's horizontal advance.
+    ///
+    /// This method is affected by variation axes.
+    #[inline]
+    pub fn glyph_hor_advance(&self, glyph_id: GlyphId) -> Option<u16> {
+        #[cfg(feature = "variable-fonts")]
+        {
+            let mut advance = self.tables.hmtx?.advance(glyph_id)? as f32;
+
+            if self.is_variable() {
+                // Ignore variation offset when `hvar` is not set.
+                if let Some(hvar) = self.tables.hvar {
+                    if let Some(offset) = hvar.advance_offset(glyph_id, self.coords()) {
+                        // We can't use `round()` in `no_std`, so this is the next best thing.
+                        advance += offset + 0.5;
+                    }
+                } else if let Some(points) = self.glyph_phantom_points(glyph_id) {
+                    // We can't use `round()` in `no_std`, so this is the next best thing.
+                    advance += points.right.x + 0.5
+                }
+            }
+
+            u16::try_num_from(advance)
+        }
+
+        #[cfg(not(feature = "variable-fonts"))]
+        {
+            self.tables.hmtx?.advance(glyph_id)
+        }
+    }
+
+    /// Returns glyph's vertical advance.
+    ///
+    /// This method is affected by variation axes.
+    #[inline]
+    pub fn glyph_ver_advance(&self, glyph_id: GlyphId) -> Option<u16> {
+        #[cfg(feature = "variable-fonts")]
+        {
+            let mut advance = self.tables.vmtx?.advance(glyph_id)? as f32;
+
+            if self.is_variable() {
+                // Ignore variation offset when `vvar` is not set.
+                if let Some(vvar) = self.tables.vvar {
+                    if let Some(offset) = vvar.advance_offset(glyph_id, self.coords()) {
+                        // We can't use `round()` in `no_std`, so this is the next best thing.
+                        advance += offset + 0.5;
+                    }
+                } else if let Some(points) = self.glyph_phantom_points(glyph_id) {
+                    // We can't use `round()` in `no_std`, so this is the next best thing.
+                    advance += points.bottom.y + 0.5
+                }
+            }
+
+            u16::try_num_from(advance)
+        }
+
+        #[cfg(not(feature = "variable-fonts"))]
+        {
+            self.tables.vmtx?.advance(glyph_id)
+        }
+    }
+
+    /// Returns glyph's horizontal side bearing.
+    ///
+    /// This method is affected by variation axes.
+    #[inline]
+    pub fn glyph_hor_side_bearing(&self, glyph_id: GlyphId) -> Option<i16> {
+        #[cfg(feature = "variable-fonts")]
+        {
+            let mut bearing = self.tables.hmtx?.side_bearing(glyph_id)? as f32;
+
+            if self.is_variable() {
+                // Ignore variation offset when `hvar` is not set.
+                if let Some(hvar) = self.tables.hvar {
+                    if let Some(offset) = hvar.left_side_bearing_offset(glyph_id, self.coords()) {
+                        // We can't use `round()` in `no_std`, so this is the next best thing.
+                        bearing += offset + 0.5;
+                    }
+                }
+            }
+
+            i16::try_num_from(bearing)
+        }
+
+        #[cfg(not(feature = "variable-fonts"))]
+        {
+            self.tables.hmtx?.side_bearing(glyph_id)
+        }
+    }
+
+    /// Returns glyph's vertical side bearing.
+    ///
+    /// This method is affected by variation axes.
+    #[inline]
+    pub fn glyph_ver_side_bearing(&self, glyph_id: GlyphId) -> Option<i16> {
+        #[cfg(feature = "variable-fonts")]
+        {
+            let mut bearing = self.tables.vmtx?.side_bearing(glyph_id)? as f32;
+
+            if self.is_variable() {
+                // Ignore variation offset when `vvar` is not set.
+                if let Some(vvar) = self.tables.vvar {
+                    if let Some(offset) = vvar.top_side_bearing_offset(glyph_id, self.coords()) {
+                        // We can't use `round()` in `no_std`, so this is the next best thing.
+                        bearing += offset + 0.5;
+                    }
+                }
+            }
+
+            i16::try_num_from(bearing)
+        }
+
+        #[cfg(not(feature = "variable-fonts"))]
+        {
+            self.tables.vmtx?.side_bearing(glyph_id)
+        }
+    }
+
+    /// Returns glyph's vertical origin according to
+    /// [Vertical Origin Table](https://docs.microsoft.com/en-us/typography/opentype/spec/vorg).
+    ///
+    /// This method is affected by variation axes.
+    pub fn glyph_y_origin(&self, glyph_id: GlyphId) -> Option<i16> {
+        #[cfg(feature = "variable-fonts")]
+        {
+            let mut origin = self.tables.vorg.map(|vorg| vorg.glyph_y_origin(glyph_id))? as f32;
+
+            if self.is_variable() {
+                // Ignore variation offset when `vvar` is not set.
+                if let Some(vvar) = self.tables.vvar {
+                    if let Some(offset) = vvar.vertical_origin_offset(glyph_id, self.coords()) {
+                        // We can't use `round()` in `no_std`, so this is the next best thing.
+                        origin += offset + 0.5;
+                    }
+                }
+            }
+
+            i16::try_num_from(origin)
+        }
+
+        #[cfg(not(feature = "variable-fonts"))]
+        {
+            self.tables.vorg.map(|vorg| vorg.glyph_y_origin(glyph_id))
+        }
+    }
+
+    /// Returns glyph's name.
+    ///
+    /// Uses the `post` and `CFF` tables as sources.
+    ///
+    /// Returns `None` when no name is associated with a `glyph`.
+    #[cfg(feature = "glyph-names")]
+    #[inline]
+    pub fn glyph_name(&self, glyph_id: GlyphId) -> Option<&str> {
+        if let Some(name) = self.tables.post.and_then(|post| post.glyph_name(glyph_id)) {
+            return Some(name);
+        }
+
+        if let Some(name) = self
+            .tables
+            .cff
+            .as_ref()
+            .and_then(|cff1| cff1.glyph_name(glyph_id))
+        {
+            return Some(name);
+        }
+
+        None
+    }
+
+    /// Outlines a glyph and returns its tight bounding box.
+    ///
+    /// **Warning**: since `ttf-parser` is a pull parser,
+    /// `OutlineBuilder` will emit segments even when outline is partially malformed.
+    /// You must check `outline_glyph()` result before using
+    /// `OutlineBuilder`'s output.
+    ///
+    /// `gvar`, `glyf`, `CFF` and `CFF2` tables are supported.
+    /// And they will be accessed in this specific order.
+    ///
+    /// This method is affected by variation axes.
+    ///
+    /// Returns `None` when glyph has no outline or on error.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use std::fmt::Write;
+    /// use ttf_parser;
+    ///
+    /// struct Builder(String);
+    ///
+    /// impl ttf_parser::OutlineBuilder for Builder {
+    ///     fn move_to(&mut self, x: f32, y: f32) {
+    ///         write!(&mut self.0, "M {} {} ", x, y).unwrap();
+    ///     }
+    ///
+    ///     fn line_to(&mut self, x: f32, y: f32) {
+    ///         write!(&mut self.0, "L {} {} ", x, y).unwrap();
+    ///     }
+    ///
+    ///     fn quad_to(&mut self, x1: f32, y1: f32, x: f32, y: f32) {
+    ///         write!(&mut self.0, "Q {} {} {} {} ", x1, y1, x, y).unwrap();
+    ///     }
+    ///
+    ///     fn curve_to(&mut self, x1: f32, y1: f32, x2: f32, y2: f32, x: f32, y: f32) {
+    ///         write!(&mut self.0, "C {} {} {} {} {} {} ", x1, y1, x2, y2, x, y).unwrap();
+    ///     }
+    ///
+    ///     fn close(&mut self) {
+    ///         write!(&mut self.0, "Z ").unwrap();
+    ///     }
+    /// }
+    ///
+    /// let data = std::fs::read("tests/fonts/demo.ttf").unwrap();
+    /// let face = ttf_parser::Face::parse(&data, 0).unwrap();
+    /// let mut builder = Builder(String::new());
+    /// let bbox = face.outline_glyph(ttf_parser::GlyphId(1), &mut builder).unwrap();
+    /// assert_eq!(builder.0, "M 173 267 L 369 267 L 270 587 L 173 267 Z M 6 0 L 224 656 \
+    ///                        L 320 656 L 541 0 L 452 0 L 390 200 L 151 200 L 85 0 L 6 0 Z ");
+    /// assert_eq!(bbox, ttf_parser::Rect { x_min: 6, y_min: 0, x_max: 541, y_max: 656 });
+    /// ```
+    #[inline]
+    pub fn outline_glyph(
         &self,
-        req: RequestInfo,
-        parent: &Path,
-        name: &OsStr,
-        newparent: &Path,
-        newname: &OsStr,
-    ) -> ResultEmpty {
-        self.rename_internal(req, parent, name, newparent, newname)
+        glyph_id: GlyphId,
+        builder: &mut dyn OutlineBuilder,
+    ) -> Option<Rect> {
+        #[cfg(feature = "variable-fonts")]
+        {
+            if let Some(ref gvar) = self.tables.gvar {
+                return gvar.outline(self.tables.glyf?, self.coords(), glyph_id, builder);
+            }
+        }
+
+        if let Some(table) = self.tables.glyf {
+            return table.outline(glyph_id, builder);
+        }
+
+        if let Some(ref cff) = self.tables.cff {
+            return cff.outline(glyph_id, builder).ok();
+        }
+
+        #[cfg(feature = "variable-fonts")]
+        {
+            if let Some(ref cff2) = self.tables.cff2 {
+                return cff2.outline(self.coords(), glyph_id, builder).ok();
+            }
+        }
+
+        None
     }
 
-    fn setxattr(
+    /// Returns a tight glyph bounding box.
+    ///
+    /// This is just a shorthand for `outline_glyph()` since only the `glyf` table stores
+    /// a bounding box. We ignore `glyf` table bboxes because they can be malformed.
+    /// In case of CFF and variable fonts we have to actually outline
+    /// a glyph to find it's bounding box.
+    ///
+    /// When a glyph is defined by a raster or a vector image,
+    /// that can be obtained via `glyph_image()`,
+    /// the bounding box must be calculated manually and this method will return `None`.
+    ///
+    /// Note: the returned bbox is not validated in any way. A font file can have a glyph bbox
+    /// set to zero/negative width and/or height and this is perfectly ok.
+    /// For calculated bboxes, zero width and/or height is also perfectly fine.
+    ///
+    /// This method is affected by variation axes.
+    #[inline]
+    pub fn glyph_bounding_box(&self, glyph_id: GlyphId) -> Option<Rect> {
+        self.outline_glyph(glyph_id, &mut DummyOutline)
+    }
+
+    /// Returns a bounding box that large enough to enclose any glyph from the face.
+    #[inline]
+    pub fn global_bounding_box(&self) -> Rect {
+        self.tables.head.global_bbox
+    }
+
+    /// Returns a reference to a glyph's raster image.
+    ///
+    /// A font can define a glyph using a raster or a vector image instead of a simple outline.
+    /// Which is primarily used for emojis. This method should be used to access raster images.
+    ///
+    /// `pixels_per_em` allows selecting a preferred image size. The chosen size will
+    /// be closer to an upper one. So when font has 64px and 96px images and `pixels_per_em`
+    /// is set to 72, 96px image will be returned.
+    /// To get the largest image simply use `std::u16::MAX`.
+    ///
+    /// Note that this method will return an encoded image. It should be decoded
+    /// by the caller. We don't validate or preprocess it in any way.
+    ///
+    /// Also, a font can contain both: images and outlines. So when this method returns `None`
+    /// you should also try `outline_glyph()` afterwards.
+    ///
+    /// There are multiple ways an image can be stored in a TrueType font
+    /// and this method supports most of them.
+    /// This includes `sbix`, `bloc` + `bdat`, `EBLC` + `EBDT`, `CBLC` + `CBDT`.
+    /// And font's tables will be accesses in this specific order.
+    #[inline]
+    pub fn glyph_raster_image(
         &self,
-        _req: RequestInfo,
-        path: &Path,
-        name: &OsStr,
-        value: &[u8],
-        flags: u32,
-        position: u32,
-    ) -> ResultEmpty {
-        debug!(
-            "setxattr: {:?} name={:?} value_len={} flags={} position={}",
-            path,
-            name,
-            value.len(),
-            flags,
-            position
-        );
-
-        let (real_path, path_iv) = self.encrypt_path(path)?;
-
-        let name_bytes = name.as_bytes();
-
-        // Encrypt all attributes
-        // Store them with "user.encfs." prefix on disk
-        // Encrypt the full xattr name
-        let encrypted_name = self
-            .cipher
-            .encrypt_xattr_name(name_bytes, path_iv)
-            .map_err(|e| {
-                error!("Failed to encrypt xattr name: {}", e);
-                libc::EIO
-            })?;
-
-        // Encrypt xattr value
-        let encrypted_value = self
-            .cipher
-            .encrypt_xattr_value(value, path_iv)
-            .map_err(|e| {
-                error!("Failed to encrypt xattr value: {}", e);
-                libc::EIO
-            })?;
-
-        // Store with "user.encfs." prefix + base64-encoded encrypted name
-        // Use base64 encoding for the encrypted name to make it filesystem-safe
-        let encoded_name = STANDARD_NO_PAD.encode(&encrypted_name);
-        let final_name = format!("user.encfs.{}", encoded_name);
-
-        let c_name = std::ffi::CString::new(final_name).map_err(|_| libc::EINVAL)?;
-        let c_path =
-            std::ffi::CString::new(real_path.as_os_str().as_bytes()).map_err(|_| libc::EINVAL)?;
-
-        // Set xattr on underlying filesystem
-        let ret = unsafe {
-            libc::lsetxattr(
-                c_path.as_ptr(),
-                c_name.as_ptr(),
-                encrypted_value.as_ptr() as *const libc::c_void,
-                encrypted_value.len(),
-                flags as i32,
-            )
-        };
-
-        if ret == 0 {
-            Ok(())
-        } else {
-            Err(std::io::Error::last_os_error()
-                .raw_os_error()
-                .unwrap_or(libc::EIO))
+        glyph_id: GlyphId,
+        pixels_per_em: u16,
+    ) -> Option<RasterGlyphImage<'_>> {
+        if let Some(table) = self.tables.sbix {
+            if let Some(strike) = table.best_strike(pixels_per_em) {
+                return strike.get(glyph_id);
+            }
         }
+        if let Some(bdat) = self.tables.bdat {
+            return bdat.get(glyph_id, pixels_per_em);
+        }
+
+        if let Some(ebdt) = self.tables.ebdt {
+            return ebdt.get(glyph_id, pixels_per_em);
+        }
+
+        if let Some(cbdt) = self.tables.cbdt {
+            return cbdt.get(glyph_id, pixels_per_em);
+        }
+
+        None
     }
 
-    fn getxattr(
+    /// Returns a reference to a glyph's SVG image.
+    ///
+    /// A font can define a glyph using a raster or a vector image instead of a simple outline.
+    /// Which is primarily used for emojis. This method should be used to access SVG images.
+    ///
+    /// Note that this method will return just an SVG data. It should be rendered
+    /// or even decompressed (in case of SVGZ) by the caller.
+    /// We don't validate or preprocess it in any way.
+    ///
+    /// Also, a font can contain both: images and outlines. So when this method returns `None`
+    /// you should also try `outline_glyph()` afterwards.
+    #[inline]
+    pub fn glyph_svg_image(&self, glyph_id: GlyphId) -> Option<svg::SvgDocument<'a>> {
+        self.tables.svg.and_then(|svg| svg.documents.find(glyph_id))
+    }
+
+    /// Returns `true` if the glyph can be colored/painted using the `COLR`+`CPAL` tables.
+    ///
+    /// See [`paint_color_glyph`](Face::paint_color_glyph) for details.
+    pub fn is_color_glyph(&self, glyph_id: GlyphId) -> bool {
+        self.tables()
+            .colr
+            .map(|colr| colr.contains(glyph_id))
+            .unwrap_or(false)
+    }
+
+    /// Returns the number of palettes stored in the `COLR`+`CPAL` tables.
+    ///
+    /// See [`paint_color_glyph`](Face::paint_color_glyph) for details.
+    pub fn color_palettes(&self) -> Option<core::num::NonZeroU16> {
+        Some(self.tables().colr?.palettes.palettes())
+    }
+
+    /// Paints a color glyph from the `COLR` table.
+    ///
+    /// A font can have multiple palettes, which you can check via
+    /// [`color_palettes`](Face::color_palettes).
+    /// If unsure, just pass 0 to the `palette` argument, which is the default.
+    ///
+    /// A font can define a glyph using layers of colored shapes instead of a
+    /// simple outline. Which is primarily used for emojis. This method should
+    /// be used to access glyphs defined in the `COLR` table.
+    ///
+    /// Also, a font can contain both: a layered definition and outlines. So
+    /// when this method returns `None` you should also try
+    /// [`outline_glyph`](Face::outline_glyph) afterwards.
+    ///
+    /// Returns `None` if the glyph has no `COLR` definition or if the glyph
+    /// definition is malformed.
+    ///
+    /// See `examples/font2svg.rs` for usage examples.
+    #[inline]
+    pub fn paint_color_glyph(
         &self,
-        _req: RequestInfo,
-        path: &Path,
-        name: &OsStr,
-        size: u32,
-    ) -> Result<Xattr, libc::c_int> {
-        debug!("getxattr: {:?} name={:?} size={}", path, name, size);
-
-        let (real_path, path_iv) = self.encrypt_path(path)?;
-
-        let name_bytes = name.as_bytes();
-
-        // Encrypt all attributes
-        // Look them up with "user.encfs." prefix on disk
-        // Encrypt the full xattr name to find it on disk
-        let encrypted_name = self
-            .cipher
-            .encrypt_xattr_name(name_bytes, path_iv)
-            .map_err(|e| {
-                error!("Failed to encrypt xattr name: {}", e);
-                libc::EIO
-            })?;
-
-        // Encode encrypted name for storage lookup
-        let encoded_name = STANDARD_NO_PAD.encode(&encrypted_name);
-        let lookup_name = format!("user.encfs.{}", encoded_name);
-
-        let c_name = std::ffi::CString::new(lookup_name).map_err(|_| libc::EINVAL)?;
-        let c_path =
-            std::ffi::CString::new(real_path.as_os_str().as_bytes()).map_err(|_| libc::EINVAL)?;
-
-        // Get xattr size first if size is 0
-        let buf_size = if size == 0 {
-            let ret = unsafe {
-                libc::lgetxattr(c_path.as_ptr(), c_name.as_ptr(), std::ptr::null_mut(), 0)
-            };
-            if ret < 0 {
-                return Err(std::io::Error::last_os_error()
-                    .raw_os_error()
-                    .unwrap_or(libc::EIO));
-            }
-            ret as usize
-        } else {
-            size as usize
-        };
-
-        // Read encrypted value
-        let mut encrypted_value = vec![0u8; buf_size];
-        let ret = unsafe {
-            libc::lgetxattr(
-                c_path.as_ptr(),
-                c_name.as_ptr(),
-                encrypted_value.as_mut_ptr() as *mut libc::c_void,
-                buf_size,
-            )
-        };
-
-        if ret < 0 {
-            return Err(std::io::Error::last_os_error()
-                .raw_os_error()
-                .unwrap_or(libc::EIO));
-        }
-
-        encrypted_value.truncate(ret as usize);
-
-        // Decrypt value
-        let decrypted_value = self
-            .cipher
-            .decrypt_xattr_value(&encrypted_value, path_iv)
-            .map_err(|e| {
-                error!("Failed to decrypt xattr value: {}", e);
-                libc::EIO
-            })?;
-
-        Ok(Xattr::Data(decrypted_value))
+        glyph_id: GlyphId,
+        palette: u16,
+        foreground_color: RgbaColor,
+        painter: &mut dyn colr::Painter<'a>,
+    ) -> Option<()> {
+        self.tables.colr?.paint(
+            glyph_id,
+            palette,
+            painter,
+            #[cfg(feature = "variable-fonts")]
+            self.coords(),
+            foreground_color,
+        )
     }
 
-    fn listxattr(&self, _req: RequestInfo, path: &Path, size: u32) -> Result<Xattr, libc::c_int> {
-        debug!("listxattr: {:?} size={}", path, size);
-
-        let (real_path, path_iv) = self.encrypt_path(path)?;
-
-        let c_path =
-            std::ffi::CString::new(real_path.as_os_str().as_bytes()).map_err(|_| libc::EINVAL)?;
-
-        // Get list size first if size is 0
-        let buf_size = if size == 0 {
-            let ret = unsafe { libc::llistxattr(c_path.as_ptr(), std::ptr::null_mut(), 0) };
-            if ret < 0 {
-                return Err(std::io::Error::last_os_error()
-                    .raw_os_error()
-                    .unwrap_or(libc::EIO));
-            }
-            ret as usize
-        } else {
-            size as usize
-        };
-
-        // Read xattr names list
-        // llistxattr expects *mut c_char (i8), so we use a Vec<i8>
-        let mut list = vec![0i8; buf_size];
-        let ret = unsafe { libc::llistxattr(c_path.as_ptr(), list.as_mut_ptr(), buf_size) };
-
-        if ret < 0 {
-            return Err(std::io::Error::last_os_error()
-                .raw_os_error()
-                .unwrap_or(libc::EIO));
-        }
-
-        list.truncate(ret as usize);
-
-        // Process all xattr names in the list
-        // xattr lists are null-separated strings (as i8, convert to u8)
-        let list_u8: Vec<u8> = list.iter().map(|&b| b as u8).collect();
-        let mut decrypted_list = Vec::new();
-        let mut current_name = Vec::new();
-
-        for &byte in &list_u8 {
-            if byte == 0 {
-                // End of current name, process it
-                if !current_name.is_empty() {
-                    let name_str = match std::str::from_utf8(&current_name) {
-                        Ok(s) => s,
-                        Err(_) => {
-                            // Invalid UTF-8, skip
-                            current_name.clear();
-                            continue;
-                        }
-                    };
-
-                    if let Some(encoded_part) = name_str.strip_prefix("user.encfs.") {
-                        // This is an encrypted encfs attribute stored on disk
-                        // Extract the base64-encoded encrypted name
-                        match STANDARD_NO_PAD.decode(encoded_part) {
-                            Ok(encrypted_name_bytes) => {
-                                match self
-                                    .cipher
-                                    .decrypt_xattr_name(&encrypted_name_bytes, path_iv)
-                                {
-                                    Ok(decrypted_name) => {
-                                        // Return the decrypted name without the "user.encfs." prefix
-                                        decrypted_list.extend_from_slice(&decrypted_name);
-                                        decrypted_list.push(0); // null separator
-                                    }
-                                    Err(e) => {
-                                        warn!("Failed to decrypt xattr name: {}", e);
-                                        // Skip this name but continue
-                                    }
-                                }
-                            }
-                            Err(_) => {
-                                warn!("Failed to decode base64 xattr name: {}", name_str);
-                                // Skip this name but continue
-                            }
-                        }
-                    } else {
-                        // Non-encfs attribute (shouldn't happen if we encrypt all), skip it
-                        // or pass through if there are any legacy unencrypted attributes
-                        warn!("Found non-encfs xattr on disk: {}, skipping", name_str);
-                    }
-                    current_name.clear();
-                }
-            } else {
-                current_name.push(byte);
-            }
-        }
-
-        // Handle last name if list doesn't end with null
-        if !current_name.is_empty() {
-            let name_str = match std::str::from_utf8(&current_name) {
-                Ok(s) => s,
-                Err(_) => {
-                    return Ok(Xattr::Data(decrypted_list));
-                }
-            };
-
-            if let Some(encoded_part) = name_str.strip_prefix("user.encfs.") {
-                match base64::engine::general_purpose::STANDARD_NO_PAD.decode(encoded_part) {
-                    Ok(encrypted_name_bytes) => {
-                        match self
-                            .cipher
-                            .decrypt_xattr_name(&encrypted_name_bytes, path_iv)
-                        {
-                            Ok(decrypted_name) => {
-                                // Return the decrypted name without the "user.encfs." prefix
-                                decrypted_list.extend_from_slice(&decrypted_name);
-                                decrypted_list.push(0);
-                            }
-                            Err(e) => {
-                                warn!("Failed to decrypt xattr name: {}", e);
-                            }
-                        }
-                    }
-                    Err(_) => {
-                        warn!("Failed to decode base64 xattr name: {}", name_str);
-                    }
-                }
-            } else {
-                decrypted_list.extend_from_slice(&current_name);
-                decrypted_list.push(0);
-            }
-        }
-
-        Ok(Xattr::Data(decrypted_list))
+    /// Returns an iterator over variation axes.
+    #[cfg(feature = "variable-fonts")]
+    #[inline]
+    pub fn variation_axes(&self) -> LazyArray16<'a, VariationAxis> {
+        self.tables.fvar.map(|fvar| fvar.axes).unwrap_or_default()
     }
 
-    fn removexattr(&self, _req: RequestInfo, path: &Path, name: &OsStr) -> ResultEmpty {
-        debug!("removexattr: {:?} name={:?}", path, name);
-
-        let (real_path, path_iv) = self.encrypt_path(path)?;
-
-        let name_bytes = name.as_bytes();
-
-        // Encrypt all attributes
-        // Look them up with "user.encfs." prefix on disk
-        // Encrypt the full xattr name
-        let encrypted_name = self
-            .cipher
-            .encrypt_xattr_name(name_bytes, path_iv)
-            .map_err(|e| {
-                error!("Failed to encrypt xattr name: {}", e);
-                libc::EIO
-            })?;
-
-        // Encode encrypted name for storage lookup
-        let encoded_name = STANDARD_NO_PAD.encode(&encrypted_name);
-        let lookup_name = format!("user.encfs.{}", encoded_name);
-
-        let c_name = std::ffi::CString::new(lookup_name).map_err(|_| libc::EINVAL)?;
-        let c_path =
-            std::ffi::CString::new(real_path.as_os_str().as_bytes()).map_err(|_| libc::EINVAL)?;
-
-        // Remove xattr from underlying filesystem
-        let ret = unsafe { libc::lremovexattr(c_path.as_ptr(), c_name.as_ptr()) };
-
-        if ret == 0 {
-            Ok(())
-        } else {
-            Err(std::io::Error::last_os_error()
-                .raw_os_error()
-                .unwrap_or(libc::EIO))
+    /// Sets a variation axis coordinate.
+    ///
+    /// This is one of the two only mutable methods in the library.
+    /// We can simplify the API a lot by storing the variable coordinates
+    /// in the face object itself.
+    ///
+    /// Since coordinates are stored on the stack, we allow only 64 of them.
+    ///
+    /// Returns `None` when face is not variable or doesn't have such axis.
+    #[cfg(feature = "variable-fonts")]
+    pub fn set_variation(&mut self, axis: Tag, value: f32) -> Option<()> {
+        if !self.is_variable() {
+            return None;
         }
+
+        // Bounds `self.coordinates.data[i]` below, where `i` runs over every axis. A face with
+        // more axes than the array holds is rejected outright rather than partially applied.
+        // The comparison is inclusive because `MAX_VAR_COORDS` axes still fit: `Face::parse`
+        // clamps the coordinate count with `.min(MAX_VAR_COORDS)`, which is inclusive too. ~keep
+        if usize::from(self.variation_axes().len()) > MAX_VAR_COORDS {
+            return None;
+        }
+
+        let mut success = false;
+        for (i, var_axis) in self.variation_axes().into_iter().enumerate() {
+            if var_axis.tag == axis {
+                success = true;
+                self.coordinates.data[i] = var_axis.normalized_value(value);
+
+                if let Some(avar) = self.tables.avar {
+                    let _ = avar.map_coordinate(self.coordinates.as_mut_slice(), i);
+                }
+            }
+        }
+
+        success.then_some(())
+    }
+
+    /// Returns the current normalized variation coordinates.
+    #[cfg(feature = "variable-fonts")]
+    #[inline]
+    pub fn variation_coordinates(&self) -> &[NormalizedCoordinate] {
+        self.coordinates.as_slice()
+    }
+
+    /// Checks that face has non-default variation coordinates.
+    #[cfg(feature = "variable-fonts")]
+    #[inline]
+    pub fn has_non_default_variation_coordinates(&self) -> bool {
+        self.coordinates.as_slice().iter().any(|c| c.0 != 0)
+    }
+
+    /// Parses glyph's phantom points.
+    ///
+    /// Available only for variable fonts with the `gvar` table.
+    #[cfg(feature = "variable-fonts")]
+    pub fn glyph_phantom_points(&self, glyph_id: GlyphId) -> Option<PhantomPoints> {
+        let glyf = self.tables.glyf?;
+        let gvar = self.tables.gvar?;
+        gvar.phantom_points(glyf, self.coords(), glyph_id)
+    }
+
+    #[cfg(feature = "variable-fonts")]
+    #[inline]
+    fn metrics_var_offset(&self, tag: Tag) -> f32 {
+        self.tables
+            .mvar
+            .and_then(|table| table.metric_offset(tag, self.coords()))
+            .unwrap_or(0.0)
+    }
+
+    #[inline]
+    fn apply_metrics_variation(&self, tag: Tag, mut value: i16) -> i16 {
+        self.apply_metrics_variation_to(tag, &mut value);
+        value
+    }
+
+    #[cfg(feature = "variable-fonts")]
+    #[inline]
+    fn apply_metrics_variation_to(&self, tag: Tag, value: &mut i16) {
+        if self.is_variable() {
+            let v = f32::from(*value) + self.metrics_var_offset(tag);
+            // TODO: Should probably round it, but f32::round is not available in core.
+            if let Some(v) = i16::try_num_from(v) {
+                *value = v;
+            }
+        }
+    }
+
+    #[cfg(not(feature = "variable-fonts"))]
+    #[inline]
+    fn apply_metrics_variation_to(&self, _: Tag, _: &mut i16) {}
+
+    #[cfg(feature = "variable-fonts")]
+    #[inline]
+    fn coords(&self) -> &[NormalizedCoordinate] {
+        self.coordinates.as_slice()
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::headerless_file_iv;
+impl core::fmt::Debug for Face<'_> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "Face()")
+    }
+}
 
-    #[test]
-    fn headerless_files_use_external_iv() {
-        assert_eq!(
-            headerless_file_iv(0, 0x1234_5678_9abc_def0),
-            0x1234_5678_9abc_def0
-        );
+/// Returns the number of fonts stored in a TrueType font collection.
+///
+/// Returns `None` if a provided data is not a TrueType font collection.
+#[inline]
+pub fn fonts_in_collection(data: &[u8]) -> Option<u32> {
+    let mut s = Stream::new(data);
+    if s.read::<Magic>()? != Magic::FontCollection {
+        return None;
     }
 
-    #[test]
-    fn headered_files_ignore_external_iv() {
-        assert_eq!(headerless_file_iv(8, 0x1234_5678_9abc_def0), 0);
-    }
+    s.skip::<u32>(); // version
+    s.read::<u32>()
 }

@@ -1,198 +1,165 @@
 ---
-title: '{% data variables.product.github %}{% ifversion fpt or ghec %}.com{% endif %} Help Documentation'
-featuredLinks:
-  gettingStarted:
-    - /get-started/git-basics/set-up-git
-    - /authentication/connecting-to-github-with-ssh
-    - /repositories/creating-and-managing-repositories
-    - /get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax
-  popular:
-    - /pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-pull-requests
-    - /authentication
-    - /copilot/how-tos/get-code-suggestions/get-ide-code-suggestions
-    - /get-started/git-basics/managing-remote-repositories
-    - /pages
-redirect_from:
-  - /github
-  - /articles
-  - /common-issues-and-questions
-  - /troubleshooting-common-issues
-  - /early-access/github/enforcing-best-practices-with-github-policies
-  - /github/enforcing-best-practices-with-github-policies/index
-  - /early-access/github/enforcing-best-practices-with-github-policies/about-github-policies
-  - /github/enforcing-best-practices-with-github-policies/about-github-policies
-  - /early-access/github/enforcing-best-practices-with-github-policies/constraints
-  - /github/enforcing-best-practices-with-github-policies/constraints
-  - /early-access/github/enforcing-best-practices-with-github-policies/contexts
-  - /github/enforcing-best-practices-with-github-policies/contexts
-  - /early-access/github/enforcing-best-practices-with-github-policies/expressions
-  - /github/enforcing-best-practices-with-github-policies/expressions
-  - /early-access/github/enforcing-best-practices-with-github-policies/getting-started
-  - /early-access/github/enforcing-best-practices-with-github-policies/github-policies-vision
-  - /github/enforcing-best-practices-with-github-policies/github-policies-vision
-  - /early-access/github/enforcing-best-practices-with-github-policies/onboarding
-  - /github/enforcing-best-practices-with-github-policies/onboarding
-  - /early-access/github/enforcing-best-practices-with-github-policies/overview
-  - /github/enforcing-best-practices-with-github-policies/overview
-  - /early-access/github/enforcing-best-practices-with-github-policies/release-notes
-  - /github/enforcing-best-practices-with-github-policies/release-notes
-  - /early-access/github/enforcing-best-practices-with-github-policies/resources
-  - /github/enforcing-best-practices-with-github-policies/resources
-  - /early-access/github/enforcing-best-practices-with-github-policies/sharing
-  - /github/enforcing-best-practices-with-github-policies/sharing
-  - /early-access/github/enforcing-best-practices-with-github-policies/syntax
-  - /github/enforcing-best-practices-with-github-policies/syntax
-  - /site-policy/site-policy-deprecated/github-ae-data-protection-agreement
-  - /site-policy/site-policy-deprecated/github-ae-product-specific-terms
-versions:
-  fpt: '*'
-  ghes: '*'
-  ghec: '*'
-children:
-  - search
-  - get-started
-  - enterprise-onboarding
-  - account-and-profile
-  - subscriptions-and-notifications
-  - authentication
-  - repositories
-  - admin
-  - billing
-  - site-policy
-  - organizations
-  - code-security
-  - pull-requests
-  - issues
-  - actions
-  - copilot
-  - codespaces
-  - integrations
-  - migrations
-  - packages
-  - search-github
-  - apps
-  - webhooks
-  - rest
-  - graphql
-  - github-cli
-  - discussions
-  - sponsors
-  - communities
-  - pages
-  - education
-  - desktop
-  - early-access
-  - support
-  - video-transcripts
-  - contributing
-  - github-models
-  - nonprofit
-childGroups:
-  - name: Get started
-    octicon: RocketIcon
-    children:
-      - get-started
-      - migrations
-      - account-and-profile
-      - subscriptions-and-notifications
-      - authentication
-      - billing
-      - site-policy
-  - name: Collaborative coding
-    octicon: CommentDiscussionIcon
-    children:
-      - codespaces
-      - repositories
-      - pull-requests
-      - discussions
-      - integrations
-  - name: GitHub Copilot
-    octicon: CopilotIcon
-    children:
-      - copilot
-      - copilot/get-started/plans
-      - copilot/how-tos/use-copilot-agents/coding-agent
-      - copilot/tutorials
-      - copilot/tutorials/copilot-chat-cookbook
-      - copilot/tutorials/customization-library
-      - copilot/how-tos/copilot-cli
-  - name: CI/CD and DevOps
-    octicon: GearIcon
-    children:
-      - actions
-      - packages
-      - pages
-  - name: Security and code quality
-    octicon: ShieldLockIcon
-    children:
-      - code-security
-      - code-security/how-tos/secure-your-secrets
-      - code-security/how-tos/find-and-fix-code-vulnerabilities
-      - code-security/how-tos/secure-your-supply-chain
-      - code-security/how-tos/maintain-quality-code
-      - code-security/how-tos/secure-at-scale
-  - name: Client apps
-    octicon: DeviceMobileIcon
-    children:
-      - github-cli
-      - get-started/using-github/github-mobile
-      - desktop
-  - name: Project management
-    octicon: ProjectIcon
-    children:
-      - issues
-      - issues/planning-and-tracking-with-projects
-      - search-github
-  - name: Enterprise and teams
-    octicon: OrganizationIcon
-    children:
-      - organizations
-      - code-security/how-tos/secure-at-scale
-      - enterprise-onboarding
-      - admin
-  - name: Developers
-    octicon: CodeSquareIcon
-    children:
-      - apps
-      - rest
-      - graphql
-      - webhooks
-      - github-models
-  - name: Community
-    octicon: GlobeIcon
-    children:
-      - communities
-      - sponsors
-      - education
-      - nonprofit
-      - support
-      - contributing
-  - name: More docs
-    octicon: PencilIcon
-    children:
-      - codeql
-      - electron
-      - npm
-      - gh-wa
-externalProducts:
-  electron:
-    id: electron
-    name: Electron
-    href: 'https://electronjs.org/docs/latest'
-    external: true
-  codeql:
-    id: codeql
-    name: CodeQL query writing
-    href: 'https://codeql.github.com/docs'
-    external: true
-  npm:
-    id: npm
-    name: npm
-    href: 'https://docs.npmjs.com/'
-    external: true
-  gh-wa:
-    id: gh-wa
-    name: GitHub Well-Architected
-    href: 'https://wellarchitected.github.com/'
-    external: true
+sort: 3
+title: 'Lesson 3: Nunjucks basics'
 ---
+
+A one-liner in a Markdown file isn’t all that useful, so let’s get some HTML on the page. We’re going to use [Nunjucks](https://mozilla.github.io/nunjucks/) to do this.
+
+## What is Nunjucks?
+
+[Nunjucks](https://mozilla.github.io/nunjucks/) is a templating language that’s powered by JavaScript. It’s a way of extending HTML that lets us add logic, loops and various other capabilities.
+
+These allow our templates to be dynamic, even though at the end, they’ll generate static HTML. It’s sort of like [Sass](https://sass-lang.com/), but for HTML rather than CSS. (We'll be using Sass later in this course.)
+
+You can also use Nunjucks in the browser as a client-side templating language. It’s very powerful, as we’ll come to learn throughout the course.
+
+## Getting started with Nunjucks
+
+Eleventy already has Nunjucks built in, and if we were to use a `.njk` file, it would automatically use Nunjucks to process it. That’s super smart but, ideally, we want to be using good ol’ HTML pages.
+
+Luckily, Eleventy has us covered for that. All we need to do is update our Eleventy config file.
+
+Open up `eleventy-from-scratch/eleventy.config.js` in your text editor.
+
+Below the curly bracket `}` marking the end of our configuration function on line 4, add the following:
+
+```js
+export const config = {
+	markdownTemplateEngine: 'njk',
+	htmlTemplateEngine: 'njk',
+};
+```
+
+Your `eleventy.config.js` file should now look like this:
+
+```js
+export default function (eleventyConfig) {
+	eleventyConfig.setInputDirectory('src');
+	eleventyConfig.setOutputDirectory('dist');
+}
+
+export const config = {
+	markdownTemplateEngine: 'njk',
+	htmlTemplateEngine: 'njk',
+};
+```
+
+With the code we’ve just added, we’re telling Eleventy that Markdown files, data files and HTML files should be processed by Nunjucks. That means that we can now use `.html` files instead of having to use `.njk` files.
+
+Now that’s set up, we’re ready to create some templates. Let’s start by making some folders for them to live in.
+
+In your terminal, make sure you’re in the `eleventy-from-scratch` folder, and run the following command:
+
+```sh
+mkdir -p src/_includes/layouts
+```
+
+The `-p` flag tells the `mkdir` command to create any parent folders that don’t already exist.
+
+This creates our `_includes` and `layouts` subfolders.
+
+Inside `eleventy-from-scratch/src/_includes/layouts`, add a new file called `base.html` and open it up.
+
+Paste in the following HTML:
+
+```njk
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>{{ title }}</title>
+	</head>
+	<body>
+		{% block content %}{% endblock %}
+	</body>
+</html>
+```
+
+This is our **base template**. All future templates will **extend** this template—more on that in just a minute.
+
+But first let’s zoom in on two areas of interest in this snippet:
+
+1. The `{{ title }}` part prints the yet to be defined `title` variable on the page. It’s a bit like a `${title}` in JavaScript, or the `<?php echo $title; ?>` in PHP. You can [read more about it](https://mozilla.github.io/nunjucks/templating.html#variables) in the Nunjucks docs.
+2. The `{% block content %}{% endblock %}` area is really interesting. It essentially lets us create a named placeholder. If a template that extends `base.html` also puts content inside a `{% block content %}{% endblock %}`, it will render inside that block on `base.html`. This is _super_ handy for complex templates, because you can set as many `{% block %}` elements as you like.
+
+> [!TIP]
+> One handy thing we can do with a [Nunjucks block](https://mozilla.github.io/nunjucks/templating.html#block) is populate it with placeholder content while we’re working on our site.
+>
+> Imagine this example is in `base.html`:
+>
+> ```njk
+> {% block content %}
+> <p>
+> 	Here is some placeholder content that will render if a template doesn’t define a
+> 	block.
+> </p>
+> {% endblock %}
+> ```
+>
+> If say, `home.html`, which extends `base.html`, didn’t define its own `{% block content %}`, then the content above would render.
+>
+> This is _supremely_ useful for generating `<title>` elements—or anything else—if we’re still figuring out the content and we want to make sure there’s something in place in the meantime.
+
+Now that we’ve set up our base template, let’s add a template for our home page.
+
+Inside `eleventy-from-scratch/src/_includes/layouts` add a new file called `home.html` and add the following HTML to it:
+
+```njk
+{% extends "layouts/base.html" %}
+{% block content %}
+<article>
+	<h1>{{ title }}</h1>
+	{{ content | safe }}
+</article>
+{% endblock %}
+```
+
+The first thing this does is tell our home template to extend the `base.html` template that we added earlier. Eleventy automatically looks for includes like these templates from the `_includes` directory, which is why we only need to specify `layouts/base.html`.
+
+After this comes the `{% block %}` which we discussed earlier.
+
+Inside the `{% block %}`, we’ve added an article which contains the title, followed by `{{ content | safe }}`. This will render the Markdown content, which for us currently, is “Hello, world”.
+
+Because it’s Markdown, it will be now converted to HTML and this is where `safe` kicks in.
+
+This is what’s called a [filter](https://mozilla.github.io/nunjucks/templating.html#filters)—a JavaScript function that can be applied to variables (in this case, `content`).
+
+We have something called [autoescaping](https://mozilla.github.io/nunjucks/templating.html#autoescaping) turned on here, which protects us against cross-site scripting.
+
+Without the `safe` filter, the HTML would be automatically _escaped_ to keep our site safe.
+
+Adding the `safe` filter to our content marks it as safe and allows it to render on the page.
+
+## Assigning our template to our page
+
+_Right_, that was a lot to take in wasn’t it? Let’s reward that hard work with some output!
+
+Open `eleventy-from-scratch/src/index.md` and delete everything in it.
+Replace the deleted content with the following code block:
+
+```yaml
+---
+title: 'Hello, world'
+layout: 'layouts/home.html'
+---
+This is pretty _rad_, right?
+```
+
+Here, we're using YAML syntax to define some metadata for our page. The `title` field sets the title of the page to "Hello, world", while the `layout` field tells Eleventy to use `home.html` as the layout for this page. In this case, our `home.html` template is using `base.html` as its layout, so our final page will be fully composed with HTML.
+
+Front matter is a way to add metadata to your pages and templates. It's typically used by static site generators to manage content. YAML is a human-readable, structured data format that's commonly used for configuration files. By enclosing our metadata in --- delimiters, we're telling Eleventy to treat it as front matter. You can read more about front matter in the [Eleventy docs](https://www.11ty.dev/docs/data-frontmatter/) or in the [next lesson](/lesson/4/)!
+
+If you weren’t running it already, run `npm start` in your terminal. When you open <http://localhost:8080> now, you should see this:
+
+![A browser with a page that has a title of “Hello, world” and a paragraph that says “This is pretty _rad_, right?”](/images/ss-home-initial.jpg)
+
+## Wrapping up
+
+We’re really getting somewhere now.
+
+We’ve got ourselves a base layout, a home layout, _and_ we’ve been introduced to Nunjucks, Nunjucks filters and Nunjucks blocks.
+
+This is all helping us render out some HTML. Nice work!
+
+Next up, let’s dig a little further into front matter.

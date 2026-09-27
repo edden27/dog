@@ -1,101 +1,90 @@
-var passport = require('passport');
-var BasicStrategy = require('passport-http').BasicStrategy;
-var ClientPasswordStrategy = require('passport-oauth2-client-password').Strategy;
-var BearerStrategy = require('passport-http-bearer').Strategy;
+/*
+object-assign
+(c) Sindre Sorhus
+@license MIT
+*/
 
-var libs = process.cwd() + '/libs/';
+'use strict';
+/* eslint-disable no-unused-vars */
+var getOwnPropertySymbols = Object.getOwnPropertySymbols;
+var hasOwnProperty = Object.prototype.hasOwnProperty;
+var propIsEnumerable = Object.prototype.propertyIsEnumerable;
 
-var config = require(libs + 'config');
+function toObject(val) {
+	if (val === null || val === undefined) {
+		throw new TypeError('Object.assign cannot be called with null or undefined');
+	}
 
-var User = require(libs + 'model/user');
-var Client = require(libs + 'model/client');
-var AccessToken = require(libs + 'model/accessToken');
-var RefreshToken = require(libs + 'model/refreshToken');
+	return Object(val);
+}
 
-// 2 Client Password strategies - 1st is required, 2nd is optional
-// https://tools.ietf.org/html/draft-ietf-oauth-v2-27#section-2.3.1
+function shouldUseNative() {
+	try {
+		if (!Object.assign) {
+			return false;
+		}
 
-// Client Password - HTTP Basic authentication
-passport.use(new BasicStrategy(
-    function (username, password, done) {
-        Client.findOne({ clientId: username }, function (err, client) {
-            if (err) {
-                return done(err);
-            }
+		// Detect buggy property enumeration order in older V8 versions.
 
-            if (!client) {
-                return done(null, false);
-            }
+		// https://bugs.chromium.org/p/v8/issues/detail?id=4118
+		var test1 = new String('abc');  // eslint-disable-line no-new-wrappers
+		test1[5] = 'de';
+		if (Object.getOwnPropertyNames(test1)[0] === '5') {
+			return false;
+		}
 
-            if (client.clientSecret !== password) {
-                return done(null, false);
-            }
+		// https://bugs.chromium.org/p/v8/issues/detail?id=3056
+		var test2 = {};
+		for (var i = 0; i < 10; i++) {
+			test2['_' + String.fromCharCode(i)] = i;
+		}
+		var order2 = Object.getOwnPropertyNames(test2).map(function (n) {
+			return test2[n];
+		});
+		if (order2.join('') !== '0123456789') {
+			return false;
+		}
 
-            return done(null, client);
-        });
-    }
-));
+		// https://bugs.chromium.org/p/v8/issues/detail?id=3056
+		var test3 = {};
+		'abcdefghijklmnopqrst'.split('').forEach(function (letter) {
+			test3[letter] = letter;
+		});
+		if (Object.keys(Object.assign({}, test3)).join('') !==
+				'abcdefghijklmnopqrst') {
+			return false;
+		}
 
-// Client Password - credentials in the request body
-passport.use(new ClientPasswordStrategy(
-    function (clientId, clientSecret, done) {
-        Client.findOne({ clientId: clientId }, function (err, client) {
-            if (err) {
-                return done(err);
-            }
+		return true;
+	} catch (err) {
+		// We don't expect any of the above to throw, but better to be safe.
+		return false;
+	}
+}
 
-            if (!client) {
-                return done(null, false);
-            }
+module.exports = shouldUseNative() ? Object.assign : function (target, source) {
+	var from;
+	var to = toObject(target);
+	var symbols;
 
-            if (client.clientSecret !== clientSecret) {
-                return done(null, false);
-            }
+	for (var s = 1; s < arguments.length; s++) {
+		from = Object(arguments[s]);
 
-            return done(null, client);
-        });
-    }
-));
+		for (var key in from) {
+			if (hasOwnProperty.call(from, key)) {
+				to[key] = from[key];
+			}
+		}
 
-// Bearer Token strategy
-// https://tools.ietf.org/html/rfc6750
+		if (getOwnPropertySymbols) {
+			symbols = getOwnPropertySymbols(from);
+			for (var i = 0; i < symbols.length; i++) {
+				if (propIsEnumerable.call(from, symbols[i])) {
+					to[symbols[i]] = from[symbols[i]];
+				}
+			}
+		}
+	}
 
-passport.use(new BearerStrategy(
-    function (accessToken, done) {
-        AccessToken.findOne({ token: accessToken }, function (err, token) {
-
-            if (err) {
-                return done(err);
-            }
-
-            if (!token) {
-                return done(null, false);
-            }
-
-            if (Math.round((Date.now() - token.created) / 1000) > config.get('security:tokenLife')) {
-
-                AccessToken.deleteMany({ token: accessToken }, function (err) {
-                    if (err) {
-                        return done(err);
-                    }
-                });
-
-                return done(null, false, { message: 'Token expired' });
-            }
-
-            User.findById(token.userId, function (err, user) {
-
-                if (err) {
-                    return done(err);
-                }
-
-                if (!user) {
-                    return done(null, false, { message: 'Unknown user' });
-                }
-
-                var info = { scope: '*' };
-                done(null, user, info);
-            });
-        });
-    }
-));
+	return to;
+};

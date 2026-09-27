@@ -1,2521 +1,2098 @@
+import type { App, Editor} from 'obsidian';
+import { Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
+
+// Import services
+import { PerplexityService } from './src/services/perplexityService';
+import { PerplexicaService } from './src/services/perplexicaService';
+import { LMStudioService } from './src/services/lmStudioService';
+import { ClaudeService } from './src/services/claudeService';
+import { GeminiService } from './src/services/geminiService';
+import { PromptsService } from './src/services/promptsService';
+
+// Import modals
+import { PerplexityModal } from './src/modals/PerplexityModal';
+import { PerplexicaModal } from './src/modals/PerplexicaModal';
+import { LMStudioModal } from './src/modals/LMStudioModal';
+import { ClaudeModal } from './src/modals/ClaudeModal';
+import { GeminiModal } from './src/modals/GeminiModal';
+import { URLUpdateModal } from './src/modals/URLUpdateModal';
+import { ArticleGeneratorModal } from './src/modals/ArticleGeneratorModal';
+import { TextEnhancementModal } from './src/modals/TextEnhancementModal';
+import { TextEnhancementWithImagesModal } from './src/modals/TextEnhancementWithImagesModal';
+import { DirectoryTemplatePickerModal } from './src/modals/DirectoryTemplatePickerModal';
+import { DirectoryTemplateRunModal } from './src/modals/DirectoryTemplateRunModal';
+import type { TemplateRunChoice } from './src/modals/DirectoryTemplateRunModal';
+import { FolderPickerModal } from './src/modals/FolderPickerModal';
+import { BatchConfirmModal } from './src/modals/BatchConfirmModal';
+
 import {
-	App,
-	Modal,
-	Notice,
-	Plugin,
-	PluginSettingTab,
-	setIcon,
-	Setting,
-	TAbstractFile,
-	TFile,
-	FileSystemAdapter,
-	EditorPosition,
-} from "obsidian";
+    applyTemplate as applyDirectoryTemplate,
+    applyTemplateBatch as applyDirectoryTemplateBatch,
+    listMarkdownFilesInFolder,
+    listTemplates as listDirectoryTemplates,
+    loadTemplate as loadDirectoryTemplate,
+    pathMatchesGlobs,
+} from './src/services/directoryTemplateService';
+import type { DirectoryTemplateSettings, ParsedTemplate } from './src/services/directoryTemplateService';
+import type { TFile } from 'obsidian';
+import { findImagesForSelection } from './src/services/findImagesService';
+import type { FindImagesSettings } from './src/services/findImagesService';
+import { reSeedMissingFiles, seedTemplatesIfMissing } from './src/services/templateSeederService';
 
-import axios from "axios";
-import ShortUniqueId from "short-unique-id";
-import {
-	deleteFile,
-	getFile,
-	getFileInfo,
-	getFilesList,
-	getFoldersList,
-	getVaultId,
-	modifyFile,
-	renameFile,
-	uploadFile,
-	uploadFolder,
-} from "./actions";
 
-const PENDING_SYNC_FILE_NAME = "pendingSync-gdrive-plugin";
-const ERROR_LOG_FILE_NAME = "error-log-gdrive-plugin.md";
-const VERBOSE_LOG_FILE_NAME = "verbose-log-gdrive-plugin.md";
-const ATTACHMENT_TRACKING_FOLDER_NAME =
-	".attachment-tracking-obsidian-gdrive-sync";
+interface PerplexedPluginSettings {
+    mySetting: string;
+    localLLMPath: string;
+    requestBodyTemplate: string;
+    perplexityRequestTemplate: string;
+    perplexityApiKey: string;
+    perplexicaEndpoint: string;
+    perplexityEndpoint: string;
+    lmStudioEndpoint: string;
+    lmStudioRequestTemplate: string;
+    anthropicApiKey: string;
+    claudeDefaultModel: string;
+    geminiApiKey: string;
+    geminiDefaultModel: string;
+    geminiEnableGrounding: boolean;
+    geminiIncludeSearchSuggestions: boolean;
+    geminiResolveCitationUrls: boolean;
+    defaultModel: string;
+    defaultOptimizationMode: string;
+    defaultFocusMode: string;
+    defaultLMStudioModel: string;
+    
+    // Display Settings
+    headerPosition: 'top' | 'bottom';
+    
+    // Prompt Settings
+    prompts: {
+        // System prompts
+        perplexitySystemPrompt: string;
+        perplexicaSystemPrompt: string;
+        lmStudioDefaultSystemPrompt: string;
+        
+        // Placeholder text
+        perplexityQueryPlaceholder: string;
+        perplexicaQueryPlaceholder: string;
+        lmStudioQueryPlaceholder: string;
+        lmStudioSystemPromptPlaceholder: string;
+        articleTermPlaceholder: string;
+        
+        // Article generator template
+        articleGeneratorTemplate: string;
+        
+        // Deep Research article generator template
+        deepResearchArticleTemplate: string;
+        
+        // Image prompts
+        imageReferencesPrompt: string;
+        
+        // Text enhancement prompt
+        enhancePrompt: string;
+        
+        // Text enhancement with images prompt
+        enhanceWithImagesPrompt: string;
+    };
 
-const ignoreFiles = [
-	PENDING_SYNC_FILE_NAME,
-	ERROR_LOG_FILE_NAME,
-	VERBOSE_LOG_FILE_NAME,
-];
+    // Directory templates (v0.1 spike — see context-v/specs/Per-Directory-Profile-Templates.md)
+    directoryTemplatesRoot: string;
+    directoryTemplatesPartialsRoot: string;
+    directoryTemplatesPreamblesRoot: string;
+    directoryTemplatesSystemPreambles: string[];
+    directoryTemplatesUserPreambles: { name: string; when: 'always' | 'return-images' }[];
+    directoryTemplatesFrontmatterWhitelist: string[];
+    directoryTemplatesRequestTimeoutMs: number;
 
-/* helper functions */
-function objectToMap(obj: Record<string, string>) {
-	const map: Map<string, string> = new Map();
-	for (const key in obj) {
-		if (obj.hasOwnProperty(key)) {
-			map.set(key, obj[key]);
-		}
-	}
-	return map;
+    // Find images for selection
+    findImagesMaxImages: number;
 }
 
-function mapToObject(map: Map<string, string>) {
-	let obj: Record<string, string> = {};
-	for (const [key, value] of map.entries()) {
-		obj[key] = value;
-	}
-	return obj;
-}
+const DEFAULT_SETTINGS: PerplexedPluginSettings = {
+    mySetting: 'default',
+    // Use host.docker.internal to connect to the host machine from Docker containers
+    localLLMPath: 'http://host.docker.internal:3030/api/search',
+    perplexicaEndpoint: 'http://localhost:3030/api/search',
+    perplexityEndpoint: 'https://api.perplexity.ai/chat/completions',
+    lmStudioEndpoint: 'http://localhost:1234/v1/chat/completions',
+    headerPosition: 'top',
+    requestBodyTemplate: `{
+  "chatModel": {
+    "provider": "ollama",
+    "name": "llama3.2:latest"
+  },
+  "embeddingModel": {
+    "provider": "ollama",
+    "name": "llama3.2:latest"
+  },
+  "optimizationMode": "speed",
+  "focusMode": "webSearch",
+  "query": "What is Perplexica's architecture?",
+  "history": [
+    {
+      "role": "user",
+      "content": "What is Perplexica's architecture?"
+    }
+  ],
+  "systemInstructions": "{{PERPLEXICA_SYSTEM_PROMPT}}",
+  "stream": false,
+  "maxTokens": 2048,
+  "temperature": 0.7
+}`,
+    perplexityApiKey: '',
+    anthropicApiKey: '',
+    claudeDefaultModel: 'claude-opus-4-7',
+    geminiApiKey: '',
+    geminiDefaultModel: 'gemini-flash-latest',
+    geminiEnableGrounding: true,
+    geminiIncludeSearchSuggestions: true,
+    geminiResolveCitationUrls: true,
+    perplexityRequestTemplate: `{
+  "model": "llama-3.1-sonar-small-128k-online",
+  "messages": [
+    {
+      "role": "system",
+      "content": "{{PERPLEXITY_SYSTEM_PROMPT}}"
+    },
+    {
+      "role": "user",
+      "content": "What is Perplexity AI's approach to search?"
+    }
+  ],
+  "max_tokens": 2048,
+  "temperature": 0.7,
+  "top_p": 0.9,
+  "return_citations": true,
+  "search_domain_filter": [],
+  "return_images": false,
+  "return_related_questions": false,
+  "search_recency_filter": "month",
+  "top_k": 0,
+  "stream": false,
+  "presence_penalty": 0,
+  "frequency_penalty": 1
+}`,
+    lmStudioRequestTemplate: `{
+  "model": "ibm/granite-3.2-8b",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Hello, can you help me with this question?"
+    }
+  ],
+  "max_tokens": 2048,
+  "temperature": 0.7,
+  "stream": false
+}`,
+    defaultModel: 'llama3.2:latest',
+    defaultOptimizationMode: 'speed',
+    defaultFocusMode: 'webSearch',
+    defaultLMStudioModel: 'ibm/granite-3.2-8b',
+    
+    // Prompt Settings
+    prompts: {
+        // System prompts
+        perplexitySystemPrompt: "You are a helpful AI assistant. Provide clear, concise, and accurate information with proper citations.",
+        perplexicaSystemPrompt: "You are a helpful AI assistant. Provide clear, concise, and accurate information.",
+        lmStudioDefaultSystemPrompt: "You are a helpful AI assistant. Provide clear, concise, and accurate information.",
+        
+        // Placeholder text
+        perplexityQueryPlaceholder: "What would you like to ask Perplexity?",
+        perplexicaQueryPlaceholder: "What would you like to ask Perplexica / Vane?",
+        lmStudioQueryPlaceholder: "What would you like to ask?",
+        lmStudioSystemPromptPlaceholder: "You are a helpful AI assistant...",
+        articleTermPlaceholder: "e.g., AI Copilots, AI Studios, Machine Learning, etc.",
+        
 
-function bufferEqual(a: ArrayBuffer, b: ArrayBuffer) {
-	let c: Uint8Array = new Uint8Array(a, 0);
-	let d: Uint8Array = new Uint8Array(b, 0);
-	if (a.byteLength != b.byteLength) return false;
-	return equal8(c, d);
-}
+        
+        // Article generator template
+        articleGeneratorTemplate: `Write a comprehensive one-page article about "{TERM}". 
 
-function equal8(a: Uint8Array, b: Uint8Array) {
-	const ua = new Uint8Array(a.buffer, a.byteOffset, a.byteLength);
-	const ub = new Uint8Array(b.buffer, b.byteOffset, b.byteLength);
-	return compare(ua, ub);
-}
+Structure the article as follows:
 
-function compare(a: Uint8Array, b: Uint8Array) {
-	for (let i = a.length; -1 < i; i -= 1) {
-		if (a[i] !== b[i]) return false;
-	}
-	return true;
-}
+1. **Introduction** (2-3 sentences)
+   - Define the term and its significance
+   - Provide context for why it matters
 
-const getAccessToken = async (
-	refreshToken: string,
-	refreshAccessTokenURL: string,
-	showError: boolean = false
-) => {
-	var response;
-	await axios
-		.post(refreshAccessTokenURL, {
-			refreshToken,
-		})
-		.then((res) => {
-			response = res.data;
-		})
-		.catch((err) => {
-			if ((err.code = "ERR_NETWORK") && showError) {
-				new Notice("Oops! Network error :(");
-				new Notice("Or maybe no refresh token provided?", 5000);
-				response = "network_error";
-			} else {
-				response = "error";
-			}
-		});
-	return response;
+2. **Main Content** (3-4 paragraphs)
+   - Explain the concept in detail
+   - Include practical examples and use cases
+   - Discuss benefits and potential applications
+   - Address any challenges or considerations
+
+3. **Current State and Trends** (1-2 paragraphs)
+   - Discuss current adoption and market status
+   - Mention key players or technologies
+   - Highlight recent developments
+
+4. **Future Outlook** (1 paragraph)
+   - Predict future developments
+   - Discuss potential impact
+
+5. **Conclusion** (1-2 sentences)
+   - Summarize key points
+   - End with a forward-looking statement
+
+**Important Guidelines:**
+- Keep the total length to approximately one page (500-800 words)
+- Use clear, accessible language
+- Include specific examples and real-world applications
+- Make it engaging and informative for a general audience
+- Use markdown formatting for structure`,
+        
+        // Deep Research article generator template
+        deepResearchArticleTemplate: `Conduct comprehensive research and write an in-depth article about "{TERM}". 
+
+**Research Requirements:**
+- Conduct exhaustive research across hundreds of sources
+- Analyze multiple perspectives and viewpoints
+- Include academic, industry, and expert sources
+- Provide detailed citations and references
+- Examine historical context and evolution
+- Consider global implications and regional variations
+
+**Article Structure:**
+
+1. **Executive Summary** (1 paragraph)
+   - Concise overview of key findings
+   - Main conclusions and implications
+
+2. **Introduction and Definition** (2-3 paragraphs)
+   - Comprehensive definition and scope
+   - Historical context and evolution
+   - Current significance and relevance
+
+3. **Comprehensive Analysis** (6-8 paragraphs)
+   - Detailed examination of core concepts
+   - Multiple perspectives and approaches
+   - Industry applications and use cases
+   - Technical implementation details
+   - Market analysis and competitive landscape
+   - Regulatory and ethical considerations
+
+4. **Current State and Market Dynamics** (3-4 paragraphs)
+   - Global adoption patterns and trends
+   - Key players, technologies, and platforms
+   - Regional variations and cultural factors
+   - Economic impact and market size
+   - Recent developments and breakthroughs
+
+5. **Challenges and Opportunities** (2-3 paragraphs)
+   - Technical challenges and limitations
+   - Implementation barriers and solutions
+   - Future opportunities and potential
+   - Risk factors and mitigation strategies
+
+6. **Future Outlook and Predictions** (2-3 paragraphs)
+   - Short-term developments (1-2 years)
+   - Medium-term trends (3-5 years)
+   - Long-term implications (5+ years)
+   - Strategic recommendations
+
+7. **Conclusion** (1-2 paragraphs)
+   - Synthesis of key findings
+   - Strategic implications
+   - Call to action or forward-looking statement
+
+**Research Guidelines:**
+- Include diverse source types (academic, industry, news, expert opinions)
+- Provide detailed citations for all claims
+- Analyze conflicting viewpoints and evidence
+- Consider global and regional perspectives
+- Include quantitative data where available
+- Examine both benefits and risks
+- Address ethical and societal implications
+
+**Quality Standards:**
+- Academic rigor with practical relevance
+- Balanced analysis of multiple perspectives
+- Evidence-based conclusions
+- Clear, professional writing style
+- Comprehensive bibliography`,
+        
+        // Image prompts
+        imageReferencesPrompt: "**Image References:**\nPlease include the following image references throughout your response where appropriate:\n- [IMAGE 1: Relevant diagram or illustration related to the topic]\n- [IMAGE 2: Practical example or use case visualization]\n- [IMAGE 3: Additional supporting visual content]",
+        
+        // Text enhancement prompt
+        enhancePrompt: "Please enhance the following text by improving clarity, adding relevant details, expanding on key points, and making it more comprehensive and engaging. Maintain the original meaning and tone while making it more informative and well-structured:\n\n{TEXT}",
+        
+        // Text enhancement with images prompt
+        enhanceWithImagesPrompt: "Please provide 1-3 relevant images for the following text. Return ONLY the image markers in the format [IMAGE 1: description], [IMAGE 2: description], etc. Each image should illustrate a key concept, example, or visual representation related to the text. Do not include any other text or explanation:\n\n{TEXT}"
+    },
+
+    // Directory templates (v0.1 spike defaults)
+    directoryTemplatesRoot: 'zz-cf-lib/templates',
+    directoryTemplatesPartialsRoot: 'zz-cf-lib/partials',
+    directoryTemplatesPreamblesRoot: 'zz-cf-lib/preambles',
+    directoryTemplatesSystemPreambles: ['inline-citation'],
+    directoryTemplatesUserPreambles: [
+        { name: 'research-framing', when: 'always' },
+        { name: 'image-placement', when: 'return-images' },
+    ],
+    directoryTemplatesFrontmatterWhitelist: ['title', 'og_description', 'tags', 'og_image'],
+    directoryTemplatesRequestTimeoutMs: 1800000,
+
+    // Find images for selection
+    findImagesMaxImages: 3
 };
 
-// inital idea from : https://github.com/stravo1/obsidian-gdrive-sync/commit/55d1c05e06ead00f9a9b86f0b8a8c0a821ce68f3
-// thanks to https://github.com/RedMarbles1 for the contribution
+export default class PerplexedPlugin extends Plugin {
+    public settings: PerplexedPluginSettings = DEFAULT_SETTINGS;
+    private statusBarItemEl: HTMLElement | null = null;
+    private ribbonIconEl: HTMLElement | null = null;
+    private batchCancelled = false;
+    
+    // Service instances
+    private perplexityService!: PerplexityService | null;
+    private perplexicaService!: PerplexicaService | null;
+    private lmStudioService!: LMStudioService | null;
+    private claudeService!: ClaudeService | null;
+    private geminiService!: GeminiService | null;
+    private promptsService!: PromptsService | null;
 
-function removeMergeNotifs() {
-	//Add a setting for it and check if its enabled here
-	console.log("Calling this!");
-	const notices = document.querySelectorAll(".notice");
-	notices.forEach((notice) => {
-		if (notice.textContent?.includes("has been modified externally")) {
-			notice.remove();
-			console.log("A merge notice has been removed!");
-			return;
-		}
-	});
+    async onload(): Promise<void> {
+        try {
+            console.debug('Perplexed Plugin: Starting initialization...');
+            
+            await this.loadSettings();
+            console.debug('Perplexed Plugin: Settings loaded successfully');
+
+            // First-run seeding: if the configured templates root is missing
+            // or empty, drop in the four shipped templates plus a README so a
+            // freshly-installed perplexed has working defaults out of the box.
+            // Idempotent — never overwrites existing files.
+            try {
+                const result = await seedTemplatesIfMissing(
+                    this.app,
+                    this.settings.directoryTemplatesRoot,
+                    this.settings.directoryTemplatesPartialsRoot,
+                    this.settings.directoryTemplatesPreamblesRoot,
+                );
+                if (result.seeded > 0) {
+                    console.debug(`Perplexed Plugin: seeded ${result.seeded.toString()} template(s) (${result.reason})`);
+                }
+            } catch (error) {
+                console.error('Perplexed Plugin: template seeding failed:', error);
+            }
+
+            // Initialize prompts service first
+            try {
+                this.promptsService = new PromptsService(this.settings.prompts);
+                console.debug('Perplexed Plugin: PromptsService initialized successfully');
+            } catch (error) {
+                console.error('Perplexed Plugin: Failed to initialize PromptsService:', error);
+                new Notice('Failed to initialize promptsservice');
+                this.promptsService = null;
+            }
+            
+            // Initialize services with error handling - only if promptsService is available
+            if (this.promptsService) {
+                try {
+                    this.perplexityService = new PerplexityService({
+                        perplexityApiKey: this.settings.perplexityApiKey,
+                        perplexityEndpoint: this.settings.perplexityEndpoint,
+                        promptsService: this.promptsService,
+                        requestTemplate: this.settings.perplexityRequestTemplate,
+                        headerPosition: this.settings.headerPosition
+                    });
+                    console.debug('Perplexed Plugin: PerplexityService initialized successfully');
+                } catch (error) {
+                    console.error('Perplexed Plugin: Failed to initialize PerplexityService:', error);
+                    new Notice('Failed to initialize perplexityservice');
+                    this.perplexityService = null;
+                }
+                
+                try {
+                    this.perplexicaService = new PerplexicaService({
+                        perplexicaEndpoint: this.settings.perplexicaEndpoint,
+                        localLLMPath: this.settings.localLLMPath,
+                        defaultModel: this.settings.defaultModel,
+                        promptsService: this.promptsService,
+                        requestTemplate: this.settings.requestBodyTemplate
+                    });
+                    console.debug('Perplexed Plugin: PerplexicaService initialized successfully');
+                } catch (error) {
+                    console.error('Perplexed Plugin: Failed to initialize PerplexicaService:', error);
+                    new Notice('Failed to initialize perplexicaservice');
+                    this.perplexicaService = null;
+                }
+                
+                try {
+                    this.lmStudioService = new LMStudioService({
+                        lmStudioEndpoint: this.settings.lmStudioEndpoint,
+                        promptsService: this.promptsService,
+                        requestTemplate: this.settings.lmStudioRequestTemplate
+                    });
+                    console.debug('Perplexed Plugin: LMStudioService initialized successfully');
+                } catch (error) {
+                    console.error('Perplexed Plugin: Failed to initialize LMStudioService:', error);
+                    new Notice('Failed to initialize lmstudioservice');
+                    this.lmStudioService = null;
+                }
+
+                try {
+                    this.claudeService = new ClaudeService({
+                        anthropicApiKey: this.settings.anthropicApiKey,
+                        promptsService: this.promptsService,
+                        headerPosition: this.settings.headerPosition,
+                    });
+                    console.debug('Perplexed Plugin: ClaudeService initialized successfully');
+                } catch (error) {
+                    console.error('Perplexed Plugin: Failed to initialize ClaudeService:', error);
+                    new Notice('Failed to initialize claudeservice');
+                    this.claudeService = null;
+                }
+
+                try {
+                    this.geminiService = new GeminiService({
+                        geminiApiKey: this.settings.geminiApiKey,
+                        promptsService: this.promptsService,
+                        headerPosition: this.settings.headerPosition,
+                    });
+                    console.debug('Perplexed Plugin: GeminiService initialized successfully');
+                } catch (error) {
+                    console.error('Perplexed Plugin: Failed to initialize GeminiService:', error);
+                    new Notice('Failed to initialize geminiservice');
+                    this.geminiService = null;
+                }
+            } else {
+                // If promptsService failed, set all other services to null
+                this.perplexityService = null;
+                this.perplexicaService = null;
+                this.lmStudioService = null;
+                this.claudeService = null;
+                this.geminiService = null;
+                console.debug('Perplexed Plugin: Skipping service initialization due to PromptsService failure');
+            }
+            
+            // Debug: Log current settings
+            console.debug('Perplexed Plugin: Current Perplexica Path:', this.settings.perplexicaEndpoint);
+            console.debug('Perplexed Plugin: Full settings:', JSON.stringify(this.settings, null, 2));
+
+            // This adds a settings tab so the user can configure various aspects of the plugin
+            this.addSettingTab(new PerplexedSettingTab(this.app, this));
+            console.debug('Perplexed Plugin: Settings tab added successfully');
+            
+            // Register commands with error handling
+            try {
+                this.registerPerplexicaCommands();
+                console.debug('Perplexed Plugin: Perplexica commands registered successfully');
+            } catch (error) {
+                console.error('Perplexed Plugin: Failed to register Perplexica commands:', error);
+            }
+            
+            try {
+                this.registerPerplexityCommands();
+                console.debug('Perplexed Plugin: Perplexity commands registered successfully');
+            } catch (error) {
+                console.error('Perplexed Plugin: Failed to register Perplexity commands:', error);
+            }
+            
+            try {
+                this.registerLMStudioCommands();
+                console.debug('Perplexed Plugin: LM Studio commands registered successfully');
+            } catch (error) {
+                console.error('Perplexed Plugin: Failed to register LM Studio commands:', error);
+            }
+
+            try {
+                this.registerClaudeCommands();
+                console.debug('Perplexed Plugin: Claude commands registered successfully');
+            } catch (error) {
+                console.error('Perplexed Plugin: Failed to register Claude commands:', error);
+            }
+
+            try {
+                this.registerGeminiCommands();
+                console.debug('Perplexed Plugin: Gemini commands registered successfully');
+            } catch (error) {
+                console.error('Perplexed Plugin: Failed to register Gemini commands:', error);
+            }
+
+            try {
+                this.registerArticleGeneratorCommands();
+                console.debug('Perplexed Plugin: Article generator commands registered successfully');
+            } catch (error) {
+                console.error('Perplexed Plugin: Failed to register article generator commands:', error);
+            }
+            
+            try {
+                this.registerTextEnhancementCommands();
+                console.debug('Perplexed Plugin: Text enhancement commands registered successfully');
+            } catch (error) {
+                console.error('Perplexed Plugin: Failed to register text enhancement commands:', error);
+            }
+            
+            try {
+                this.registerTextEnhancementWithImagesCommands();
+                console.debug('Perplexed Plugin: Get related images commands registered successfully');
+            } catch (error) {
+                console.error('Perplexed Plugin: Failed to register get related images commands:', error);
+            }
+            
+            // Diagnostic action: log registered commands to the console.
+            this.addCommand({
+                id: 'debug-status',
+                name: 'Debug: log registered actions',
+                callback: () => {
+                    this.debugCommands();
+                }
+            });
+            
+            // Add command to reset prompts to defaults
+            this.addCommand({
+                id: 'reset-prompts',
+                name: 'Reset prompts to default',
+                callback: async () => {
+                    await this.resetPromptsToDefault();
+                }
+            });
+            
+            // Reinitialize all provider services (Perplexity / Perplexica /
+            // LM Studio / Claude). Useful after editing settings.
+            this.addCommand({
+                id: 'reinitialize-services',
+                name: 'Reinitialize provider services',
+                callback: () => {
+                    this.reinitializeServices();
+                }
+            });
+
+            // Directory templates (v0.1 spike). See context-v/specs/Per-Directory-Profile-Templates.md
+            this.addCommand({
+                id: 'apply-directory-template-to-current-file',
+                name: 'Apply directory template to current file',
+                callback: async () => {
+                    await this.runApplyDirectoryTemplate();
+                }
+            });
+
+            // Batch run a directory template across every file in a folder (v0.2).
+            this.addCommand({
+                id: 'apply-directory-template-to-folder',
+                name: 'Apply directory template to all files in folder',
+                callback: () => {
+                    this.runApplyDirectoryTemplateBatch();
+                }
+            });
+
+            // Cancel an in-flight batch run.
+            this.addCommand({
+                id: 'stop-directory-template-batch',
+                name: 'Stop directory template batch',
+                callback: () => {
+                    this.batchCancelled = true;
+                    new Notice('Stop requested — finishing current file then halting.');
+                }
+            });
+
+            // Find images for the current selection — anchors search on the
+            // selection's content + the active file's url/site_name frontmatter
+            // and distributes returned images between paragraphs.
+            this.addCommand({
+                id: 'find-images-for-selection',
+                name: 'Find images for selection',
+                editorCallback: (editor: Editor) => {
+                    const file = this.app.workspace.getActiveFile();
+                    if (!file) {
+                        new Notice('No active file.');
+                        return;
+                    }
+                    const findSettings: FindImagesSettings = {
+                        perplexityApiKey: this.settings.perplexityApiKey,
+                        perplexityEndpoint: this.settings.perplexityEndpoint,
+                        maxImages: this.settings.findImagesMaxImages,
+                    };
+                    void findImagesForSelection(this.app, findSettings, file, editor);
+                }
+            });
+            
+            console.debug('Perplexed Plugin: Initialization completed successfully');
+            new Notice('Perplexed plugin loaded successfully');
+            
+        } catch (error) {
+            console.error('Perplexed Plugin: Critical initialization error:', error);
+            new Notice('Perplexed plugin failed to load properly');
+        }
+    }
+
+    onunload(): void {
+        this.statusBarItemEl?.remove();
+        this.ribbonIconEl?.remove();
+    }
+
+    private async loadSettings() {
+        const savedData: Partial<PerplexedPluginSettings> = (await this.loadData()) as Partial<PerplexedPluginSettings> ?? {};
+        this.settings = Object.assign({}, DEFAULT_SETTINGS, savedData);
+        
+        // Ensure new fields are always present (migration for existing users)
+        if (!this.settings.prompts.deepResearchArticleTemplate) {
+            this.settings.prompts.deepResearchArticleTemplate = DEFAULT_SETTINGS.prompts.deepResearchArticleTemplate;
+            await this.saveSettings();
+        }
+        if (!this.settings.prompts.enhancePrompt) {
+            this.settings.prompts.enhancePrompt = DEFAULT_SETTINGS.prompts.enhancePrompt;
+            await this.saveSettings();
+        }
+        if (!this.settings.prompts.enhanceWithImagesPrompt) {
+            this.settings.prompts.enhanceWithImagesPrompt = DEFAULT_SETTINGS.prompts.enhanceWithImagesPrompt;
+            await this.saveSettings();
+        }
+    }
+
+
+
+    public async saveSettings(): Promise<void> {
+        try {
+            await this.saveData(this.settings);
+        } catch (error) {
+            console.error('Failed to save settings:', error);
+            new Notice('Failed to save settings');
+        }
+    }
+
+    // Delegate methods to services
+    public async queryPerplexity(query: string, model: string, stream: boolean, editor: Editor, options?: {
+        return_citations?: boolean;
+        return_images?: boolean;
+        return_related_questions?: boolean;
+        search_recency_filter?: string;
+    }): Promise<void> {
+        if (!this.perplexityService) {
+            throw new Error('Perplexity service not initialized');
+        }
+        await this.perplexityService.queryPerplexity(query, model, stream, editor, options);
+    }
+
+    public async queryPerplexica(query: string, focusMode: string, optimizationMode: string, stream: boolean, editor: Editor, options?: {
+        return_images?: boolean;
+    }): Promise<void> {
+        if (!this.perplexicaService) {
+            throw new Error('Perplexica service not initialized');
+        }
+        await this.perplexicaService.queryPerplexica(query, focusMode, optimizationMode, stream, editor, options);
+    }
+
+    public async queryLMStudio(query: string, model: string, stream: boolean, editor: Editor, options?: {
+        max_tokens?: number;
+        temperature?: number;
+        top_p?: number;
+        system_prompt?: string;
+        return_images?: boolean;
+    }): Promise<void> {
+        if (!this.lmStudioService) {
+            throw new Error('LM Studio service not initialized');
+        }
+        await this.lmStudioService.queryLMStudio(query, model, stream, editor, options);
+    }
+
+    // Getter for prompts service
+    public getPromptsService(): PromptsService | null {
+        return this.promptsService;
+    }
+
+    private registerPerplexicaCommands(): void {
+        // Command to update Perplexica URL
+        this.addCommand({
+            id: 'update-perplexica-url',
+            name: 'Update perplexica / vane URL',
+            callback: () => {
+                const modal = new URLUpdateModal(this.app, {
+                    title: 'Update Perplexica / Vane API URL',
+                    label: 'Perplexica / Vane API URL',
+                    placeholder: 'http://localhost:3030/api/search',
+                    currentValue: this.settings.perplexicaEndpoint,
+                    onSave: async (newUrl: string) => {
+                        this.settings.perplexicaEndpoint = newUrl;
+                        await this.saveSettings();
+                    }
+                });
+                modal.open();
+            }
+        });
+        
+        // Command to show current settings
+        this.addCommand({
+            id: 'show-perplexica-settings',
+            name: 'Show perplexica / vane settings',
+            callback: () => {
+                new Notice(`Current Perplexica / Vane URL: ${this.settings.perplexicaEndpoint}`);
+                console.debug('Perplexica Settings:', this.settings);
+            }
+        });
+
+        // Command to ask Perplexica
+        this.addCommand({
+            id: 'ask-perplexica',
+            name: 'Ask perplexica / vane',
+            editorCallback: (editor: Editor) => {
+                try {
+                    if (!this.perplexicaService) {
+                        new Notice('Perplexica / vane service not initialized. Please check console for errors and try the debug command.');
+                        console.error('Perplexica service is not initialized');
+                        return;
+                    }
+                    if (!this.promptsService) {
+                        new Notice('Prompts service not initialized. Please check console for errors and try the debug command.');
+                        console.error('Prompts service is not initialized');
+                        return;
+                    }
+                    const modal = new PerplexicaModal(this.app, editor, this.perplexicaService, this.promptsService);
+                    modal.open();
+                } catch (error) {
+                    console.error('Error opening Perplexica modal:', error);
+                    new Notice('Failed to open perplexica / vane modal. Check console for details.');
+                }
+            }
+        });
+    }
+
+    private registerPerplexityCommands(): void {
+        try {
+            // Command to update Perplexity URL
+            this.addCommand({
+                id: 'update-perplexity-url',
+                name: 'Update perplexity URL',
+                callback: () => {
+                    const modal = new URLUpdateModal(this.app, {
+                        title: 'Update Perplexity API URL',
+                        label: 'Perplexity API URL',
+                        placeholder: 'https://api.perplexity.ai/chat/completions',
+                        currentValue: this.settings.perplexityEndpoint,
+                        onSave: async (newUrl: string) => {
+                            this.settings.perplexityEndpoint = newUrl;
+                            await this.saveSettings();
+                        }
+                    });
+                    modal.open();
+                }
+            });
+
+            // Command to show current Perplexity settings
+            this.addCommand({
+                id: 'show-perplexity-settings',
+                name: 'Show perplexity settings',
+                callback: () => {
+                    new Notice(`Current Perplexity URL: ${this.settings.perplexityEndpoint}`);
+                    console.debug('Perplexity Settings:', this.settings);
+                }
+            });
+
+            // Command to ask Perplexity
+            this.addCommand({
+                id: 'ask-perplexity',
+                name: 'Ask perplexity',
+                editorCallback: (editor: Editor) => {
+                    try {
+                        if (!this.perplexityService) {
+                            new Notice('Perplexity service not initialized. Please check console for errors and try the debug command.');
+                            console.error('Perplexity service is not initialized');
+                            return;
+                        }
+                        if (!this.promptsService) {
+                            new Notice('Prompts service not initialized. Please check console for errors and try the debug command.');
+                            console.error('Prompts service is not initialized');
+                            return;
+                        }
+                        const modal = new PerplexityModal(this.app, editor, this.perplexityService, this.promptsService);
+                        modal.open();
+                    } catch (error) {
+                        console.error('Error opening Perplexity modal:', error);
+                        new Notice('Failed to open perplexity modal. Check console for details.');
+                    }
+                }
+            });
+            
+            // Add a fallback command that shows service status
+            this.addCommand({
+                id: 'perplexity-service-status',
+                name: 'Check perplexity service status',
+                callback: () => {
+                    if (this.perplexityService) {
+                        new Notice('Perplexity service is initialized and ready');
+                        console.debug('Perplexity service status: OK');
+                    } else {
+                        new Notice('Perplexity service is not initialized. Check console for errors.');
+                        console.error('Perplexity service status: FAILED');
+                    }
+                }
+            });
+            
+            console.debug('Perplexed Plugin: Perplexity commands registered successfully');
+        } catch (error) {
+            console.error('Perplexed Plugin: Error registering Perplexity commands:', error);
+            throw error;
+        }
+    }
+
+    private registerGeminiCommands(): void {
+        this.addCommand({
+            id: 'ask-gemini',
+            name: 'Ask Gemini',
+            editorCallback: (editor: Editor) => {
+                if (!this.geminiService) {
+                    new Notice('Gemini service not initialized. Set GEMINI_API_KEY in .env or settings, then reinitialize services.');
+                    return;
+                }
+                if (!this.promptsService) {
+                    new Notice('Prompts service not initialized.');
+                    return;
+                }
+                new GeminiModal(
+                    this.app,
+                    editor,
+                    this.geminiService,
+                    this.promptsService,
+                    {
+                        defaultModel: this.settings.geminiDefaultModel,
+                        enableGrounding: this.settings.geminiEnableGrounding,
+                        includeSearchSuggestions: this.settings.geminiIncludeSearchSuggestions,
+                        resolveCitationUrls: this.settings.geminiResolveCitationUrls,
+                    }
+                ).open();
+            },
+        });
+
+        this.addCommand({
+            id: 'gemini-service-status',
+            name: 'Check Gemini service status',
+            callback: () => {
+                if (this.geminiService && this.settings.geminiApiKey) {
+                    new Notice('Gemini service is initialized and an API key is configured.');
+                } else if (this.geminiService) {
+                    new Notice('Gemini service is initialized but no API key is set.');
+                } else {
+                    new Notice('Gemini service is not initialized.');
+                }
+            },
+        });
+    }
+
+    private registerClaudeCommands(): void {
+        this.addCommand({
+            id: 'ask-claude',
+            name: 'Ask Claude',
+            editorCallback: (editor: Editor) => {
+                if (!this.claudeService) {
+                    new Notice('Claude service not initialized. Set ANTHROPIC_API_KEY in .env or settings, then reinitialize services.');
+                    return;
+                }
+                if (!this.promptsService) {
+                    new Notice('Prompts service not initialized.');
+                    return;
+                }
+                new ClaudeModal(this.app, editor, this.claudeService, this.promptsService).open();
+            },
+        });
+
+        this.addCommand({
+            id: 'claude-service-status',
+            name: 'Check Claude service status',
+            callback: () => {
+                if (this.claudeService && this.settings.anthropicApiKey) {
+                    new Notice('Claude service is initialized and an API key is configured.');
+                } else if (this.claudeService) {
+                    new Notice('Claude service is initialized but no API key is set.');
+                } else {
+                    new Notice('Claude service is not initialized.');
+                }
+            },
+        });
+    }
+
+    private registerLMStudioCommands(): void {
+        // Command to update LM Studio URL
+        this.addCommand({
+            id: 'update-lmstudio-url',
+            name: 'Update lm studio URL',
+            callback: () => {
+                const modal = new URLUpdateModal(this.app, {
+                    title: 'Update LM Studio API URL',
+                    label: 'LM Studio API URL',
+                    placeholder: 'http://localhost:1234/v1/chat/completions',
+                    currentValue: this.settings.lmStudioEndpoint,
+                    onSave: async (newUrl: string) => {
+                        this.settings.lmStudioEndpoint = newUrl;
+                        await this.saveSettings();
+                    }
+                });
+                modal.open();
+            }
+        });
+
+        // Command to show current LM Studio settings
+        this.addCommand({
+            id: 'show-lmstudio-settings',
+            name: 'Show lm studio settings',
+            callback: () => {
+                new Notice(`Current LM Studio URL: ${this.settings.lmStudioEndpoint}`);
+                console.debug('LM Studio Settings:', this.settings);
+            }
+        });
+
+        // Command to ask LM Studio
+        this.addCommand({
+            id: 'ask-lmstudio',
+            name: 'Ask lm studio',
+            editorCallback: (editor: Editor) => {
+                try {
+                    if (!this.lmStudioService) {
+                        new Notice('Lm studio service not initialized. Please check console for errors and try the debug command.');
+                        console.error('LM Studio service is not initialized');
+                        return;
+                    }
+                    if (!this.promptsService) {
+                        new Notice('Prompts service not initialized. Please check console for errors and try the debug command.');
+                        console.error('Prompts service is not initialized');
+                        return;
+                    }
+                    const modal = new LMStudioModal(this.app, editor, this.lmStudioService, this.promptsService);
+                    modal.open();
+                } catch (error) {
+                    console.error('Error opening LM Studio modal:', error);
+                    new Notice('Failed to open lm studio modal. Check console for details.');
+                }
+            }
+        });
+    }
+
+    private registerArticleGeneratorCommands(): void {
+        // Register Article Generator command
+        this.addCommand({
+            id: 'generate-article',
+            name: 'Generate one-page article',
+            editorCallback: (editor: Editor) => {
+                try {
+                    if (!this.perplexityService) {
+                        new Notice('Perplexity service not initialized. Please check console for errors and try the debug command.');
+                        console.error('Perplexity service is not initialized');
+                        return;
+                    }
+                    if (!this.promptsService) {
+                        new Notice('Prompts service not initialized. Please check console for errors and try the debug command.');
+                        console.error('Prompts service is not initialized');
+                        return;
+                    }
+                    new ArticleGeneratorModal(this.app, editor, this.perplexityService, this.promptsService).open();
+                } catch (error) {
+                    console.error('Error opening Article Generator modal:', error);
+                    new Notice('Failed to open article generator modal. Check console for details.');
+                }
+            }
+        });
+    }
+
+    private registerTextEnhancementCommands(): void {
+        // Register Text Enhancement command
+        this.addCommand({
+            id: 'enhance-text',
+            name: 'Enhance selected text with perplexity',
+            editorCallback: (editor: Editor) => {
+                try {
+                    const selectedText = editor.getSelection();
+                    if (!selectedText || selectedText.trim() === '') {
+                        new Notice('Please select some text to enhance');
+                        return;
+                    }
+                    
+                    if (!this.perplexityService) {
+                        new Notice('Perplexity service not initialized. Please check console for errors and try the debug command.');
+                        console.error('Perplexity service is not initialized');
+                        return;
+                    }
+                    if (!this.promptsService) {
+                        new Notice('Prompts service not initialized. Please check console for errors and try the debug command.');
+                        console.error('Prompts service is not initialized');
+                        return;
+                    }
+                    
+                    new TextEnhancementModal(this.app, editor, this.perplexityService, this.promptsService, selectedText).open();
+                } catch (error) {
+                    console.error('Error opening Text Enhancement modal:', error);
+                    new Notice('Failed to open text enhancement modal. Check console for details.');
+                }
+            }
+        });
+    }
+
+    private registerTextEnhancementWithImagesCommands(): void {
+        // Register Get Related Images command
+        this.addCommand({
+            id: 'enhance-text-with-images',
+            name: 'Get related images for selected text',
+            editorCallback: (editor: Editor) => {
+                try {
+                    const selectedText = editor.getSelection();
+                    if (!selectedText || selectedText.trim() === '') {
+                        new Notice('Please select some text to get related images for');
+                        return;
+                    }
+                    
+                    if (!this.perplexityService) {
+                        new Notice('Perplexity service not initialized. Please check console for errors and try the debug command.');
+                        console.error('Perplexity service is not initialized');
+                        return;
+                    }
+                    if (!this.promptsService) {
+                        new Notice('Prompts service not initialized. Please check console for errors and try the debug command.');
+                        console.error('Prompts service is not initialized');
+                        return;
+                    }
+                    
+                    new TextEnhancementWithImagesModal(this.app, editor, this.perplexityService, this.promptsService, selectedText).open();
+                } catch (error) {
+                    console.error('Error opening Get Related Images modal:', error);
+                    new Notice('Failed to open get related images modal. Check console for details.');
+                }
+            }
+        });
+    }
+
+    private debugCommands(): void {
+        console.debug('=== Perplexed Plugin Debug Information ===');
+        console.debug('Plugin instance:', this);
+        console.debug('Settings:', this.settings);
+        console.debug('Services status:');
+        console.debug('- PromptsService:', this.promptsService ? 'Initialized' : 'NOT INITIALIZED');
+        console.debug('- PerplexityService:', this.perplexityService ? 'Initialized' : 'NOT INITIALIZED');
+        console.debug('- PerplexicaService:', this.perplexicaService ? 'Initialized' : 'NOT INITIALIZED');
+        console.debug('- LMStudioService:', this.lmStudioService ? 'Initialized' : 'NOT INITIALIZED');
+        
+        // Check if commands are registered in Obsidian
+        const registeredCommands = this.app.commands.commands;
+        const perplexedCommands = Object.keys(registeredCommands).filter(cmd => 
+            cmd.startsWith('perplexed') || 
+            cmd.includes('perplexity') || 
+            cmd.includes('perplexica') || 
+            cmd.includes('lmstudio') ||
+            cmd.includes('generate-article') ||
+            cmd.includes('enhance-text')
+        );
+        
+        console.debug('Registered Perplexed commands:', perplexedCommands);
+        
+        if (perplexedCommands.length === 0) {
+            new Notice('No perplexed commands found! Check console for details.');
+        } else {
+            new Notice(`Found ${perplexedCommands.length} Perplexed commands. Check console for details.`);
+        }
+        
+        console.debug('=== End Debug Information ===');
+    }
+
+    private async resetPromptsToDefault(): Promise<void> {
+        try {
+            console.debug('Perplexed Plugin: Resetting prompts to default...');
+            new Notice('Resetting prompts to default values...');
+            
+            // Reset all prompt settings to default values
+            this.settings.prompts = { ...DEFAULT_SETTINGS.prompts };
+            
+            // Save the updated settings
+            await this.saveSettings();
+            
+            // Reinitialize the prompts service with new settings
+            if (this.promptsService) {
+                this.promptsService.updateSettings(this.settings.prompts);
+                console.debug('Perplexed Plugin: PromptsService updated with default settings');
+            }
+            
+            new Notice('✅ Prompts reset to default values successfully');
+            console.debug('Perplexed Plugin: Prompts reset to default successfully');
+            
+        } catch (error) {
+            console.error('Perplexed Plugin: Failed to reset prompts to default:', error);
+            new Notice('❌ Failed to reset prompts to default. Check console for details.');
+        }
+    }
+
+    private reinitializeServices(): void {
+        try {
+            console.debug('Perplexed Plugin: Reinitializing services...');
+            new Notice('Reinitializing perplexed services...');
+            
+            // Reinitialize prompts service first
+            try {
+                this.promptsService = new PromptsService(this.settings.prompts);
+                console.debug('Perplexed Plugin: PromptsService reinitialized successfully');
+            } catch (error) {
+                console.error('Perplexed Plugin: Failed to reinitialize PromptsService:', error);
+                this.promptsService = null;
+            }
+            
+            // Reinitialize other services only if promptsService is available
+            if (this.promptsService) {
+                try {
+                    this.perplexityService = new PerplexityService({
+                        perplexityApiKey: this.settings.perplexityApiKey,
+                        perplexityEndpoint: this.settings.perplexityEndpoint,
+                        promptsService: this.promptsService,
+                        requestTemplate: this.settings.perplexityRequestTemplate,
+                        headerPosition: this.settings.headerPosition
+                    });
+                    console.debug('Perplexed Plugin: PerplexityService reinitialized successfully');
+                } catch (error) {
+                    console.error('Perplexed Plugin: Failed to reinitialize PerplexityService:', error);
+                    this.perplexityService = null;
+                }
+                
+                try {
+                    this.perplexicaService = new PerplexicaService({
+                        perplexicaEndpoint: this.settings.perplexicaEndpoint,
+                        localLLMPath: this.settings.localLLMPath,
+                        defaultModel: this.settings.defaultModel,
+                        promptsService: this.promptsService,
+                        requestTemplate: this.settings.requestBodyTemplate
+                    });
+                    console.debug('Perplexed Plugin: PerplexicaService reinitialized successfully');
+                } catch (error) {
+                    console.error('Perplexed Plugin: Failed to reinitialize PerplexicaService:', error);
+                    this.perplexicaService = null;
+                }
+                
+                try {
+                    this.lmStudioService = new LMStudioService({
+                        lmStudioEndpoint: this.settings.lmStudioEndpoint,
+                        promptsService: this.promptsService,
+                        requestTemplate: this.settings.lmStudioRequestTemplate
+                    });
+                    console.debug('Perplexed Plugin: LMStudioService reinitialized successfully');
+                } catch (error) {
+                    console.error('Perplexed Plugin: Failed to reinitialize LMStudioService:', error);
+                    this.lmStudioService = null;
+                }
+
+                try {
+                    this.claudeService = new ClaudeService({
+                        anthropicApiKey: this.settings.anthropicApiKey,
+                        promptsService: this.promptsService,
+                        headerPosition: this.settings.headerPosition,
+                    });
+                    console.debug('Perplexed Plugin: ClaudeService reinitialized successfully');
+                } catch (error) {
+                    console.error('Perplexed Plugin: Failed to reinitialize ClaudeService:', error);
+                    this.claudeService = null;
+                }
+
+                try {
+                    this.geminiService = new GeminiService({
+                        geminiApiKey: this.settings.geminiApiKey,
+                        promptsService: this.promptsService,
+                        headerPosition: this.settings.headerPosition,
+                    });
+                    console.debug('Perplexed Plugin: GeminiService reinitialized successfully');
+                } catch (error) {
+                    console.error('Perplexed Plugin: Failed to reinitialize GeminiService:', error);
+                    this.geminiService = null;
+                }
+            } else {
+                // If promptsService failed, set all other services to null
+                this.perplexityService = null;
+                this.perplexicaService = null;
+                this.lmStudioService = null;
+                this.claudeService = null;
+                this.geminiService = null;
+                console.debug('Perplexed Plugin: Skipping service reinitialization due to PromptsService failure');
+            }
+            
+            new Notice('Services reinitialization completed. Check console for details.');
+            console.debug('Perplexed Plugin: Services reinitialization completed');
+            
+        } catch (error) {
+            console.error('Perplexed Plugin: Error during services reinitialization:', error);
+            new Notice('Failed to reinitialize services. Check console for details.');
+        }
+    }
+
+    private buildDirectoryTemplateSettings(): DirectoryTemplateSettings {
+        return {
+            perplexityApiKey: this.settings.perplexityApiKey,
+            perplexityEndpoint: this.settings.perplexityEndpoint,
+            templatesRoot: this.settings.directoryTemplatesRoot,
+            partialsRoot: this.settings.directoryTemplatesPartialsRoot,
+            preamblesRoot: this.settings.directoryTemplatesPreamblesRoot,
+            systemPreambles: this.settings.directoryTemplatesSystemPreambles,
+            userPreambles: this.settings.directoryTemplatesUserPreambles,
+            frontmatterWhitelist: this.settings.directoryTemplatesFrontmatterWhitelist,
+            requestTimeoutMs: this.settings.directoryTemplatesRequestTimeoutMs,
+        };
+    }
+
+    private async runApplyDirectoryTemplate(): Promise<void> {
+        const target = this.app.workspace.getActiveFile();
+        if (!target) {
+            new Notice('No active file.');
+            return;
+        }
+        if (!this.settings.perplexityApiKey) {
+            new Notice('Perplexity API key is not set. Configure it in perplexed settings.');
+            return;
+        }
+
+        const root = this.settings.directoryTemplatesRoot;
+        const all = listDirectoryTemplates(this.app, root);
+        if (all.length === 0) {
+            new Notice(`No templates found under "${root}".`);
+            return;
+        }
+
+        const matching = all.filter(t => pathMatchesGlobs(target.path, t.appliesToPaths));
+        if (matching.length === 0) {
+            new Notice("No template's applies-to-paths matches this file.");
+            return;
+        }
+
+        const dirSettings: DirectoryTemplateSettings = this.buildDirectoryTemplateSettings();
+
+        // Load every matching template up front so the run modal can show
+        // each one's cft model as the default in the model selector.
+        const choices: TemplateRunChoice[] = [];
+        for (const tf of matching) {
+            const parsed = await loadDirectoryTemplate(this.app, tf.file);
+            if (parsed) choices.push({ template: parsed, title: tf.title });
+        }
+        if (choices.length === 0) {
+            new Notice('Template parse error: missing or malformed cft block.');
+            return;
+        }
+
+        new DirectoryTemplateRunModal(this.app, choices, (template, model) => {
+            void applyDirectoryTemplate(this.app, dirSettings, target, template, { modelOverride: model });
+        }).open();
+    }
+
+    private runApplyDirectoryTemplateBatch(): void {
+        if (!this.settings.perplexityApiKey) {
+            new Notice('Perplexity API key is not set. Configure it in perplexed settings.');
+            return;
+        }
+
+        new FolderPickerModal(this.app, (folder) => {
+            void (async () => {
+                const folderPath = folder.path;
+                const filesInFolder = listMarkdownFilesInFolder(this.app, folderPath);
+                if (filesInFolder.length === 0) {
+                    new Notice(`No markdown files in "${folderPath || '/'}".`);
+                    return;
+                }
+
+                const all = listDirectoryTemplates(this.app, this.settings.directoryTemplatesRoot);
+                const matchingTemplates = all.filter(t =>
+                    filesInFolder.some(f => pathMatchesGlobs(f.path, t.appliesToPaths))
+                );
+                if (matchingTemplates.length === 0) {
+                    new Notice('No template matches any file in this folder.');
+                    return;
+                }
+
+                new DirectoryTemplatePickerModal(this.app, matchingTemplates, (chosen) => {
+                    void (async () => {
+                        const parsed = await loadDirectoryTemplate(this.app, chosen.file);
+                        if (!parsed) {
+                            new Notice('Template parse error: missing or malformed cft block.');
+                            return;
+                        }
+
+                        const filesForThisTemplate = filesInFolder.filter(f =>
+                            pathMatchesGlobs(f.path, chosen.appliesToPaths)
+                        );
+
+                        let fillCount = 0;
+                        let appendCount = 0;
+                        for (const f of filesForThisTemplate) {
+                            const content = await this.app.vault.cachedRead(f);
+                            const afterFm = content.replace(/^---\n[\s\S]*?\n---\n?/, '');
+                            if (afterFm.trim().length === 0) fillCount++;
+                            else appendCount++;
+                        }
+
+                        const dirSettings: DirectoryTemplateSettings = this.buildDirectoryTemplateSettings();
+
+                        new BatchConfirmModal(this.app, {
+                            folderPath,
+                            templateTitle: chosen.title,
+                            fileCount: filesForThisTemplate.length,
+                            fillCount,
+                            appendCount,
+                        }, () => {
+                            void this.executeBatch(dirSettings, parsed, filesForThisTemplate);
+                        }).open();
+                    })();
+                }).open();
+            })();
+        }).open();
+    }
+
+    private async executeBatch(
+        dirSettings: DirectoryTemplateSettings,
+        parsed: ParsedTemplate,
+        files: TFile[],
+    ): Promise<void> {
+        this.batchCancelled = false;
+        const progressNotice = new Notice(`Batch starting on ${files.length.toString()} files…`, 0);
+
+        try {
+            const result = await applyDirectoryTemplateBatch(
+                this.app,
+                dirSettings,
+                files,
+                parsed,
+                (p) => {
+                    progressNotice.setMessage(
+                        `Applying ${p.current.toString()}/${p.total.toString()}: ${p.file.basename}`
+                    );
+                },
+                () => this.batchCancelled,
+            );
+
+            const summary = [
+                `Batch ${result.cancelled ? 'cancelled' : 'complete'}.`,
+                `Filled: ${result.appliedFill.toString()}`,
+                `Appended: ${result.appliedAppend.toString()}`,
+                `Errored: ${result.errored.toString()}`,
+            ].join(' ');
+            new Notice(summary, 8000);
+
+            if (result.errors.length > 0) {
+                console.warn('Directory-template batch errors:', result.errors);
+            }
+        } catch (err) {
+            const msg = err instanceof Error ? err.message : String(err);
+            new Notice(`Batch failed: ${msg}`);
+        } finally {
+            progressNotice.hide();
+            this.batchCancelled = false;
+        }
+    }
 }
 
-const { randomUUID } = new ShortUniqueId({ length: 6 });
-
-interface driveValues {
-	refreshToken: string;
-	accessToken: string;
-	accessTokenExpiryTime: string;
-	refreshAccessTokenURL: string;
-	fetchRefreshTokenURL: string;
-	validToken: Boolean;
-	vaultId: any;
-	vaultInit: boolean;
-	filesList: any[];
-	rootFolderId: any;
-	refresh: boolean;
-	refreshTime: string;
-	autoRefreshBinaryFiles: string;
-	errorLoggingToFile: boolean;
-	verboseLoggingToFile: boolean;
-	blacklistPaths: string[];
-	forceFocus: boolean;
-	removeMergeNotifsSettings: boolean;
-	//writingFile: boolean;
-	//syncQueue: boolean;
-}
-
-const DEFAULT_SETTINGS: driveValues = {
-	refreshToken: "",
-	accessToken: "",
-	accessTokenExpiryTime: "",
-	refreshAccessTokenURL:
-		"https://red-formula-303406.ue.r.appspot.com/auth/obsidian/refresh-token",
-	fetchRefreshTokenURL:
-		"https://red-formula-303406.ue.r.appspot.com/auth/obsidian",
-	validToken: false,
-	vaultId: "",
-	filesList: [],
-	vaultInit: false,
-	rootFolderId: "",
-	refresh: false,
-	refreshTime: "5",
-	autoRefreshBinaryFiles: "1",
-	errorLoggingToFile: false,
-	verboseLoggingToFile: false,
-	blacklistPaths: [],
-	forceFocus: false,
-	removeMergeNotifsSettings: false,
-	//writingFile: false,
-	//syncQueue: false,
-};
-
-const metaPattern = /^---\n[\s\S]*---/;
-const driveDataPattern = /\nlastSync:.*\n/;
-
-interface pendingSyncItemInterface {
-	fileID?: string;
-	action: "UPLOAD" | "MODIFY" | "RENAME" | "DELETE";
-	timeStamp: string;
-	newFileName?: string;
-	isBinaryFile?: boolean;
-}
-
-export default class driveSyncPlugin extends Plugin {
-	settings: driveValues;
-	cloudFiles: string[] = [];
-	localFiles: string[] = [];
-	timer: any = null;
-	alreadyRefreshing: boolean = false;
-	writingFile: boolean = false;
-	syncQueue: string[] = [];
-	isUploadingCurrentFile: boolean = false;
-	latestContentThatWasSynced: ArrayBuffer | null = null;
-	currentlyUploading: string | null = null; // to mitigate the issue of deleting recently created file while its being uploaded and gets overlaped with the auto-trash function call
-	renamingList: string[] = [];
-	deletingList: string[] = [];
-	statusBarItem = this.addStatusBarItem().createEl("span", "sync_icon_still");
-	pendingSync: boolean = false;
-	connectedToInternet: boolean = false;
-	checkingForConnectivity: boolean = false;
-	pendingSyncItems: Array<pendingSyncItemInterface> = [];
-	renamedWhileOffline: Map<string, string> = new Map();
-	finalNamesForFileID: Map<string, string> = new Map();
-	completingPendingSync: boolean = false;
-	verboseLoggingForTheFirstTimeInThisSession: boolean = true;
-	errorLoggingForTheFirstTimeInThisSession: boolean = true;
-	lastErrorTime: Date = new Date(0);
-	totalErrorsWithinAMinute: number = 0;
-	haltAllOperations: boolean = false;
-	adapter: FileSystemAdapter;
-	attachmentTrackingInitializationComplete: boolean = false;
-	layoutReady: boolean = false;
-
-	completeAllPendingSyncs = async () => {
-		if (!this.app.workspace.layoutReady) {
-			// Workspace is still loading, do nothing
-			return;
-		}
-		if (this.haltAllOperations) {
-			return;
-		}
-		if (this.completingPendingSync) {
-			return;
-		}
-		/* files created when offline are assigned a dummy fileId 
-		so the following Map keeps track of the dummy fielId to the actual fileId 
-		which is retrieved when the file is uploadedf for the first time when online */
-		await this.writeToVerboseLogFile(
-			"LOG: Entering completeAllPendingSyncs"
-		);
-		let uuidToFileIdMap = new Map();
-
-		let pendingSyncFile = this.app.vault.getAbstractFileByPath(
-			PENDING_SYNC_FILE_NAME
-		);
-
-		pendingSyncFile instanceof TFile
-			? console.log(
-					JSON.parse(await this.app.vault.read(pendingSyncFile))
-			  )
-			: console.log("No file");
-
-		let {
-			pendingSyncItems,
-			finalNamesForFileID,
-		}: {
-			pendingSyncItems: Array<pendingSyncItemInterface>;
-			finalNamesForFileID: Record<string, string>;
-		} =
-			pendingSyncFile instanceof TFile
-				? JSON.parse(await this.app.vault.read(pendingSyncFile))
-				: { pendingSyncItems: [], finalNamesForFileID: new Map() };
-
-		this.pendingSyncItems = [...pendingSyncItems];
-		this.finalNamesForFileID = objectToMap(finalNamesForFileID);
-
-		let finalNamesForFileIDMap = objectToMap(finalNamesForFileID);
-
-		console.log(pendingSyncItems, finalNamesForFileID);
-
-		if (pendingSyncItems.length) {
-			new Notice(
-				"ATTENTION: Syncing all pending changes since app was last online!"
-			);
-			new Notice(
-				"Please wait till the sync is complete before proceeding with anything else..."
-			);
-		}
-
-		try {
-			this.settings.filesList = await getFilesList(
-				this.settings.accessToken,
-				this.settings.vaultId
-			); // to get the last modifiedTimes
-			this.completingPendingSync = true;
-			for (var item of pendingSyncItems) {
-				let lastCloudUpdateTime = new Date(0);
-				let pendingSyncTime = new Date(item.timeStamp);
-				this.settings.filesList.forEach((file) => {
-					if (file.id == item.fileID) {
-						lastCloudUpdateTime = new Date(file.modifiedTime!);
-					}
-				});
-				switch (item.action) {
-					case "DELETE":
-						if (lastCloudUpdateTime < pendingSyncTime) {
-							await deleteFile(
-								this.settings.accessToken,
-								uuidToFileIdMap.get(item.fileID)
-									? uuidToFileIdMap.get(item.fileID)
-									: item.fileID
-							);
-						}
-						await this.writeToVerboseLogFile(
-							"LOG: Deleted file. [PS]"
-						);
-						break;
-					case "UPLOAD":
-						var fileName = finalNamesForFileIDMap.get(item.fileID!);
-						var file = this.app.vault.getAbstractFileByPath(
-							fileName!
-						);
-						let actualId;
-						if (file instanceof TFile) {
-							if (item.isBinaryFile) {
-								actualId = await this.uploadNewAttachment(file);
-							} else {
-								actualId = await this.uploadNewNotesFile(file);
-							}
-						}
-						uuidToFileIdMap.set(item.fileID, actualId);
-						finalNamesForFileIDMap.set(actualId, fileName!);
-						this.finalNamesForFileID.set(actualId, fileName!);
-						await this.writeToVerboseLogFile(
-							"LOG: Uploaded file. [PS]"
-						);
-						break;
-					case "MODIFY":
-						if (pendingSyncTime > lastCloudUpdateTime) {
-							let file = this.app.vault.getAbstractFileByPath(
-								finalNamesForFileIDMap.get(item.fileID!)!
-							);
-							if (file instanceof TFile) {
-								await this.updateLastSyncMetaTag(file);
-								var buffer = await this.app.vault.readBinary(
-									file
-								);
-								await modifyFile(
-									this.settings.accessToken,
-									uuidToFileIdMap.get(item.fileID)
-										? uuidToFileIdMap.get(item.fileID)
-										: item.fileID,
-									buffer
-								);
-							}
-							await this.writeToVerboseLogFile(
-								"LOG: Modified file. [PS]"
-							);
-						}
-						break;
-					case "RENAME":
-						if (pendingSyncTime > lastCloudUpdateTime) {
-							await renameFile(
-								this.settings.accessToken,
-								uuidToFileIdMap.get(item.fileID)
-									? uuidToFileIdMap.get(item.fileID)
-									: item.fileID,
-								finalNamesForFileIDMap.get(item.fileID!)
-							);
-						}
-						await this.writeToVerboseLogFile(
-							"LOG: Renamed file. [PS]"
-						);
-						break;
-				}
-				this.pendingSyncItems.shift();
-				await this.writeToPendingSyncFile();
-				new Notice(
-					`Synced ${pendingSyncItems.indexOf(item) + 1}/${
-						pendingSyncItems.length
-					} changes`
-				);
-				await this.writeToVerboseLogFile(
-					"LOG: completeAllPendingSyncs: Finished one operation"
-				);
-			}
-		} catch (err) {
-			if (err.message.includes("404")) {
-				this.pendingSyncItems.shift();
-				await this.writeToPendingSyncFile();
-			}
-			this.completingPendingSync = false;
-			await this.notifyError();
-			await this.checkForConnectivity();
-			await this.writeToErrorLogFile(err);
-		}
-		if (pendingSyncItems.length) {
-			new Notice("Sync complete!");
-			this.finalNamesForFileID.clear();
-			await this.writeToPendingSyncFile();
-			await this.writeToVerboseLogFile(
-				"LOG: completeAllPendingSyncs: Finished allpendingSyncs"
-			);
-		}
-		this.completingPendingSync = false;
-		this.pendingSync = false;
-		await this.refreshAll();
-		await this.writeToVerboseLogFile("LOG: Exited completeAllPendingSyncs");
-	};
-
-	checkForConnectivity = async () => {
-		if (this.haltAllOperations) {
-			return;
-		}
-		try {
-			await this.writeToVerboseLogFile(
-				"LOG: Entering checkForConnectivity"
-			);
-			await fetch("https://www.github.com/stravo1", {
-				mode: "no-cors",
-			});
-
-			if (!this.connectedToInternet) {
-				new Notice("Connectivity re-established!");
-				this.connectedToInternet = true;
-				this.checkingForConnectivity = false;
-			}
-			await this.completeAllPendingSyncs();
-		} catch (err) {
-			console.log("Checking for connectivity again after 5sec...");
-			if (this.connectedToInternet) {
-				console.log("error: " + err); // (currently fetch failed)
-				new Notice("Connection lost :(");
-				this.connectedToInternet = false;
-				await this.writeToErrorLogFile(err);
-			}
-			setTimeout(() => {
-				this.checkingForConnectivity = true;
-				this.checkForConnectivity();
-			}, 5000);
-		}
-		await this.writeToVerboseLogFile("LOG: Exited checkForConnectivity");
-	};
-
-	notifyError = async () => {
-		if (!this.app.workspace.layoutReady || !this.layoutReady) {
-			// Workspace is still loading, do nothing
-			return;
-		}
-		if (this.haltAllOperations) {
-			return;
-		}
-		if (!this.pendingSync) {
-			this.pendingSync = true;
-			new Notice("ERROR: Something went wrong! Sync might be paused!");
-		}
-		await this.writeToVerboseLogFile("LOG: Error occured");
-		// check if the time between this error and last error was less than a minute:
-		if (new Date().getTime() - this.lastErrorTime.getTime() < 60000) {
-			this.totalErrorsWithinAMinute++;
-		} else {
-			this.totalErrorsWithinAMinute = 0;
-		}
-		if (this.totalErrorsWithinAMinute > 5) {
-			this.haltAllOperations = true;
-			setTimeout(async () => {
-				await this.writeToErrorLogFile(
-					new Error("FATAL ERROR: Too many errors within a minute.")
-				);
-				await this.writeToVerboseLogFile(
-					"LOG: Too many errors within a minute. Halting all operations."
-				);
-				new Notice(
-					"FATAL ERROR: Too many errors within a minute. Please reload the plug-in. If error persists, check the Verbose and Error Logs (turn them on in plug-in settings).",
-					5000
-				);
-				new Notice(
-					"Report issue by attaching the log files at https://github.com/stravo1/obsidian-gdrive-sync/issues/new",
-					5000
-				);
-			}, 1500);
-		}
-
-		this.lastErrorTime = new Date();
-	};
-
-	cleanInstall = async () => {
-		if (this.haltAllOperations) {
-			return;
-		}
-		try {
-			await this.writeToVerboseLogFile("LOG: Enerting cleanInstall");
-			if (!this.settings.rootFolderId) {
-				await this.writeToErrorLogFile(
-					new Error("ERROR: Root folder does not exist")
-				);
-				new Notice(
-					"ERROR: Root folder does not exist. Please reload the plug-in."
-				);
-				new Notice(
-					"If this error persists, please check if there is a folder named 'obsidian' in your Google Drive."
-				);
-				new Notice(
-					"If there is one and you are still getting this error, consider joining the Discord server for help.",
-					3000
-				);
-				new Notice(
-					"If there is no folder named 'obsidian' in your Drive root, try using the 'Create root folder' button in Settings.",
-					4000
-				);
-				return;
-			}
-			new Notice("Creating vault in Google Drive...");
-			var res = await uploadFolder(
-				this.settings.accessToken,
-				this.app.vault.getName(),
-				this.settings.rootFolderId
-			);
-			this.settings.vaultId = res;
-			new Notice("Vault created!");
-			new Notice(
-				"Uploading files, this might take time. Please wait...",
-				6000
-			);
-			var filesList = this.app.vault.getFiles();
-			let noOfFiles = filesList.length;
-			let count = 0;
-			for (const file of filesList) {
-				// const buffer: any = await this.app.vault.readBinary(file);
-				if (file.extension != "md") {
-					await this.uploadNewAttachment(file);
-				} else {
-					await this.uploadNewNotesFile(file);
-				}
-				count++;
-				new Notice("Uploaded " + count + "/" + noOfFiles + " files");
-			}
-			new Notice("Files uploaded!");
-			new Notice("Please reload the plug-in.", 5000);
-		} catch (err) {
-			new Notice("ERROR: Unable to initialize Vault in Google Drive");
-			await this.checkForConnectivity();
-			await this.writeToErrorLogFile(err);
-		}
-		await this.writeToVerboseLogFile("LOG: Exited cleanInstall");
-	};
-
-	refreshAll = async () => {
-		if (!this.app.workspace.layoutReady || !this.layoutReady) {
-			// Workspace is still loading, do nothing
-			return;
-		}
-		if (this.haltAllOperations) {
-			return;
-		}
-		await this.writeToVerboseLogFile("LOG: Entering refreshAll");
-		try {
-			if (!this.connectedToInternet) {
-				console.log("ERROR: Connectivity lost, not refreshing...");
-				return;
-			}
-			if (
-				new Date(this.settings.accessTokenExpiryTime).getTime() -
-					new Date().getTime() <
-				1800000
-				// half hour
-			) {
-				await this.writeToVerboseLogFile(
-					"LOG: Token will expire in 30mins, getting new token..."
-				);
-				var res: any = await getAccessToken(
-					this.settings.refreshToken,
-					this.settings.refreshAccessTokenURL,
-					false
-				);
-				if (res == "error") {
-					new Notice("ERROR: Couldn't fetch new accessToken :(");
-					await this.writeToErrorLogFile(
-						new Error("ERROR: Couldn't fetch new accessToken")
-					);
-					return;
-				}
-				this.settings.accessToken = res.access_token;
-				this.settings.accessTokenExpiryTime = res.expiry_date;
-				this.saveSettings();
-			}
-			if (this.pendingSync) {
-				console.log("PAUSED: Writing pending syncs, not refreshing...");
-				if (!this.checkingForConnectivity) {
-					setTimeout(() => {
-						this.checkForConnectivity();
-					}, 5000);
-				}
-				return;
-			}
-			if (this.alreadyRefreshing) {
-				return;
-			} else {
-				this.alreadyRefreshing = true;
-			}
-			await this.refreshFilesListInDriveAndStoreInSettings();
-			/* refresh both the files list */
-			this.cloudFiles = [];
-			this.localFiles = [];
-
-			this.settings.filesList.map((file) =>
-				this.cloudFiles.push(file.name)
-			);
-			this.app.vault
-				.getFiles()
-				.map((file) => this.localFiles.push(file.path));
-
-			var toDownload = this.cloudFiles.filter(
-				(file) =>
-					!this.localFiles.includes(file) && // is not currently in vault
-					!this.renamingList.includes(file) && // is not currently being renamed
-					!this.deletingList.includes(file) && // is not currently being deleted
-					!this.isInBlacklist(file) // is not in blacklist
-			);
-
-			await this.writeToVerboseLogFile(
-				"LOG: Deleting files in refreshAll"
-			);
-			/* delete tracked but not-in-drive-anymore files */
-			this.app.vault.getFiles().map(async (file) => {
-				if (
-					!this.cloudFiles.includes(file.path) &&
-					!this.renamingList.includes(file.path) &&
-					!this.deletingList.includes(file.path) &&
-					file.path != this.currentlyUploading
-				) {
-					if (file.extension != "md") {
-						if (await this.isAttachmentSynced(file.path)) {
-							this.app.vault.trash(file, false);
-							let convertedSafeFilename = file.path.replace(
-								/\//g,
-								"."
-							);
-							try {
-								await this.adapter.remove(
-									`${ATTACHMENT_TRACKING_FOLDER_NAME}/${convertedSafeFilename}`
-								);
-							} catch (err) {
-								await this.writeToErrorLogFile(err);
-								await this.writeToVerboseLogFile(
-									"LOG: Could not delete " +
-										`${ATTACHMENT_TRACKING_FOLDER_NAME}/${convertedSafeFilename}`
-								);
-							}
-							return;
-						}
-					}
-					var content = await this.app.vault.read(file);
-					if (driveDataPattern.test(content)) {
-						this.app.vault.trash(file, false);
-					}
-				}
-			});
-
-			await this.writeToVerboseLogFile(
-				"LOG: Downloading missing files in refreshAll"
-			);
-			/* download new files or files that were renamed */
-			if (toDownload.length) {
-				new Notice("Downloading missing files", 2500);
-
-				this.settings.refresh = true;
-				for (const dFile of toDownload) {
-					var id;
-					this.settings.filesList.map((file: any) => {
-						//console.log(file.name);
-
-						if (file.name == dFile) {
-							id = file.id;
-						}
-					});
-					//console.log(id, dFile);
-
-					var file = await getFile(this.settings.accessToken, id);
-					let isBinary =
-						file[0].split(".")[file[0].split(".").length - 1] !=
-						"md";
-					try {
-						await this.app.vault.createBinary(file[0], file[1]);
-						if (isBinary) {
-							let safeFilename = file[0].replace(/\//g, ".");
-							try {
-								await this.app.vault.create(
-									`${ATTACHMENT_TRACKING_FOLDER_NAME}/${safeFilename}`,
-									""
-								);
-							} catch (err) {
-								await this.writeToVerboseLogFile(
-									`LOG: ${ATTACHMENT_TRACKING_FOLDER_NAME}/${safeFilename} could not be created`
-								);
-								await this.writeToErrorLogFile(err);
-							}
-						}
-					} catch (err) {
-						await this.writeToVerboseLogFile(
-							"LOG: Couldn't create file directly, trying to create folder first..."
-						);
-						var path = file[0].split("/").slice(0, -1).join("/");
-						// console.log(path);
-
-						try {
-							await this.app.vault.createFolder(path);
-						} catch (err) {
-							if (err.message.includes("Folder already exists")) {
-								await this.writeToVerboseLogFile(
-									"LOG: Caught: Folder exists"
-								);
-							}
-						}
-						try {
-							await this.app.vault.createBinary(file[0], file[1]);
-						} catch (err) {
-							await this.writeToVerboseLogFile(
-								"LOG: Couldn't create file and folder, details of path, file[0]: " +
-									path +
-									", " +
-									file[0]
-							);
-							await this.writeToErrorLogFile(err);
-							await this.notifyError();
-						}
-					}
-					new Notice(
-						`Downloaded ${toDownload.indexOf(dFile) + 1}/${
-							toDownload.length
-						} files`,
-						1000
-					);
-				}
-				new Notice("Download complete :)", 2500);
-				// new Notice(
-				// 	"Sorry to make you wait for so long. Please continue with your work",
-				// 	5000
-				// );
-
-				this.settings.refresh = false;
-			}
-			if (!this.attachmentTrackingInitializationComplete) {
-				console.log("Initializing attachment tracking...");
-				for (const file of this.cloudFiles) {
-					if (file.slice(-3) == ".md") {
-						continue;
-					}
-					console.log("Trying to attachment tracking file: " + file);
-
-					let convertedSafeFilename = file.replace(/\//g, ".");
-					try {
-						await this.app.vault.create(
-							`${ATTACHMENT_TRACKING_FOLDER_NAME}/${convertedSafeFilename}`,
-							""
-						);
-					} catch (err) {
-						if (err.message.includes("exist")) {
-							await this.writeToVerboseLogFile(
-								"LOG: Already tracked: " + file
-							);
-						} else {
-							await this.writeToErrorLogFile(err);
-							await this.writeToVerboseLogFile(
-								"LOG: Could not create " +
-									`${ATTACHMENT_TRACKING_FOLDER_NAME}/${convertedSafeFilename}`
-							);
-						}
-					}
-				}
-				this.attachmentTrackingInitializationComplete = true;
-			}
-			this.getLatestContent(this.app.workspace.getActiveFile()!);
-			this.alreadyRefreshing = false;
-			//console.log("refreshing filelist...");
-		} catch (err) {
-			this.notifyError();
-			this.checkForConnectivity();
-			await this.writeToErrorLogFile(err);
-			this.alreadyRefreshing = false;
-		}
-		await this.writeToVerboseLogFile("LOG: Exited refreshAll");
-	};
-	uploadNewNotesFile = async (newFile: TFile) => {
-		if (this.haltAllOperations) {
-			return;
-		}
-		if (this.isInBlacklist(newFile)) {
-			new Notice(
-				"File in blacklist. It will be uploaded but not be synced/tracked automatically by the plugin."
-			);
-		}
-		try {
-			await this.writeToVerboseLogFile(
-				"LOG: Entering uploadNewNotesFile"
-			);
-			if (!this.connectedToInternet) {
-				console.log("ERROR: Connectivity lost, not uploading...");
-				return;
-			}
-			if (
-				newFile.extension != "md" ||
-				newFile.path == this.currentlyUploading
-			)
-				return; // skip binary files or the file which is already being uploaded
-			this.writingFile = true;
-			this.currentlyUploading = newFile.path;
-
-			new Notice("Uploading new file to Google Drive!");
-
-			var content = await this.app.vault.read(newFile);
-
-			var metaExists = metaPattern.test(content);
-			var driveDataExists = driveDataPattern.test(content);
-			if (!metaExists) {
-				await this.app.vault.modify(
-					newFile,
-					`---\nlastSync: ${new Date().toString()}\n---\n` + content
-				);
-			} else if (!driveDataExists) {
-				await this.app.vault.modify(
-					newFile,
-					content.replace(
-						/^---\n/g,
-						`---\nlastSync: ${new Date().toString()}\n`
-					)
-				);
-			}
-
-			var buffer: any = await this.app.vault.readBinary(newFile);
-			var id = await uploadFile(
-				this.settings.accessToken,
-				newFile.path,
-				buffer,
-				this.settings.vaultId
-			);
-
-			this.writingFile = false;
-			this.cloudFiles.push(newFile.path);
-			await this.refreshFilesListInDriveAndStoreInSettings();
-			this.currentlyUploading = null;
-
-			new Notice("Uploaded!");
-			await this.writeToVerboseLogFile("LOG: Exited uploadNewNotesFile");
-			return id;
-		} catch (err) {
-			await this.notifyError();
-			await this.checkForConnectivity();
-			await this.writeToErrorLogFile(err);
-			this.writingFile = false;
-			this.currentlyUploading = null;
-			await this.writeToVerboseLogFile("LOG: Exited uploadNewNotesFile");
-		}
-	};
-
-	getLatestContent = async (
-		file: TFile,
-		forced: "forced" | false = false
-	) => {
-		if (!this.app.workspace.layoutReady || !this.layoutReady) {
-			// Workspace is still loading, do nothing
-			return;
-		}
-		try {
-			if (this.haltAllOperations) {
-				return;
-			}
-			await this.writeToVerboseLogFile("LOG: Entering getLatestContent");
-			if (!this.connectedToInternet) {
-				console.log(
-					"ERROR: Connectivity lost, not fetching latest content..."
-				);
-				return;
-			}
-			if (
-				this.cloudFiles.includes(file?.path!) &&
-				!this.syncQueue.length
-			) {
-				var index = this.cloudFiles.indexOf(file?.path!);
-
-				var cloudDate = new Date(
-					this.settings.filesList[index].modifiedTime
-				);
-				var content: string;
-				var timeStamp: any;
-				var isBinaryFile: boolean = false;
-
-				if (file.extension != "md") {
-					isBinaryFile = true;
-					timeStamp = [file.stat.mtime];
-				} else {
-					content = await this.app.vault.cachedRead(file!);
-					timeStamp = content.match(/lastSync:.*/);
-				}
-
-				//console.log(cloudDate, new Date(timeStamp![0]));
-
-				if (
-					forced == "forced" ||
-					(timeStamp /* check if timeStamp is present */ &&
-						cloudDate.getTime() >
-							new Date(timeStamp![0]).getTime() +
-								(isBinaryFile
-									? 5000
-									: 3000)) /* allow 3sec/5sec (needs to be tested) delay in 'localDate' */
-				) {
-					if (
-						isBinaryFile &&
-						!parseInt(this.settings.autoRefreshBinaryFiles)
-					) {
-						return;
-					}
-					// new Notice("Downloading updated file!");
-					var id;
-					this.settings.filesList.map((fileItem: any) => {
-						if (fileItem.name == file.path) {
-							id = fileItem.id;
-						}
-					});
-					var res = await getFile(this.settings.accessToken, id);
-					// console.log("here", this.writingFile, res);
-
-					if (
-						this.syncQueue.length ||
-						// isBinaryFile ||
-						this.writingFile
-					)
-						return;
-
-					//console.log(this.syncQueue);
-					this.latestContentThatWasSynced = res[1];
-
-					await this.app.vault
-						.modifyBinary(file, res[1])
-						.catch(async () => {
-							var path = res[0].split("/").slice(0, -1).join("/");
-							//console.log(path);
-
-							await this.app.vault.createFolder(path);
-							await this.app.vault.modifyBinary(res[0], res[1]);
-						});
-					// new Notice("Sync complete :)");
-				}
-			}
-		} catch (err) {
-			await this.notifyError();
-			await this.checkForConnectivity();
-			await this.writeToErrorLogFile(err);
-		}
-		await this.writeToVerboseLogFile("LOG: Exited getLatestContent");
-	};
-	emptySyncQueue = async () => {
-		if (this.haltAllOperations) {
-			return;
-		}
-
-		await this.writeToVerboseLogFile("LOG: Entering emptySyncQueue");
-		let path = this.syncQueue.shift(); // this tells that, uptil this moment, all changes are being accounted for the 1st file in sync queue
-		this.isUploadingCurrentFile = true; // this ensures only one upload operation is going on at a time
-
-		let file = this.app.vault.getAbstractFileByPath(path!);
-		if (!(file instanceof TFile)) {
-			return;
-		}
-
-		var id;
-		this.settings.filesList.map((f: any) => {
-			if (f.name == file!.path) {
-				id = f.id;
-			}
-		});
-		if (file.extension == "md") await this.updateLastSyncMetaTag(file);
-		var buffer = await this.app.vault.readBinary(file);
-		await modifyFile(this.settings.accessToken, id, buffer);
-		await this.refreshFilesListInDriveAndStoreInSettings();
-
-		this.statusBarItem.classList.replace("sync_icon", "sync_icon_still");
-		setIcon(this.statusBarItem, "checkmark");
-
-		this.isUploadingCurrentFile = false;
-		await this.writeToVerboseLogFile("LOG: Exited emptySyncQueue");
-	};
-
-	checkAndEmptySyncQueue = async () => {
-		if (!this.app.workspace.layoutReady || !this.layoutReady) {
-			// Workspace is still loading, do nothing
-			return;
-		}
-		if (
-			this.haltAllOperations ||
-			this.completingPendingSync ||
-			!this.connectedToInternet
-		)
-			return;
-		await this.writeToVerboseLogFile(
-			"LOG: Entering checkAndEmptySyncQueue"
-		);
-		if (this.haltAllOperations) {
-			return;
-		}
-		if (this.syncQueue.length && !this.isUploadingCurrentFile) {
-			this.emptySyncQueue();
-		}
-	};
-
-	uploadNewAttachment = async (e: TFile) => {
-		if (this.haltAllOperations) {
-			return;
-		}
-		if (this.isInBlacklist(e)) {
-			new Notice(
-				"File is listed in blacklist. It will be uploaded but not be tracked by the plugin automatically."
-			);
-		}
-		try {
-			await this.writeToVerboseLogFile(
-				"LOG: Entering uploadNewAttachment"
-			);
-			new Notice("Uploading new attachment!");
-			var buffer: any = await this.app.vault.readBinary(e);
-
-			this.currentlyUploading = e.path;
-
-			this.cloudFiles.push(e.path);
-			try {
-				await this.app.vault.create(
-					`${ATTACHMENT_TRACKING_FOLDER_NAME}/${e.path.replace(
-						/\//g,
-						"."
-					)}`,
-					""
-				);
-			} catch (err) {
-				await this.writeToErrorLogFile(err);
-				await this.writeToVerboseLogFile(
-					"LOG: Could not create attachment tracking file: " +
-						`${ATTACHMENT_TRACKING_FOLDER_NAME}/${e.path.replace(
-							/\//g,
-							"."
-						)}`
-				);
-			}
-
-			let id = await uploadFile(
-				this.settings.accessToken,
-				e.path,
-				buffer,
-				this.settings.vaultId
-			);
-
-			this.currentlyUploading = null;
-			new Notice("Uploaded!");
-			return id;
-		} catch (err) {
-			await this.notifyError();
-			await this.checkForConnectivity();
-			await this.writeToErrorLogFile(err);
-		}
-		await this.writeToVerboseLogFile("LOG: Exited uploadNewAttachment");
-	};
-
-	updateLastSyncMetaTag = async (e: TFile) => {
-		await this.writeToVerboseLogFile("LOG: Entering updateLastSyncMetaTag");
-		var content = await this.app.vault.read(e);
-
-		var metaExists = metaPattern.test(content);
-		var driveDataExists = driveDataPattern.test(content);
-		
-		const lastEditor = this.app.workspace.activeEditor;
-
-		if (metaExists) {
-			if (driveDataExists) {
-				await this.app.vault.modify(
-					e,
-					content.replace(
-						driveDataPattern,
-						`\nlastSync: ${new Date().toString()}\n`
-					)
-				);
-			} else {
-				await this.app.vault.modify(
-					e,
-					content.replace(
-						/^---\n/g,
-						`---\nlastSync: ${new Date().toString()}\n`
-					)
-				);
-			}
-		} else {
-			await this.app.vault.modify(
-				e,
-				`---\nlastSync: ${new Date().toString()}\n---\n` + content
-			);
-		}
-		if (
-			this.settings.forceFocus &&
-			lastEditor &&
-			!lastEditor.editor?.hasFocus()
-		) {
-			lastEditor?.editor?.focus();
-		}
-		await this.writeToVerboseLogFile("LOG: Exited updateLastSyncMetaTag");
-	};
-
-	writeToPendingSyncFile = async () => {
-		await this.writeToVerboseLogFile(
-			"LOG: Entering writeToPendingSyncFile"
-		);
-		let pendingSyncFile = this.app.vault.getAbstractFileByPath(
-			PENDING_SYNC_FILE_NAME
-		);
-		// console.log(
-		// 	this.pendingSyncItems,
-		// 	this.finalNamesForFileID,
-		// 	JSON.stringify({
-		// 		pendingSyncItems: this.pendingSyncItems,
-		// 		finalNamesForFileID: mapToObject(this.finalNamesForFileID),
-		// 	})
-		// );
-
-		if (pendingSyncFile instanceof TFile) {
-			await this.app.vault.modify(
-				pendingSyncFile,
-				JSON.stringify({
-					pendingSyncItems: this.pendingSyncItems,
-					finalNamesForFileID: mapToObject(this.finalNamesForFileID),
-				})
-			);
-		} else {
-			try {
-				await this.app.vault.create(
-					PENDING_SYNC_FILE_NAME,
-					JSON.stringify({
-						pendingSyncItems: this.pendingSyncItems,
-						finalNamesForFileID: mapToObject(
-							this.finalNamesForFileID
-						),
-					})
-				);
-			} catch (err) {
-				console.log(
-					"CAUGHT: ERROR for PENDIND SYNC: Probably during startup"
-				);
-			}
-		}
-		await this.writeToVerboseLogFile("LOG: Exited writeToPendingSyncFile");
-	};
-	refreshFilesListInDriveAndStoreInSettings = async () => {
-		if (this.haltAllOperations) {
-			return;
-		}
-		/*
-		fetches all the files that are backed-up in drive and
-		stores them in data.json file which contains all the settings,
-		this list can be used to get the last known list of files on drive
-		in case of offline operations when even the initial fetch request
-		for retreiving the files list also fails
-		*/
-		await this.writeToVerboseLogFile(
-			"LOG: Entering refreshFilesListInDriveAndStoreInSettings"
-		);
-		try {
-			this.settings.filesList = await getFilesList(
-				this.settings.accessToken,
-				this.settings.vaultId
-			);
-		} catch (err) {
-			this.notifyError();
-			this.checkForConnectivity();
-			await this.writeToErrorLogFile(err);
-		}
-		this.saveSettings();
-		await this.writeToVerboseLogFile(
-			"LOG: Exiting refreshFilesListInDriveAndStoreInSettings"
-		);
-	};
-
-	writeToErrorLogFile = async (log: Error) => {
-		if (!this.app.workspace.layoutReady || !this.layoutReady) {
-			// Workspace is still loading, do nothing
-			return;
-		}
-		await this.writeToVerboseLogFile("LOG: Entering writeToErrorLogFile");
-		if (!this.settings.errorLoggingToFile) {
-			return;
-		}
-		let errorLogFile =
-			this.app.vault.getAbstractFileByPath(ERROR_LOG_FILE_NAME);
-		console.log(log.stack, "logging");
-
-		let content: string;
-
-		try {
-			if (errorLogFile instanceof TFile) {
-				content = !this.errorLoggingForTheFirstTimeInThisSession
-					? await this.app.vault.read(errorLogFile)
-					: "";
-				await this.app.vault.modify(
-					errorLogFile,
-					`${content}\n\n${new Date().toString()}-${log.name}-${
-						log.message
-					}-${log.stack}`
-				);
-				this.errorLoggingForTheFirstTimeInThisSession = false;
-			} else {
-				try {
-					await this.app.vault.create(
-						ERROR_LOG_FILE_NAME,
-						`${new Date().toString()}-${log.name}-${log.message}-${
-							log.stack
-						}`
-					);
-				} catch (err) {
-					console.log(
-						"CAUGHT: ERROR for ERROR LOGS: Probably during startup"
-					);
-				}
-			}
-		} catch (err) {
-			console.log(err);
-		}
-		await this.writeToVerboseLogFile("LOG: Exited writeToErrorLogFile");
-	};
-
-	writeToVerboseLogFile = async (log: string) => {
-		if (!this.app.workspace.layoutReady || !this.layoutReady) {
-			// Workspace is still loading, do nothing
-			return;
-		}
-		if (!this.settings.verboseLoggingToFile) {
-			return;
-		}
-		let verboseLogFile = this.app.vault.getAbstractFileByPath(
-			VERBOSE_LOG_FILE_NAME
-		);
-		console.log(log);
-
-		let content: string;
-
-		try {
-			if (verboseLogFile instanceof TFile) {
-				content = !this.verboseLoggingForTheFirstTimeInThisSession
-					? await this.app.vault.read(verboseLogFile)
-					: "";
-				await this.app.vault.modify(
-					verboseLogFile,
-					`${content}\n\n${log}`
-				);
-				// console.log("modified", log, `${content}\n\n${log}`);
-				this.verboseLoggingForTheFirstTimeInThisSession = false;
-			} else {
-				try {
-					await this.app.vault.create(
-						VERBOSE_LOG_FILE_NAME,
-						`${log}`
-					);
-				} catch (err) {
-					console.log(
-						"CAUGHT: ERROR for VERBOSE LOGS: Probably during startup"
-					);
-				}
-			}
-		} catch (err) {
-			console.log(err);
-		}
-	};
-
-	isInBlacklist = (file: TAbstractFile | string) => {
-		if (typeof file === "string") {
-			for (const path of this.settings.blacklistPaths) {
-				if (file.includes(path)) return true;
-			}
-			return false;
-		}
-		for (const path of this.settings.blacklistPaths) {
-			if (file.path.includes(path)) return true;
-		}
-		return false;
-	};
-
-	isAttachmentSynced = async (filename: string) => {
-		const attachmentsAlreadySynced = (
-			await this.adapter.list(ATTACHMENT_TRACKING_FOLDER_NAME)
-		).files;
-		const convertedSafeFilename = filename.replace(/\//g, ".");
-
-		for (const attachment of attachmentsAlreadySynced) {
-			if (attachment.includes(convertedSafeFilename)) return true;
-		}
-		return false;
-	};
-
-	initFunction = async () => {
-		this.adapter = this.app.vault.adapter as FileSystemAdapter;
-		this.layoutReady = true;
-		await this.loadSettings();
-
-		await this.writeToVerboseLogFile("LOG: getAccessToken");
-		var res: any = await getAccessToken(
-			this.settings.refreshToken,
-			this.settings.refreshAccessTokenURL,
-			true
-		); // get accessToken
-		var count = 0;
-		while (res == "error") {
-			new Notice(
-				"ERROR: Couldn't fetch accessToken. Trying again in 5 secs, please wait..."
-			);
-			await this.writeToErrorLogFile(
-				new Error(
-					"ERROR: Couldn't fetch accessToken. Trying again in 5 secs."
-				)
-			);
-			await this.writeToVerboseLogFile(
-				"LOG: failed to fetch accessToken"
-			);
-			if (!this.settings.refreshToken) {
-				await this.writeToVerboseLogFile("LOG: no refreshToken");
-				break;
-			}
-			console.log("Trying to get accessToken again after 5secs...");
-			let resolvePromise: Function;
-			let promise = new Promise((resolve, reject) => {
-				resolvePromise = resolve;
-			});
-			setTimeout(() => {
-				resolvePromise();
-			}, 5000);
-			await promise;
-			await this.writeToVerboseLogFile(
-				"LOG: trying to fetch accessToken again"
-			);
-			res = await getAccessToken(
-				this.settings.refreshToken,
-				this.settings.refreshAccessTokenURL
-			);
-			count++;
-			if (count == 6) {
-				this.settings.accessToken = "";
-				this.settings.validToken = false;
-				new Notice(
-					"FATAL ERROR: Connection timeout, couldn't fetch accessToken :("
-				);
-				new Notice(
-					"Check your internet connection and restart the plugin..."
-				);
-				this.connectedToInternet = false;
-
-				/* use previously fetched fileList (can't beleive this is actually becoming useful) */
-				this.settings.filesList.map((file) =>
-					this.cloudFiles.push(file.name)
-				);
-				this.app.vault
-					.getFiles()
-					.map((file) => this.localFiles.push(file.path));
-
-				let pendingSyncFile = this.app.vault.getAbstractFileByPath(
-					PENDING_SYNC_FILE_NAME
-				);
-
-				let {
-					pendingSyncItems,
-					finalNamesForFileID,
-				}: {
-					pendingSyncItems: Array<pendingSyncItemInterface>;
-					finalNamesForFileID: Record<string, string>;
-				} =
-					pendingSyncFile instanceof TFile
-						? JSON.parse(await this.app.vault.read(pendingSyncFile))
-						: {
-								pendingSyncItems: [],
-								finalNamesForFileID: new Map(),
-						  };
-
-				this.pendingSyncItems = [...pendingSyncItems];
-				this.finalNamesForFileID = objectToMap(finalNamesForFileID);
-				break;
-			}
-		}
-		if (res == "network_error" && this.settings.vaultId) {
-			this.connectedToInternet = false;
-			new Notice("Recording offline changes...");
-			await this.writeToVerboseLogFile(
-				"NO CONNECTION: Swtiched to offline sync"
-			);
-		}
-
-		try {
-			if (res != "error" && res != "network_error") {
-				this.connectedToInternet = true;
-				await this.writeToVerboseLogFile("LOG: received accessToken");
-				// if accessToken is available
-				this.settings.accessToken = res.access_token;
-				this.settings.accessTokenExpiryTime = res.expiry_date;
-				this.settings.validToken = true;
-				var folders = await getFoldersList(this.settings.accessToken); // look for obsidian folder
-				var reqFolder = folders.filter(
-					(folder: any) => folder.name == "obsidian"
-				);
-				if (reqFolder.length) {
-					await this.writeToVerboseLogFile(
-						"LOG: rootFolder available"
-					);
-					this.settings.rootFolderId = reqFolder[0].id; // set the rootFolder or obsidian folder id
-				} else {
-					await this.writeToVerboseLogFile(
-						"LOG: rootFolder unavailable, uploading"
-					);
-					new Notice("Initializing required files"); // else create the folder
-					this.settings.rootFolderId = await uploadFolder(
-						this.settings.accessToken,
-						"obsidian"
-					);
-				}
-				this.saveSettings();
-			}
-		} catch (err) {
-			await this.notifyError();
-			await this.writeToVerboseLogFile(
-				"FATAL ERROR: Could not fetch rootFolder"
-			);
-			await this.writeToErrorLogFile(err);
-			await this.writeToErrorLogFile(
-				new Error("FATAL ERROR: Could not fetch rootFolder")
-			);
-			new Notice("FATAL ERROR: Could not fetch rootFolder");
-			await this.writeToVerboseLogFile("LOG: adding settings UI");
-			this.addSettingTab(new syncSettings(this.app, this));
-			return;
-		}
-		// else {
-		// 	// accessToken is not available
-		// 	this.settings.accessToken = "";
-		// 	this.settings.validToken = false;
-		// }
-		if (this.settings.validToken) {
-			try {
-				await this.writeToVerboseLogFile("LOG: getting vault id");
-				this.settings.vaultId = await getVaultId(
-					// get vaultId for the current fold
-					this.settings.accessToken,
-					this.app.vault.getName(),
-					this.settings.rootFolderId
-				);
-			} catch (err) {
-				await this.writeToErrorLogFile(err);
-				if (this.connectedToInternet && !this.settings.vaultId) {
-					new Notice(
-						"FATAL ERROR: Couldn't get VaultID from Google Drive :("
-					);
-					await this.writeToVerboseLogFile(
-						"FATAL ERROR: Couldn't get VaultID from Google Drive :("
-					);
-				}
-				new Notice("Check internet connection and restart plugin.");
-				await this.writeToVerboseLogFile("LOG: adding settings UI");
-				this.addSettingTab(new syncSettings(this.app, this));
-				// return;
-			}
-			if (this.settings.vaultId == "NOT FOUND") {
-				await this.writeToVerboseLogFile("LOG: vault not found");
-				// if vault doesn't exist
-				this.settings.vaultInit = false;
-				new Notice(
-					`Oops! No vaults named ${this.app.vault.getName()} found in Google Drive`
-				);
-				new Notice(
-					"Try initializing vault in Google Drive from plug-in settings :)",
-					5000
-				);
-			} else {
-				// if vault exists
-				this.settings.vaultInit = true;
-				if (this.connectedToInternet) {
-					await this.completeAllPendingSyncs();
-				} else {
-					this.checkForConnectivity();
-				}
-				try {
-					await this.app.vault.createFolder(
-						ATTACHMENT_TRACKING_FOLDER_NAME
-					);
-				} catch (err) {
-					if (err.message.includes("exist")) {
-						console.log("It's fine, folder exists.");
-					} else {
-						new Notice(
-							"FATAL ERROR: Could not create folder for tracking attachments!"
-						);
-						await this.writeToErrorLogFile(err);
-						// this.haltAllOperations = true;
-					}
-				}
-				this.refreshAll();
-				this.registerInterval(
-					window.setInterval(async () => {
-						this.refreshAll();
-					}, parseInt(this.settings.refreshTime) * 1000)
-				);
-				this.registerInterval(
-					window.setInterval(async () => {
-						this.checkAndEmptySyncQueue();
-					}, 1000)
-				);
-			}
-		} else {
-			new Notice("ERROR: Invalid token");
-			this.writeToErrorLogFile(new Error("ERROR: Invalid token"));
-		}
-
-		// This adds a settings tab so the user can configure various aspects of the plugin
-		await this.writeToVerboseLogFile("LOG: adding settings UI");
-		this.addSettingTab(new syncSettings(this.app, this));
-		if (!this.settings.vaultInit) return;
-
-		/* extract new files to be down/uploaded */
-		this.settings.filesList.map((file) => this.cloudFiles.push(file.name));
-		this.app.vault
-			.getFiles()
-			.map((file) => this.localFiles.push(file.path));
-
-		//console.log(toUpload, toDownload);
-	};
-
-	async onload() {
-		this.app.workspace.onLayoutReady(this.initFunction);
-		this.registerEvent(
-			this.app.vault.on("rename", async (newFile, oldpath) => {
-				if (ignoreFiles.includes(newFile.path)) {
-					return;
-				}
-				if (this.isInBlacklist(newFile)) {
-					return;
-				}
-				if (this.completingPendingSync) {
-					await this.writeToVerboseLogFile(
-						"LOG: not renaming as pending sync is ongoing"
-					);
-					return;
-				}
-				try {
-					if (!this.connectedToInternet) {
-						await this.writeToVerboseLogFile(
-							"LOG: Connectivity lost, not renaming files to Google Drive"
-						);
-						console.log(
-							"ERROR: Connectivity lost, not renaming files to Google Drive..."
-						);
-						if (!this.cloudFiles.length) {
-							console.log(
-								"FATAL ERROR: Nothing in cloudFiles...."
-							);
-							return;
-						}
-						if (
-							!this.cloudFiles.includes(oldpath) &&
-							!this.renamedWhileOffline.get(oldpath)
-						) {
-							await this.writeToVerboseLogFile(
-								"LOG: new file created while offline"
-							);
-							if (newFile instanceof TFile) {
-								let id = randomUUID();
-								this.pendingSyncItems.push({
-									newFileName: newFile.path,
-									action: "UPLOAD",
-									fileID: id,
-									timeStamp: new Date().toString(),
-								});
-								this.renamedWhileOffline.set(newFile.path, id);
-								this.finalNamesForFileID.set(id, newFile.path);
-							}
-						} else {
-							await this.writeToVerboseLogFile(
-								"LOG: renamed while offline"
-							);
-							let idIfWasAlreadyRenamedOffline =
-								this.renamedWhileOffline.get(oldpath);
-							let id: string;
-							if (idIfWasAlreadyRenamedOffline) {
-								id = idIfWasAlreadyRenamedOffline;
-							} else {
-								// this should change to proper id, if not then error
-								this.settings.filesList.map((file, index) => {
-									if (file.name == oldpath) {
-										id = file.id;
-									}
-								});
-							}
-							this.pendingSyncItems.push({
-								fileID: id!,
-								action: "RENAME",
-								timeStamp: new Date().toString(),
-							});
-							this.renamedWhileOffline.set(newFile.path, id!);
-							this.renamedWhileOffline.delete(oldpath);
-							this.finalNamesForFileID.set(id!, newFile.path);
-							if (newFile instanceof TFile) {
-								if (newFile.extension != "md") {
-									try {
-										let oldSafeFilename = oldpath.replace(
-											/\//g,
-											"."
-										);
-										let newSafeFilename =
-											newFile.path.replace(/\//g, ".");
-										await this.adapter.remove(
-											`${ATTACHMENT_TRACKING_FOLDER_NAME}/${oldSafeFilename}`
-										);
-										await this.app.vault.create(
-											`${ATTACHMENT_TRACKING_FOLDER_NAME}/${newSafeFilename}`,
-											""
-										);
-									} catch (err) {
-										await this.writeToVerboseLogFile(
-											`LOG: ${ATTACHMENT_TRACKING_FOLDER_NAME}/${oldpath.replace(
-												/\//g,
-												"."
-											)} could not be renamed`
-										);
-										await this.writeToErrorLogFile(err);
-									}
-								}
-							}
-						}
-						await this.writeToPendingSyncFile();
-						return;
-					}
-					/* this is for newly created files
-					as the newly created file is always renamed first
-					so it checks that whether the file was already in cloudFiles:
-					if it was there we do normal renaming else we upload the new file
-					*/
-					if (!this.cloudFiles.includes(oldpath)) {
-						if (newFile instanceof TFile) {
-							this.uploadNewNotesFile(newFile);
-						}
-						return;
-					}
-
-					await this.writeToVerboseLogFile(
-						"LOG: renaming while online"
-					);
-					/* actual renaming of file */
-					var id;
-					var reqFile = ""; // required for changing the name of the file in the cloudsFile list
-					this.settings.filesList.map((file, index) => {
-						if (file.name == oldpath) {
-							id = file.id;
-							reqFile = file.name;
-						}
-					});
-					this.renamingList.push(oldpath);
-
-					this.cloudFiles[this.cloudFiles.indexOf(reqFile)] =
-						newFile.path; // update the renamed file in cloudfiles
-					await renameFile(
-						this.settings.accessToken,
-						id,
-						newFile.path
-					);
-					if (newFile instanceof TFile) {
-						if (newFile.extension != "md") {
-							try {
-								let oldSafeFilename = oldpath.replace(
-									/\//g,
-									"."
-								);
-								let newSafeFilename = newFile.path.replace(
-									/\//g,
-									"."
-								);
-								await this.adapter.remove(
-									`${ATTACHMENT_TRACKING_FOLDER_NAME}/${oldSafeFilename}`
-								);
-								await this.app.vault.create(
-									`${ATTACHMENT_TRACKING_FOLDER_NAME}/${newSafeFilename}`,
-									""
-								);
-							} catch (err) {
-								await this.writeToVerboseLogFile(
-									`LOG: ${ATTACHMENT_TRACKING_FOLDER_NAME}/${oldpath.replace(
-										/\//g,
-										"."
-									)} could not be renamed`
-								);
-								await this.writeToErrorLogFile(err);
-							}
-						}
-					}
-					new Notice("Files/Folders renamed!");
-
-					this.renamingList.splice(
-						this.renamingList.indexOf(oldpath),
-						1
-					);
-					await this.writeToVerboseLogFile(
-						"LOG: renamed while online"
-					);
-
-					await this.refreshFilesListInDriveAndStoreInSettings();
-				} catch (err) {
-					await this.notifyError();
-					await this.checkForConnectivity();
-					await this.writeToErrorLogFile(err);
-					this.renamingList = [];
-				}
-			})
-		);
-		this.registerEvent(
-			this.app.vault.on("create", async (e) => {
-				if (!this.app.workspace.layoutReady) {
-					// Workspace is still loading, do nothing
-					return;
-				}
-				if (ignoreFiles.includes(e.path)) {
-					return;
-				}
-				if (this.isInBlacklist(e)) {
-					return;
-				}
-				if (this.completingPendingSync) {
-					await this.writeToVerboseLogFile(
-						"LOG: not uploading as pending sync is ongoing"
-					);
-					return;
-				}
-				try {
-					if (!this.connectedToInternet) {
-						console.log(
-							"ERROR: Connectivity lost, not uploading files to Google Drive..."
-						);
-						await this.writeToVerboseLogFile(
-							"LOG: Connectivity lost, not uploading files to Google Drive"
-						);
-						if (
-							e instanceof TFile &&
-							!this.cloudFiles.includes(e.path)
-						) {
-							if (e.extension != "md") {
-								await this.writeToVerboseLogFile(
-									"LOG: created attachment while offline"
-								);
-								let id = randomUUID();
-								this.pendingSyncItems.push({
-									action: "UPLOAD",
-									timeStamp: new Date().toString(),
-									newFileName: e.path,
-									isBinaryFile: true,
-									fileID: id,
-								});
-								this.renamedWhileOffline.set(e.path, id);
-								this.finalNamesForFileID.set(id, e.path);
-							}
-						}
-						await this.writeToPendingSyncFile();
-						return;
-					}
-
-					if (
-						e instanceof TFile &&
-						!this.cloudFiles.includes(e.path)
-					) {
-						if (e.extension != "md") {
-							await this.writeToVerboseLogFile(
-								"LOG: created attachment while online"
-							);
-							await this.uploadNewAttachment(e);
-						}
-					}
-				} catch (err) {
-					await this.notifyError();
-					await this.checkForConnectivity();
-					await this.writeToErrorLogFile(err);
-					this.currentlyUploading = null;
-				}
-			})
-		);
-		this.registerEvent(
-			this.app.vault.on("delete", async (e) => {
-				if (ignoreFiles.includes(e.path)) {
-					return;
-				}
-				// if (this.isInBlacklist(e)) {
-				// 	return;
-				// }
-				if (this.completingPendingSync) {
-					await this.writeToVerboseLogFile(
-						"LOG: not deleting as pending sync is ongoing"
-					);
-					return;
-				}
-
-				if (e instanceof TFile && e.extension != "md") {
-					let convertedSafeFilename = e.path.replace(/\//g, ".");
-					try {
-						await this.adapter.remove(
-							`${ATTACHMENT_TRACKING_FOLDER_NAME}/${convertedSafeFilename}`
-						);
-					} catch (err) {
-						await this.writeToErrorLogFile(err);
-						await this.writeToVerboseLogFile(
-							"LOG: Could not delete " +
-								`${ATTACHMENT_TRACKING_FOLDER_NAME}/${convertedSafeFilename}`
-						);
-					}
-				}
-
-				try {
-					if (!this.connectedToInternet) {
-						console.log(
-							"ERROR: Connectivity lost, not deleting files from Google Drive..."
-						);
-						await this.writeToVerboseLogFile(
-							"LOG: Connectivity lost, not deleting files from Google Drive"
-						);
-						let id: any;
-						this.settings.filesList.map((file, index) => {
-							if (file.name == e.path) {
-								id = file.id;
-							}
-						});
-						await this.writeToVerboseLogFile(
-							"LOG: deleting while offline"
-						);
-						this.pendingSyncItems.push({
-							fileID: id,
-							action: "DELETE",
-							timeStamp: new Date().toString(),
-						});
-						this.renamedWhileOffline.delete(e.path);
-						if (id) this.finalNamesForFileID.delete(id);
-						await this.writeToPendingSyncFile();
-						return;
-					}
-					if (this.settings.refresh) return;
-					var id;
-					this.settings.filesList.map((file) => {
-						if (file.name == e.path) {
-							id = file.id;
-						}
-					});
-					this.deletingList.push(e.path);
-
-					await this.writeToVerboseLogFile(
-						"LOG: deleting while online"
-					);
-					var successful = await deleteFile(
-						this.settings.accessToken,
-						id
-					);
-					if (successful) new Notice("File deleted!"); // only when actual file from the drive was deleted
-
-					this.deletingList.splice(
-						this.deletingList.indexOf(e.path),
-						1
-					);
-
-					await this.refreshFilesListInDriveAndStoreInSettings();
-				} catch (err) {
-					await this.notifyError();
-					await this.checkForConnectivity();
-					await this.writeToErrorLogFile(err);
-					this.deletingList = [];
-				}
-			})
-		);
-		this.registerEvent(
-			this.app.vault.on("modify", async (e) => {
-				if (ignoreFiles.includes(e.path)) {
-					return;
-				}
-				if (this.isInBlacklist(e)) {
-					return;
-				}
-				if (this.completingPendingSync) {
-					await this.writeToVerboseLogFile(
-						"LOG: not modifying because pending sync"
-					);
-					return;
-				}
-				try {
-					if (!this.connectedToInternet) {
-						console.log(
-							"ERROR: Connectivity lost, not modifying files on Google Drive..."
-						);
-						await this.writeToVerboseLogFile(
-							"LOG: Connectivity lost, not modifying files on Google Drive"
-						);
-						if (!this.cloudFiles.length) {
-							console.log(
-								"FATAL ERROR: Nothing in cloudFiles...."
-							);
-							return;
-						}
-						if (
-							!this.cloudFiles.includes(e.path) &&
-							!this.renamedWhileOffline.get(e.path)
-						) {
-							if (e instanceof TFile) {
-								await this.writeToVerboseLogFile(
-									"LOG: created file while offline"
-								);
-								let id = randomUUID();
-								this.pendingSyncItems.push({
-									newFileName: e.path,
-									action: "UPLOAD",
-									timeStamp: new Date().toString(),
-									fileID: id,
-								});
-								this.renamedWhileOffline.set(e.path, id);
-								this.finalNamesForFileID.set(id, e.path);
-							}
-						} else {
-							let id: any;
-							if (this.renamedWhileOffline.get(e.path)) {
-								id = this.renamedWhileOffline.get(e.path);
-							} else {
-								this.settings.filesList.map((file, index) => {
-									if (file.name == e.path) {
-										id = file.id;
-									}
-								});
-							}
-							let lastItemOnPendingSync =
-								this.pendingSyncItems[
-									this.pendingSyncItems.length - 1
-								];
-							if (
-								lastItemOnPendingSync?.fileID == id &&
-								lastItemOnPendingSync?.action == "MODIFY"
-							) {
-								this.pendingSyncItems.pop();
-							}
-							await this.writeToVerboseLogFile(
-								"LOG: modifying file while offline"
-							);
-							this.pendingSyncItems.push({
-								fileID: id,
-								action: "MODIFY",
-								timeStamp: new Date().toString(),
-							});
-							this.finalNamesForFileID.set(id!, e.path);
-						}
-						await this.writeToPendingSyncFile();
-						return;
-					}
-					if (!this.cloudFiles.includes(e.path)) {
-						if (e instanceof TFile) {
-							await this.writeToVerboseLogFile(
-								"LOG: created file while online"
-							);
-							this.uploadNewNotesFile(e);
-						}
-						return;
-					}
-
-					this.writingFile = true;
-					this.statusBarItem.classList.replace(
-						"sync_icon_still",
-						"sync_icon"
-					);
-					setIcon(this.statusBarItem, "sync");
-					if (this.timer) clearTimeout(this.timer);
-					this.timer = setTimeout(async () => {
-						if (e instanceof TFile) {
-							if (this.settings.removeMergeNotifsSettings) {
-								let intervalId = setInterval(() => {
-									removeMergeNotifs();
-									setTimeout(() => {
-										clearInterval(intervalId);
-									}, 2500);
-								}, 100);
-							}
-							var buffer = await this.app.vault.readBinary(e);
-							if (
-								this.latestContentThatWasSynced != null &&
-								bufferEqual(
-									buffer,
-									this.latestContentThatWasSynced
-								)
-							) {
-								console.log(
-									"ignoring modify trigger due to updation from getLatestContent"
-								);
-								this.statusBarItem.classList.replace(
-									"sync_icon",
-									"sync_icon_still"
-								);
-								setIcon(this.statusBarItem, "checkmark");
-								this.writingFile = false;
-								return;
-							}
-							let content = await this.app.vault.cachedRead(e);
-							let timeStamp =
-								e.extension == "md"
-									? content.match(/lastSync:.*/)
-									: false;
-							if (timeStamp) {
-								if (
-									Math.abs(
-										new Date(timeStamp[0]).getTime() -
-											new Date(e.stat.mtime).getTime()
-									) < 1000
-								) {
-									// same code repeated, deal with it later
-									console.log(
-										"ignoring modify trigger due to lastSyncTag updation"
-									);
-									this.statusBarItem.classList.replace(
-										"sync_icon",
-										"sync_icon_still"
-									);
-									setIcon(this.statusBarItem, "checkmark");
-									this.writingFile = false;
-									return;
-								}
-							}
-						}
-
-						if (this.syncQueue.contains(e.path)) return;
-						else this.syncQueue.push(e.path);
-						await this.writeToVerboseLogFile(
-							"LOG: modifying file while online"
-						);
-						this.writingFile = false;
-					}, 2500);
-				} catch (err) {
-					await this.notifyError();
-					await this.checkForConnectivity();
-					await this.writeToErrorLogFile(err);
-				}
-			})
-		);
-		this.registerEvent(
-			this.app.workspace.on("file-open", async (file) => {
-				if (file?.extension == "md") this.getLatestContent(file!);
-			})
-		);
-
-		// This creates an icon in the left ribbon.
-		const uploadEl = this.addRibbonIcon(
-			"cloud",
-			"Upload Current File",
-			async () => {
-				if (!this.connectedToInternet) {
-					console.log(
-						"ERROR: Connectivity lost, not uploading files to Google Drive..."
-					);
-					new Notice("ERROR: No connectivity!");
-					return;
-				}
-				var file = this.app.workspace.getActiveFile()!;
-				if (!this.cloudFiles.includes(file?.path!)) {
-					new ConfirmUpload(this.app, async () => {
-						// Called when the user clicks the icon.
-						if (file.extension != "md") {
-							await this.uploadNewAttachment(file);
-						} else {
-							await this.uploadNewNotesFile(file);
-						}
-					}).open();
-					return;
-				}
-				try {
-					// Called when the user clicks the icon.
-					new Notice("Uploading the current file to Google Drive!");
-					var buffer: any = await this.app.vault.readBinary(
-						this.app.workspace.getActiveFile()!
-					);
-					var id;
-					this.settings.filesList.map((file: any) => {
-						if (
-							file.name ==
-							this.app.workspace.getActiveFile()?.path
-						) {
-							id = file.id;
-						}
-					});
-					var res = await modifyFile(
-						this.settings.accessToken,
-						id,
-						buffer
-					);
-					new Notice("Uploaded!");
-				} catch (err) {
-					await this.notifyError();
-					await this.checkForConnectivity();
-					await this.writeToErrorLogFile(err);
-				}
-			}
-		);
-		const downloadEl = this.addRibbonIcon(
-			"install",
-			"Download Current File",
-			async () => {
-				if (!this.connectedToInternet) {
-					console.log(
-						"ERROR: Connectivity lost, not fetching files from Google Drive..."
-					);
-					new Notice("ERROR: No connectivity!");
-					return;
-				}
-				var ufile = this.app.workspace.getActiveFile()!;
-				if (!this.cloudFiles.includes(ufile?.path!)) {
-					new Notice(
-						"This file doesn't exist on Google Drive. Please upload it first."
-					);
-					return;
-				}
-				// Called when the user clicks the icon.
-				new Notice("Downloading current file!");
-				await this.getLatestContent(ufile, "forced");
-				new Notice("Sync complete :)");
-			}
-		);
-
-		// This adds a simple command that can be triggered anywhere
-		this.addCommand({
-			id: "drive-upload-current",
-			name: "Upload current file to Google Drive",
-			callback: async () => {
-				if (!this.connectedToInternet) {
-					console.log(
-						"ERROR: Connectivity lost, not uploading files to Google Drive..."
-					);
-					new Notice("ERROR: No connectivity!");
-					return;
-				}
-				var file = this.app.workspace.getActiveFile()!;
-				if (!this.cloudFiles.includes(file?.path!)) {
-					new ConfirmUpload(this.app, async () => {
-						// Called when the user clicks the icon.
-						if (file.extension != "md") {
-							await this.uploadNewAttachment(file);
-						} else {
-							await this.uploadNewNotesFile(file);
-						}
-					}).open();
-					return;
-				}
-				try {
-					// Called when the user clicks the icon.
-					new Notice("Uploading the current file to Google Drive!");
-					var buffer: any = await this.app.vault.readBinary(
-						this.app.workspace.getActiveFile()!
-					);
-					var id;
-					this.settings.filesList.map((file: any) => {
-						if (
-							file.name ==
-							this.app.workspace.getActiveFile()?.path
-						) {
-							id = file.id;
-						}
-					});
-					var res = await modifyFile(
-						this.settings.accessToken,
-						id,
-						buffer
-					);
-					new Notice("Uploaded!");
-				} catch (err) {
-					await this.notifyError();
-					await this.checkForConnectivity();
-					await this.writeToErrorLogFile(err);
-				}
-			},
-		});
-		// This adds an editor command that can perform some operation on the current editor instance
-		this.addCommand({
-			id: "drive-download-current",
-			name: "Download current file from Google Drive",
-			callback: async () => {
-				if (!this.connectedToInternet) {
-					console.log(
-						"ERROR: Connectivity lost, not fetching files from Google Drive..."
-					);
-					new Notice("ERROR: No connectivity!");
-					return;
-				}
-				var ufile = this.app.workspace.getActiveFile()!;
-				if (!this.cloudFiles.includes(ufile?.path!)) {
-					new Notice(
-						"This file doesn't exist on Google Drive. Please upload it first."
-					);
-					return;
-				}
-				// Called when the user clicks the icon.
-				new Notice("Downloading current file!");
-				await this.getLatestContent(ufile, "forced");
-				new Notice("Sync complete :)");
-			},
-		});
-		this.addCommand({
-			id: "toggle-force-sync",
-			name: "Toggle force focus",
-			callback: async () => {
-				this.settings.forceFocus = !this.settings.forceFocus;
-				await this.saveSettings();
-				new Notice(
-					`Force focus is now ${
-						this.settings.forceFocus ? "enabled" : "disabled"
-					}`
-				);
-			},
-		});
-	}
-
-	onunload() {}
-
-	async loadSettings() {
-		this.settings = Object.assign(
-			{},
-			DEFAULT_SETTINGS,
-			await this.loadData()
-		);
-	}
-
-	async saveSettings() {
-		await this.saveData(this.settings);
-	}
-}
-
-class syncSettings extends PluginSettingTab {
-	plugin: driveSyncPlugin;
-
-	constructor(app: App, plugin: driveSyncPlugin) {
-		super(app, plugin);
-		this.plugin = plugin;
-	}
-
-	display(): void {
-		const { containerEl } = this;
-
-		containerEl.empty();
-
-		/* header */
-		const head = containerEl.createEl("h1", {
-			// heading
-			text: "Google Drive Sync",
-			cls: "main",
-		});
-
-		const sync = containerEl.createEl("div", {
-			cls: "container-gdrive-plugin",
-		});
-
-		if (this.plugin.settings.validToken) {
-			// if token is valid
-			const sync_text = sync.createEl("div", {
-				text: "Logged in",
-				cls: "sync_text",
-			});
-			const sync_icons = sync.createDiv({ cls: "sync_icon_still" });
-			setIcon(sync_icons, "checkmark");
-		} else {
-			// display login link
-			const sync_link = sync.createEl("a", {
-				text: "Open this link to log in",
-				cls: "sync_text",
-			});
-			sync_link.href = this.plugin.settings.fetchRefreshTokenURL;
-		}
-
-		new Setting(containerEl)
-			.setName("Enable Error logging")
-			.setDesc("Error logs will appear in a .md file")
-			.addToggle((toggle) => {
-				toggle.setValue(this.plugin.settings.errorLoggingToFile);
-				toggle.onChange((val) => {
-					this.plugin.settings.errorLoggingToFile = val;
-					this.plugin.saveSettings();
-				});
-			});
-
-		new Setting(containerEl)
-			.setName("Enable Verbose logging")
-			.setDesc("Verbose logs will appear in a .md file")
-			.addToggle((toggle) => {
-				toggle.setValue(this.plugin.settings.verboseLoggingToFile);
-				toggle.onChange((val) => {
-					this.plugin.settings.verboseLoggingToFile = val;
-					this.plugin.saveSettings();
-				});
-			});
-		/* set refresh token input box */
-		new Setting(containerEl)
-			.setName("Set refresh token")
-			.setDesc("Enter the refresh token you got from the link provided")
-			.addText((text) =>
-				text
-					.setPlaceholder("Enter token")
-					.setValue(this.plugin.settings.refreshToken)
-					.onChange(async (value) => {
-						this.plugin.settings.refreshToken = value;
-					})
-			)
-			.addButton((button) =>
-				button.setIcon("checkmark").onClick(async () => {
-					await this.plugin.saveSettings(); // save refresh token
-
-					sync.innerHTML = "";
-					const sync_text = sync.createEl("div", {
-						text: "Checking...",
-						cls: "sync_text",
-					});
-					const sync_icons = sync.createDiv({ cls: "sync_icon" });
-					setIcon(sync_icons, "sync");
-					var res: any = await getAccessToken(
-						this.plugin.settings.refreshToken,
-						this.plugin.settings.refreshAccessTokenURL
-					); // check for accesstoken
-					if (res != "error") {
-						// display status accordingly
-						this.plugin.settings.accessToken = res.access_token;
-						this.plugin.settings.validToken = true;
-						new Notice("Logged in successfully");
-						sync.innerHTML = "";
-						const sync_text = sync.createEl("div", {
-							text: "Logged in",
-							cls: "sync_text",
-						});
-						const sync_icons = sync.createDiv({
-							cls: "sync_icon_still",
-						});
-						setIcon(sync_icons, "checkmark");
-						new Notice("Please reload the plug-in", 5000);
-					} else {
-						this.plugin.settings.accessToken = "";
-						this.plugin.settings.validToken = false;
-						new Notice("Log in failed");
-						sync.innerHTML = "";
-						const sync_link = sync.createEl("a", {
-							text: "Open this link to log in",
-							cls: "sync_text",
-						});
-						sync_link.href =
-							this.plugin.settings.fetchRefreshTokenURL;
-					}
-					this.plugin.saveSettings();
-				})
-			);
-		if (!this.plugin.settings.validToken) return; // bodge 1
-		if (!this.plugin.settings.vaultInit) {
-			new Setting(containerEl)
-				.setName("Initialize vault")
-				.setDesc(
-					"Create vault and sync all files to Google Drive. DO NOT use this button if you are getting errors related to root folder!"
-				)
-				.addButton((button) => {
-					button.setButtonText("Proceed");
-					button.onClick(
-						async () => await this.plugin.cleanInstall()
-					);
-				});
-			new Setting(containerEl)
-				.setName("Create Root Folder Forecfully")
-				.setDesc(
-					"Experimental: Use this only if you get an error related to root folder."
-				)
-				.addButton((button) => {
-					button.setButtonText("Proceed");
-					button.onClick(async () => {
-						this.plugin.settings.rootFolderId = await uploadFolder(
-							this.plugin.settings.accessToken,
-							"obsidian"
-						);
-						new Notice(
-							"Root folder created, please reload the plugin."
-						);
-						this.plugin.saveSettings();
-					});
-				});
-			return;
-		}
-		new Setting(containerEl)
-			.setName("Set refresh time")
-			.setDesc(
-				"Enter the time in seconds after which the plugin checks for changed content. [Reload required]"
-			)
-			.addText((text) =>
-				text
-					.setPlaceholder("Enter time")
-					.setValue(this.plugin.settings.refreshTime)
-					.onChange(async (value) => {
-						this.plugin.settings.refreshTime = value;
-						this.plugin.saveSettings();
-					})
-			);
-		new Setting(containerEl)
-			.setName("Auto refresh binary files")
-			.setDesc(
-				"Experimental: Automatically fetch lastest binary files. Currently this plugin doesn't completely support binary file sync."
-			)
-			.addDropdown((selector) => {
-				selector.addOption("1", "Fetch");
-				selector.addOption("0", "Don't fetch");
-				selector.setValue(this.plugin.settings.autoRefreshBinaryFiles);
-				selector.onChange((val) => {
-					this.plugin.settings.autoRefreshBinaryFiles = val;
-					this.plugin.saveSettings();
-				});
-			});
-		/* -- LEGACY BUTTONS, CODE TO BE REMOVED -- */
-		// new Setting(containerEl)
-		// 	.setName("Upload all")
-		// 	.setDesc(
-		// 		"Upload all files to Google Drive, thus DELETING ALL PREVIOUS FILES"
-		// 	)
-		// 	.addButton((button) =>
-		// 		button.setIcon("cloud").onClick(async () => {
-		// 			new Notice("Clearing vault in Google Drive...");
-		// 			await deleteFile(
-		// 				this.plugin.settings.accessToken,
-		// 				this.plugin.settings.vaultId
-		// 			);
-		// 			await this.plugin.cleanInstall();
-		// 		})
-		// 	);
-		// new Setting(containerEl)
-		// 	.setName("Download all")
-		// 	.setDesc(
-		// 		"Download all files from Google Drive, thus DELETING ALL PREVIOUS FILES"
-		// 	)
-		// 	.addButton((button) =>
-		// 		button.setIcon("install").onClick(async () => {
-		// 			new Notice("Clearing vault...");
-		// 			var filesList = this.app.vault.getFiles();
-		// 			this.plugin.settings.refresh = true;
-		// 			for (const file of filesList) {
-		// 				this.app.vault.delete(file, true);
-		// 			}
-		// 			new Notice("Downloading files...");
-		// 			for (const file of this.plugin.settings.filesList) {
-		// 				//console.log(file);
-
-		// 				var res = await getFile(
-		// 					this.plugin.settings.accessToken,
-		// 					file.id
-		// 				);
-		// 				await this.app.vault
-		// 					.createBinary(res[0], res[1])
-		// 					.catch(async () => {
-		// 						var path = res[0]
-		// 							.split("/")
-		// 							.slice(0, -1)
-		// 							.join("/");
-		// 						//console.log(path);
-
-		// 						await this.app.vault.createFolder(path);
-		// 						await this.app.vault.createBinary(
-		// 							res[0],
-		// 							res[1]
-		// 						);
-		// 					});
-		// 			}
-		// 			this.plugin.settings.refresh = false;
-		// 			new Notice("Sync complete :)");
-		// 		})
-		// 	);
-		new Setting(containerEl)
-			.setName("Blacklist paths")
-			.setDesc(
-				"Add names for folders and files which should not be tracked by the plugin separated by comma. Example: templateFolder,dailyTemplateNote,file1,folder1 . NOTE: If folder name(s) is(are) mentioned, all files and folders under the mentioned folder would also be ignored."
-			)
-			.addTextArea((textArea) => {
-				textArea
-					.setValue(this.plugin.settings.blacklistPaths.join(","))
-					.onChange((value) => {
-						this.plugin.settings.blacklistPaths = value.split(",");
-					});
-			});
-		new Setting(containerEl)
-			.setName("Force Focus Mode")
-			.setDesc(
-				"Experimental: Forcefully bring the note in focus after each sync. Solves #45 issue on Github, but also introduces #75 issue. TLDR: Useful while working with tables, etc. when you lose focus while editing. Keep disabled otherwise. You can quickly toggle this setting using the command 'Toggle Force Focus Mode' in the command palette."
-			)
-			.addToggle((toggle) => {
-				toggle.setValue(this.plugin.settings.forceFocus);
-				toggle.onChange((val) => {
-					this.plugin.settings.forceFocus = val;
-					this.plugin.saveSettings();
-				});
-			});
-		new Setting(containerEl)
-			.setName(
-				"Remove merging changes notices automatically (NOT RECOMMENDED)"
-			)
-			.setDesc(
-				"This enables a hacky fix that removes any merging changes notice that sometimes appears while typing. It does not prevent the notice from appearing but rather removes it as soon as it appears."
-			)
-			.addToggle((toggle) => {
-				toggle.setValue(this.plugin.settings.removeMergeNotifsSettings);
-				toggle.onChange((val) => {
-					this.plugin.settings.removeMergeNotifsSettings = val;
-					this.plugin.saveSettings();
-				});
-			});
-	}
-}
-
-export class ConfirmUpload extends Modal {
-	onSubmit: () => void;
-
-	constructor(app: App, onSubmit: () => void) {
-		super(app);
-		this.onSubmit = onSubmit;
-	}
-
-	onOpen() {
-		const { contentEl } = this;
-
-		contentEl.createEl("h2", { text: "Wait a sec!" });
-
-		new Setting(contentEl).setName(
-			"Seems like this file is missing from Google Drive. Either it has been created recently or was deleted from your other devices. You can upload it to Google Drive or manually delete it :)"
-		);
-
-		new Setting(contentEl)
-			.addButton((btn) =>
-				btn.setButtonText("Okay").onClick(() => {
-					this.close();
-				})
-			)
-			.addButton((btn) =>
-				btn
-					.setButtonText("Upload")
-					.setCta()
-					.onClick(() => {
-						//console.log(this.app.workspace.getActiveFile());
-						this.close();
-						this.onSubmit();
-					})
-			);
-	}
-
-	onClose() {
-		let { contentEl } = this;
-		contentEl.empty();
-	}
+class PerplexedSettingTab extends PluginSettingTab {
+    plugin: PerplexedPlugin;
+
+    constructor(app: App, plugin: PerplexedPlugin) {
+        super(app, plugin);
+        this.plugin = plugin;
+    }
+
+    // Helper method to safely update prompts service
+    private updatePromptsService(): void {
+        const promptsService = this.plugin.getPromptsService();
+        if (promptsService) {
+            promptsService.updateSettings(this.plugin.settings.prompts);
+        }
+    }
+
+    display(): void {
+        const { containerEl } = this;
+        containerEl.empty();
+
+        // Perplexity Section
+        new Setting(containerEl).setName("Perplexity (remote service)").setHeading();
+        containerEl.createEl('p', {
+            text: 'Configure settings for the hosted perplexity AI service',
+            cls: 'setting-item-description'
+        });
+
+        new Setting(containerEl)
+            .setName('Endpoint')
+            .setDesc('API endpoint for perplexity service')
+            .addText(text => text
+                .setPlaceholder('HTTPS://api.perplexity.ai/chat/completions')
+                .setValue(this.plugin.settings.perplexityEndpoint)
+                .onChange(async (value: string) => {
+                    this.plugin.settings.perplexityEndpoint = value;
+                    await this.plugin.saveSettings();
+                })
+            );
+
+        new Setting(containerEl)
+            .setName('API key')
+            .setDesc('Your perplexity API key (required for remote service)')
+            .addText(text => text
+                .setPlaceholder('Pplx-xxxxxxxxxxxxxxxxxxxxx')
+                .setValue(this.plugin.settings.perplexityApiKey)
+                .onChange(async (value: string) => {
+                    this.plugin.settings.perplexityApiKey = value;
+                    await this.plugin.saveSettings();
+                })
+            );
+
+        new Setting(containerEl)
+            .setName('Header position')
+            .setDesc('Where to place the query header in generated articles')
+            .addDropdown(dropdown => dropdown
+                .addOption('top', 'Top of article')
+                .addOption('bottom', 'Bottom of article')
+                .setValue(this.plugin.settings.headerPosition)
+                .onChange(async (value: string) => {
+                    this.plugin.settings.headerPosition = value as 'top' | 'bottom';
+                    await this.plugin.saveSettings();
+                })
+            );
+
+        // Perplexity Request Template
+        const perplexityJsonSetting = new Setting(containerEl)
+            .setName('Request body template')
+            .setDesc('JSON template for perplexity API requests');
+            
+        // Create a textarea element for Perplexity
+        const perplexityTextArea = containerEl.createEl('textarea');
+        perplexityTextArea.rows = 10;
+        perplexityTextArea.cols = 50;
+        perplexityTextArea.addClass('perplexed-json-textarea');
+        perplexityTextArea.placeholder = 'Enter perplexity JSON request template...';
+        
+        // Set initial value if it exists
+        if (this.plugin.settings.perplexityRequestTemplate) {
+            try {
+                const config: unknown = JSON.parse(this.plugin.settings.perplexityRequestTemplate);
+                perplexityTextArea.value = JSON.stringify(config, null, 2);
+            } catch {
+                // If not valid JSON, use as is
+                perplexityTextArea.value = this.plugin.settings.perplexityRequestTemplate;
+            }
+        }
+        
+        // Add input event listener for Perplexity
+        perplexityTextArea.addEventListener('input', () => void (async () => {
+            this.plugin.settings.perplexityRequestTemplate = perplexityTextArea.value;
+            await this.plugin.saveSettings();
+        })());
+        
+        // Add the textarea to the setting
+        perplexityJsonSetting.settingEl.appendChild(perplexityTextArea);
+
+        // Claude (Anthropic) Section
+        new Setting(containerEl).setName("Claude (Anthropic)").setHeading();
+        containerEl.createEl('p', {
+            text: 'Configure Claude API access. Web-search citations supported in this iteration; document-grounded citations are deferred.',
+            cls: 'setting-item-description'
+        });
+
+        new Setting(containerEl)
+            .setName('Anthropic API key')
+            .setDesc('Your Anthropic API key. Read from ANTHROPIC_API_KEY in .env if set; can be overridden here.')
+            .addText(text => text
+                .setPlaceholder('Sk-ant-...')
+                .setValue(this.plugin.settings.anthropicApiKey)
+                .onChange(async (value) => {
+                    this.plugin.settings.anthropicApiKey = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName('Default Claude model')
+            .setDesc('Default model used by the ask Claude command. Recommended: Claude-opus-4-7.')
+            .addDropdown(dropdown => dropdown
+                .addOption('claude-opus-4-7', 'Claude-opus-4-7 (recommended)')
+                .addOption('claude-opus-4-6', 'Claude-opus-4-6')
+                .addOption('claude-sonnet-4-6', 'Claude-sonnet-4-6')
+                .addOption('claude-haiku-4-5', 'Claude-haiku-4-5')
+                .setValue(this.plugin.settings.claudeDefaultModel)
+                .onChange(async (value) => {
+                    this.plugin.settings.claudeDefaultModel = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        // Gemini (Google) Section
+        new Setting(containerEl).setName("Gemini (Google)").setHeading();
+        containerEl.createEl('p', {
+            text: 'Configure Gemini API access. The Google_search tool emits per-segment grounding supports that map text spans to source urls — the per-claim attribution Claude\'s dynamic-filter pass loses.',
+            cls: 'setting-item-description'
+        });
+
+        new Setting(containerEl)
+            .setName('Gemini API key')
+            .setDesc('Your Google AI studio API key. Generate one in Google AI studio.')
+            .addText(text => text
+                .setPlaceholder('Aiza...')
+                .setValue(this.plugin.settings.geminiApiKey)
+                .onChange(async (value) => {
+                    this.plugin.settings.geminiApiKey = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName('Default Gemini model')
+            .setDesc('Default model used by the ask Gemini command. Recommended: Gemini flash (latest) — free-tier friendly.')
+            .addDropdown(dropdown => dropdown
+                .addOption('gemini-flash-latest', 'Gemini flash (latest) — recommended')
+                .addOption('gemini-pro-latest', 'Gemini pro (latest)')
+                .addOption('gemini-2.5-pro', 'Gemini 2.5 pro (pinned)')
+                .addOption('gemini-2.5-flash', 'Gemini 2.5 flash (pinned)')
+                .setValue(this.plugin.settings.geminiDefaultModel)
+                .onChange(async (value) => {
+                    this.plugin.settings.geminiDefaultModel = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName('Enable Google search grounding by default')
+            .setDesc('Sends the Google_search tool with every request. Disable to get ungrounded model knowledge only.')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.geminiEnableGrounding)
+                .onChange(async (value) => {
+                    this.plugin.settings.geminiEnableGrounding = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName('Include Google searches list in notes')
+            .setDesc('Appends a Markdown "Google searches" section listing the queries Gemini ran, each linked to Google search. Markdown-native substitute for the Google grounding chip (which is inline-styled HTML that Obsidian can\'t render cleanly).')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.geminiIncludeSearchSuggestions)
+                .onChange(async (value) => {
+                    this.plugin.settings.geminiIncludeSearchSuggestions = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName('Resolve citation urls (durable, slower)')
+            .setDesc('Google\'s grounding redirect urls expire ~30 days after the response. With this on, the plugin resolves each redirect to the real source URL before writing the citations footer. Costs one HTTP request per cited source (parallelized, 3s timeout each).')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.geminiResolveCitationUrls)
+                .onChange(async (value) => {
+                    this.plugin.settings.geminiResolveCitationUrls = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        // Perplexica / Vane Section
+        new Setting(containerEl).setName("Perplexica / vane (self-hosted)").setHeading();
+        containerEl.createEl('p', {
+            text: 'Configure settings for your local perplexica / vane installation',
+            cls: 'setting-item-description'
+        });
+
+        new Setting(containerEl)
+            .setName('Endpoint')
+            .setDesc('API endpoint for your local perplexica / vane instance')
+            .addText(text => text
+                .setPlaceholder('HTTP://localhost:3030/API/search')
+                .setValue(this.plugin.settings.perplexicaEndpoint)
+                .onChange(async (value: string) => {
+                    this.plugin.settings.perplexicaEndpoint = value;
+                    await this.plugin.saveSettings();
+                })
+            );
+        
+        new Setting(containerEl)
+            .setName('Fallback container path')
+            .setDesc('Alternative endpoint for docker container setups')
+            .addText(text => text
+                .setPlaceholder('HTTP://host.docker.internal:3030/API/search')
+                .setValue(this.plugin.settings.localLLMPath)
+                .onChange(async (value: string) => {
+                    this.plugin.settings.localLLMPath = value;
+                    await this.plugin.saveSettings();
+                })
+            );
+
+        new Setting(containerEl)
+            .setName('Default model')
+            .setDesc('Default AI model for perplexica / vane to use')
+            .addText(text => text
+                .setPlaceholder('Llama3.2:latest')
+                .setValue(this.plugin.settings.defaultModel)
+                .onChange(async (value: string) => {
+                    this.plugin.settings.defaultModel = value;
+                    await this.plugin.saveSettings();
+                })
+            );
+
+        // Perplexica Request Template
+        const perplexicaJsonSetting = new Setting(containerEl)
+            .setName('Request body template')
+            .setDesc('JSON template for perplexica / vane API requests');
+            
+        // Create a textarea element for Perplexica
+        const perplexicaTextArea = containerEl.createEl('textarea');
+        perplexicaTextArea.rows = 10;
+        perplexicaTextArea.cols = 50;
+        perplexicaTextArea.addClass('perplexed-json-textarea');
+        perplexicaTextArea.placeholder = 'Enter perplexica JSON request template...';
+        
+        // Set initial value if it exists
+        if (this.plugin.settings.requestBodyTemplate) {
+            try {
+                const config: unknown = JSON.parse(this.plugin.settings.requestBodyTemplate);
+                perplexicaTextArea.value = JSON.stringify(config, null, 2);
+            } catch {
+                // If not valid JSON, use as is
+                perplexicaTextArea.value = this.plugin.settings.requestBodyTemplate;
+            }
+        }
+        
+        // Add input event listener for Perplexica
+        perplexicaTextArea.addEventListener('input', () => void (async () => {
+            this.plugin.settings.requestBodyTemplate = perplexicaTextArea.value;
+            await this.plugin.saveSettings();
+        })());
+        
+        // Add the textarea to the setting
+        perplexicaJsonSetting.settingEl.appendChild(perplexicaTextArea);
+
+        // LM Studio Section
+        new Setting(containerEl).setName("Lm studio (local models)").setHeading();
+        containerEl.createEl('p', {
+            text: 'Configure settings for your local lm studio installation with loaded models',
+            cls: 'setting-item-description'
+        });
+
+        new Setting(containerEl)
+            .setName('Endpoint')
+            .setDesc('API endpoint for your local lm studio instance')
+            .addText(text => text
+                .setPlaceholder('HTTP://localhost:1234/v1/chat/completions')
+                .setValue(this.plugin.settings.lmStudioEndpoint)
+                .onChange(async (value: string) => {
+                    this.plugin.settings.lmStudioEndpoint = value;
+                    await this.plugin.saveSettings();
+                })
+            );
+
+        new Setting(containerEl)
+            .setName('Default model')
+            .setDesc('Default model name for lm studio to use')
+            .addText(text => text
+                .setPlaceholder('Ibm/granite-3.2-8b')
+                .setValue(this.plugin.settings.defaultLMStudioModel)
+                .onChange(async (value: string) => {
+                    this.plugin.settings.defaultLMStudioModel = value;
+                    await this.plugin.saveSettings();
+                })
+            );
+
+        // LM Studio Request Template
+        const lmStudioJsonSetting = new Setting(containerEl)
+            .setName('Request body template')
+            .setDesc('JSON template for lm studio API requests');
+            
+        // Create a textarea element for LM Studio
+        const lmStudioTextArea = containerEl.createEl('textarea');
+        lmStudioTextArea.rows = 10;
+        lmStudioTextArea.cols = 50;
+        lmStudioTextArea.addClass('perplexed-json-textarea');
+        lmStudioTextArea.placeholder = 'Enter lm studio JSON request template...';
+        
+        // Set initial value if it exists
+        if (this.plugin.settings.lmStudioRequestTemplate) {
+            try {
+                const config: unknown = JSON.parse(this.plugin.settings.lmStudioRequestTemplate);
+                lmStudioTextArea.value = JSON.stringify(config, null, 2);
+            } catch {
+                // If not valid JSON, use as is
+                lmStudioTextArea.value = this.plugin.settings.lmStudioRequestTemplate;
+            }
+        }
+        
+        // Add input event listener for LM Studio
+        lmStudioTextArea.addEventListener('input', () => void (async () => {
+            this.plugin.settings.lmStudioRequestTemplate = lmStudioTextArea.value;
+            await this.plugin.saveSettings();
+        })());
+        
+        // Add the textarea to the setting
+        lmStudioJsonSetting.settingEl.appendChild(lmStudioTextArea);
+
+        // Prompts Section
+        new Setting(containerEl).setName("Prompts & text configuration").setHeading();
+        containerEl.createEl('p', {
+            text: 'Customize all prompts, placeholders, descriptions, and messages used throughout the plugin',
+            cls: 'setting-item-description'
+        });
+
+        // System Prompts
+        new Setting(containerEl).setName("System prompts").setHeading();
+
+        // Helper: render a system prompt as a Setting (name+desc only) followed
+        // by a sibling full-width textarea. Beats Setting.addTextArea — which
+        // crams a multi-line input into a ~200px right-edge slot — for any
+        // input where the user actually has to read what they wrote.
+        const addPromptRow = (
+            name: string,
+            desc: string,
+            placeholder: string,
+            getter: () => string,
+            setter: (v: string) => void,
+        ): void => {
+            new Setting(containerEl).setName(name).setDesc(desc);
+            const ta = containerEl.createEl('textarea');
+            ta.addClass('perplexed-prose-textarea');
+            ta.placeholder = placeholder;
+            ta.value = getter();
+            ta.rows = 3;
+            ta.addEventListener('input', () => void (async () => {
+                setter(ta.value);
+                const promptsService = this.plugin.getPromptsService();
+                if (promptsService) {
+                    promptsService.updateSettings(this.plugin.settings.prompts);
+                }
+                await this.plugin.saveSettings();
+            })());
+        };
+
+        addPromptRow(
+            'Perplexity system prompt',
+            'System prompt used for perplexity AI requests',
+            'Enter system prompt for perplexity...',
+            () => this.plugin.settings.prompts.perplexitySystemPrompt,
+            (v) => { this.plugin.settings.prompts.perplexitySystemPrompt = v; },
+        );
+
+        addPromptRow(
+            'Perplexica / vane system prompt',
+            'System prompt used for perplexica / vane requests',
+            'Enter system prompt for perplexica / vane...',
+            () => this.plugin.settings.prompts.perplexicaSystemPrompt,
+            (v) => { this.plugin.settings.prompts.perplexicaSystemPrompt = v; },
+        );
+
+        addPromptRow(
+            'Lm studio default system prompt',
+            'Default system prompt used for lm studio requests',
+            'Enter default system prompt for lm studio...',
+            () => this.plugin.settings.prompts.lmStudioDefaultSystemPrompt,
+            (v) => { this.plugin.settings.prompts.lmStudioDefaultSystemPrompt = v; },
+        );
+
+        // Placeholder Text
+        new Setting(containerEl).setName("Placeholder text").setHeading();
+        
+        new Setting(containerEl)
+            .setName('Perplexity query placeholder')
+            .setDesc('Placeholder text for perplexity query input')
+            .addText(text => text
+                .setPlaceholder('Enter placeholder text...')
+                .setValue(this.plugin.settings.prompts.perplexityQueryPlaceholder)
+                .onChange(async (value: string) => {
+                    this.plugin.settings.prompts.perplexityQueryPlaceholder = value;
+                    const promptsService = this.plugin.getPromptsService();
+                    if (promptsService) {
+                        promptsService.updateSettings(this.plugin.settings.prompts);
+                    }
+                    await this.plugin.saveSettings();
+                })
+            );
+
+        new Setting(containerEl)
+            .setName('Perplexica / vane query placeholder')
+            .setDesc('Placeholder text for perplexica / vane query input')
+            .addText(text => text
+                .setPlaceholder('Enter placeholder text...')
+                .setValue(this.plugin.settings.prompts.perplexicaQueryPlaceholder)
+                .onChange(async (value: string) => {
+                    this.plugin.settings.prompts.perplexicaQueryPlaceholder = value;
+                    const promptsService = this.plugin.getPromptsService();
+                    if (promptsService) {
+                        promptsService.updateSettings(this.plugin.settings.prompts);
+                    }
+                    await this.plugin.saveSettings();
+                })
+            );
+
+        new Setting(containerEl)
+            .setName('Lm studio query placeholder')
+            .setDesc('Placeholder text for lm studio query input')
+            .addText(text => text
+                .setPlaceholder('Enter placeholder text...')
+                .setValue(this.plugin.settings.prompts.lmStudioQueryPlaceholder)
+                .onChange(async (value: string) => {
+                    this.plugin.settings.prompts.lmStudioQueryPlaceholder = value;
+                    const promptsService = this.plugin.getPromptsService();
+                    if (promptsService) {
+                        promptsService.updateSettings(this.plugin.settings.prompts);
+                    }
+                    await this.plugin.saveSettings();
+                })
+            );
+
+        new Setting(containerEl)
+            .setName('Lm studio system prompt placeholder')
+            .setDesc('Placeholder text for lm studio system prompt input')
+            .addText(text => text
+                .setPlaceholder('Enter placeholder text...')
+                .setValue(this.plugin.settings.prompts.lmStudioSystemPromptPlaceholder)
+                .onChange(async (value: string) => {
+                    this.plugin.settings.prompts.lmStudioSystemPromptPlaceholder = value;
+                    const promptsService = this.plugin.getPromptsService();
+                    if (promptsService) {
+                        promptsService.updateSettings(this.plugin.settings.prompts);
+                    }
+                    await this.plugin.saveSettings();
+                })
+            );
+
+        new Setting(containerEl)
+            .setName('Article term placeholder')
+            .setDesc('Placeholder text for article generator term input')
+            .addText(text => text
+                .setPlaceholder('Enter placeholder text...')
+                .setValue(this.plugin.settings.prompts.articleTermPlaceholder)
+                .onChange(async (value: string) => {
+                    this.plugin.settings.prompts.articleTermPlaceholder = value;
+                    this.updatePromptsService();
+                    await this.plugin.saveSettings();
+                })
+            );
+
+        // Article Generator Template
+        new Setting(containerEl).setName("Article generator template").setHeading();
+        
+        const articleTemplateSetting = new Setting(containerEl)
+            .setName('Article generator template')
+            .setDesc('Template for generating articles. Use {TERM} as placeholder for the term.');
+            
+        const articleTemplateTextArea = containerEl.createEl('textarea');
+        articleTemplateTextArea.rows = 15;
+        articleTemplateTextArea.cols = 50;
+        articleTemplateTextArea.addClasses(['perplexed-json-textarea', 'is-tall']);
+        articleTemplateTextArea.placeholder = 'Enter article generator template...';
+        articleTemplateTextArea.value = this.plugin.settings.prompts.articleGeneratorTemplate;
+        
+        articleTemplateTextArea.addEventListener('input', () => void (async () => {
+            this.plugin.settings.prompts.articleGeneratorTemplate = articleTemplateTextArea.value;
+            this.updatePromptsService();
+            await this.plugin.saveSettings();
+        })());
+        
+        articleTemplateSetting.settingEl.appendChild(articleTemplateTextArea);
+
+        // Deep Research Article Generator Template
+        const deepResearchTemplateSetting = new Setting(containerEl)
+            .setName('Deep research article generator template')
+            .setDesc('Template for generating articles with Deep Research model. Use {TERM} as placeholder for the term.');
+            
+        const deepResearchTemplateTextArea = containerEl.createEl('textarea');
+        deepResearchTemplateTextArea.rows = 20;
+        deepResearchTemplateTextArea.cols = 50;
+        deepResearchTemplateTextArea.addClasses(['perplexed-json-textarea', 'is-tall']);
+        deepResearchTemplateTextArea.placeholder = 'Enter deep research article generator template...';
+        deepResearchTemplateTextArea.value = this.plugin.settings.prompts.deepResearchArticleTemplate;
+        
+        deepResearchTemplateTextArea.addEventListener('input', () => void (async () => {
+            this.plugin.settings.prompts.deepResearchArticleTemplate = deepResearchTemplateTextArea.value;
+            this.updatePromptsService();
+            await this.plugin.saveSettings();
+        })());
+        
+        deepResearchTemplateSetting.settingEl.appendChild(deepResearchTemplateTextArea);
+
+        // Image Prompts
+        new Setting(containerEl).setName("Image prompts").setHeading();
+        
+        const imagePromptsSetting = new Setting(containerEl)
+            .setName('Image references prompt')
+            .setDesc('Prompt added to queries when images are enabled');
+            
+        const imagePromptsTextArea = containerEl.createEl('textarea');
+        imagePromptsTextArea.rows = 8;
+        imagePromptsTextArea.cols = 50;
+        imagePromptsTextArea.addClass('perplexed-json-textarea');
+        imagePromptsTextArea.placeholder = 'Enter image references prompt...';
+        imagePromptsTextArea.value = this.plugin.settings.prompts.imageReferencesPrompt;
+        
+        imagePromptsTextArea.addEventListener('input', () => void (async () => {
+            this.plugin.settings.prompts.imageReferencesPrompt = imagePromptsTextArea.value;
+            this.updatePromptsService();
+            await this.plugin.saveSettings();
+        })());
+        
+        imagePromptsSetting.settingEl.appendChild(imagePromptsTextArea);
+
+        // Text Enhancement Prompt
+        new Setting(containerEl).setName("Text enhancement").setHeading();
+        
+        const enhancePromptSetting = new Setting(containerEl)
+            .setName('Text enhancement prompt')
+            .setDesc('Template for enhancing selected text. Use {TEXT} as placeholder for the selected text.');
+            
+        const enhancePromptTextArea = containerEl.createEl('textarea');
+        enhancePromptTextArea.rows = 10;
+        enhancePromptTextArea.cols = 50;
+        enhancePromptTextArea.addClass('perplexed-json-textarea');
+        enhancePromptTextArea.placeholder = 'Enter text enhancement prompt template...';
+        enhancePromptTextArea.value = this.plugin.settings.prompts.enhancePrompt;
+        
+        enhancePromptTextArea.addEventListener('input', () => void (async () => {
+            this.plugin.settings.prompts.enhancePrompt = enhancePromptTextArea.value;
+            this.updatePromptsService();
+            await this.plugin.saveSettings();
+        })());
+        
+        enhancePromptSetting.settingEl.appendChild(enhancePromptTextArea);
+
+        // Text Enhancement with Images Prompt
+        const enhanceWithImagesPromptSetting = new Setting(containerEl)
+            .setName('Related images prompt')
+            .setDesc('Template for requesting related images for selected text. Use {TEXT} as placeholder for the selected text.');
+            
+        const enhanceWithImagesPromptTextArea = containerEl.createEl('textarea');
+        enhanceWithImagesPromptTextArea.rows = 10;
+        enhanceWithImagesPromptTextArea.cols = 50;
+        enhanceWithImagesPromptTextArea.addClass('perplexed-json-textarea');
+        enhanceWithImagesPromptTextArea.placeholder = 'Enter related images prompt template...';
+        enhanceWithImagesPromptTextArea.value = this.plugin.settings.prompts.enhanceWithImagesPrompt;
+        
+        enhanceWithImagesPromptTextArea.addEventListener('input', () => void (async () => {
+            this.plugin.settings.prompts.enhanceWithImagesPrompt = enhanceWithImagesPromptTextArea.value;
+            this.updatePromptsService();
+            await this.plugin.saveSettings();
+        })());
+        
+        enhanceWithImagesPromptSetting.settingEl.appendChild(enhanceWithImagesPromptTextArea);
+
+        // Directory Templates Section (v0.1 spike)
+        new Setting(containerEl).setName('Directory templates').setHeading();
+        containerEl.createEl('p', {
+            text: 'Apply a template (heading skeleton + per-section bullets) to fill a file via perplexity deep research. Templates live in a vault folder and are matched to files by glob.',
+            cls: 'setting-item-description'
+        });
+
+        new Setting(containerEl)
+            .setName('Templates root')
+            .setDesc('Vault-relative folder where directory templates live.')
+            .addText(text => text
+                .setPlaceholder('Zz-cf-lib/templates')
+                .setValue(this.plugin.settings.directoryTemplatesRoot)
+                .onChange(async (value: string) => {
+                    this.plugin.settings.directoryTemplatesRoot = value.trim();
+                    await this.plugin.saveSettings();
+                })
+            );
+
+        new Setting(containerEl)
+            .setName('Partials root')
+            .setDesc('Vault-relative folder where reusable snippets live. Templates pull them in with {{include: name}}.')
+            .addText(text => text
+                .setPlaceholder('Zz-cf-lib/partials')
+                .setValue(this.plugin.settings.directoryTemplatesPartialsRoot)
+                .onChange(async (value: string) => {
+                    this.plugin.settings.directoryTemplatesPartialsRoot = value.trim();
+                    await this.plugin.saveSettings();
+                })
+            );
+
+        new Setting(containerEl)
+            .setName('Preambles root')
+            .setDesc('Vault-relative folder where plugin-wide preambles live. Files here are auto-attached to every perplexity request per the lists below.')
+            .addText(text => text
+                .setPlaceholder('Zz-cf-lib/preambles')
+                .setValue(this.plugin.settings.directoryTemplatesPreamblesRoot)
+                .onChange(async (value: string) => {
+                    this.plugin.settings.directoryTemplatesPreamblesRoot = value.trim();
+                    await this.plugin.saveSettings();
+                })
+            );
+
+        new Setting(containerEl)
+            .setName('System preambles')
+            .setDesc('Comma-separated preamble names (no .md) prepended to every system prompt, in order. Default: inline-citation.')
+            .addText(text => text
+                .setPlaceholder('Inline-citation')
+                .setValue(this.plugin.settings.directoryTemplatesSystemPreambles.join(', '))
+                .onChange(async (value: string) => {
+                    this.plugin.settings.directoryTemplatesSystemPreambles = value
+                        .split(',')
+                        .map(s => s.trim())
+                        .filter(s => s.length > 0);
+                    await this.plugin.saveSettings();
+                })
+            );
+
+        new Setting(containerEl)
+            .setName('User preambles')
+            .setDesc('Comma-separated user-prompt preambles. Append ":return-images" to attach only when a template sets return-images: true. Default: research-framing, image-placement:return-images.')
+            .addText(text => text
+                .setPlaceholder('Research-framing, image-placement:return-images')
+                .setValue(this.plugin.settings.directoryTemplatesUserPreambles
+                    .map(p => p.when === 'always' ? p.name : `${p.name}:${p.when}`)
+                    .join(', '))
+                .onChange(async (value: string) => {
+                    this.plugin.settings.directoryTemplatesUserPreambles = value
+                        .split(',')
+                        .map(s => s.trim())
+                        .filter(s => s.length > 0)
+                        .map(token => {
+                            const [name, whenRaw] = token.split(':').map(s => s.trim());
+                            const when: 'always' | 'return-images' =
+                                whenRaw === 'return-images' ? 'return-images' : 'always';
+                            return { name: name ?? '', when };
+                        })
+                        .filter(p => p.name.length > 0);
+                    await this.plugin.saveSettings();
+                })
+            );
+
+        new Setting(containerEl)
+            .setName('Frontmatter whitelist')
+            .setDesc('Comma-separated list of frontmatter keys passed to the template as {{frontmatter}}. Other keys are filtered out.')
+            .addText(text => text
+                .setPlaceholder('Title, og_description, tags, og_image')
+                .setValue(this.plugin.settings.directoryTemplatesFrontmatterWhitelist.join(', '))
+                .onChange(async (value: string) => {
+                    this.plugin.settings.directoryTemplatesFrontmatterWhitelist = value
+                        .split(',')
+                        .map(s => s.trim())
+                        .filter(s => s.length > 0);
+                    await this.plugin.saveSettings();
+                })
+            );
+
+        new Setting(containerEl)
+            .setName('Request timeout (ms)')
+            .setDesc('Maximum wall-clock time to wait for a Perplexity response. Default 1800000 (30 min) — generous because deep-research runs on long analyst-grade templates routinely take 15-25 min and the $10-$50 of value per good output is worth waiting for. Individual templates may override this per-template via `request-timeout-ms:` in their cft block.')
+            .addText(text => text
+                .setPlaceholder('1800000')
+                .setValue(String(this.plugin.settings.directoryTemplatesRequestTimeoutMs))
+                .onChange(async (value: string) => {
+                    const n = parseInt(value, 10);
+                    if (!isNaN(n) && n > 0) {
+                        this.plugin.settings.directoryTemplatesRequestTimeoutMs = n;
+                        await this.plugin.saveSettings();
+                    }
+                })
+            );
+
+        new Setting(containerEl)
+            .setName('Re-seed templates')
+            .setDesc('Write any shipped template files that are missing from the templates root. Existing files are never overwritten — to reset a template to its shipped default, delete the file first then re-seed.')
+            .addButton(btn => btn
+                .setButtonText('Re-seed')
+                .onClick(async () => {
+                    try {
+                        await reSeedMissingFiles(
+                            this.plugin.app,
+                            this.plugin.settings.directoryTemplatesRoot,
+                            this.plugin.settings.directoryTemplatesPartialsRoot,
+                            this.plugin.settings.directoryTemplatesPreamblesRoot,
+                        );
+                    } catch (error) {
+                        const msg = error instanceof Error ? error.message : String(error);
+                        new Notice(`Re-seed failed: ${msg}`);
+                    }
+                })
+            );
+
+        // Find images for selection
+        new Setting(containerEl).setName('Find images for selection').setHeading();
+        containerEl.createEl('p', {
+            text: 'Highlight a passage, run "find images for selection". The plugin asks perplexity for screenshots that visually illustrate the passage, prefers images on the entity\'s domain (frontmatter URL), and embeds them between paragraphs.',
+            cls: 'setting-item-description'
+        });
+
+        new Setting(containerEl)
+            .setName('Max images')
+            .setDesc('Maximum number of images to embed per invocation.')
+            .addText(text => text
+                .setPlaceholder('3')
+                .setValue(String(this.plugin.settings.findImagesMaxImages))
+                .onChange(async (value: string) => {
+                    const n = parseInt(value, 10);
+                    if (!isNaN(n) && n > 0) {
+                        this.plugin.settings.findImagesMaxImages = n;
+                        await this.plugin.saveSettings();
+                    }
+                })
+            );
+    }
 }

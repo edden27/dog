@@ -1,15 +1,22 @@
-import React from 'react';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { AppearanceProvider } from 'react-native-appearance';
+import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
+import { StatusBar } from 'expo-status-bar';
+import { StyleSheet, Text, View } from 'react-native';
+import QRCodeScreen from './src/screens/QRCode';
+import ScanScreen from './src/screens/Scan';
 
-import { Main } from './src/main';
+const Stack = createStackNavigator();
 
-export default function App() {
-  return (
-    <SafeAreaProvider>
-      <AppearanceProvider>
-        <Main />
-      </AppearanceProvider>
-    </SafeAreaProvider>
-  );
-}
+const Application = () => {
+    return (
+        <NavigationContainer>
+            <Stack.Navigator initialRouteName="QRCode">
+                <Stack.Screen name={'QRCode'} component={QRCodeScreen} />
+                <Stack.Screen name={'Scan'} component={ScanScreen} />
+            </Stack.Navigator>
+            <StatusBar style="auto" />
+        </NavigationContainer>
+    );
+};
+
+export default Application;
