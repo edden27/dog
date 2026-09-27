@@ -5,6 +5,7 @@
 enum FastMatcher {
   case startsUppercase
   case allCapsConstant
+  case onlyCapsDigitsUnderscores
   case startsLowerOrUnderscore
   case dunder
   case shebang
@@ -27,6 +28,8 @@ enum FastMatcher {
       return isUpperASCII(source[start])
     case .allCapsConstant:
       return matchesAllCaps(source: source, start: start, end: end)
+    case .onlyCapsDigitsUnderscores:
+      return matchesOnlyCapsDigitsUnderscores(source: source, start: start, end: end)
     case .startsLowerOrUnderscore:
       return isLowerASCII(source[start]) || source[start] == 0x5F
     case .dunder:
@@ -72,8 +75,10 @@ enum FastMatcher {
       return .startsLowerOrUnderscore
     case "^__[a-zA-Z0-9_]*__$":
       return .dunder
-    case "^#!/", "^#![ \\t]*/":
+    case "^#!/", "^#![ \t]*/":
       return .shebang
+    case "^[A-Z0-9_]+$":
+      return .onlyCapsDigitsUnderscores
     case "^--":
       return .doubleDash
     case "^///$":
@@ -112,6 +117,16 @@ enum FastMatcher {
   private func matchesAllCaps(source: [UInt8], start: Int, end: Int) -> Bool {
     guard isUpperASCII(source[start]) else { return false }
     for offset in (start + 1)..<end {
+      let byte = source[offset]
+      let isValid = isUpperASCII(byte) || (byte >= 0x30 && byte <= 0x39) || byte == 0x5F
+      if !isValid { return false }
+    }
+    return true
+  }
+
+  // ^[A-Z0-9_]+$ — like allCaps, but a digit or underscore may come first
+  private func matchesOnlyCapsDigitsUnderscores(source: [UInt8], start: Int, end: Int) -> Bool {
+    for offset in start..<end {
       let byte = source[offset]
       let isValid = isUpperASCII(byte) || (byte >= 0x30 && byte <= 0x39) || byte == 0x5F
       if !isValid { return false }

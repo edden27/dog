@@ -37,7 +37,7 @@ struct FastMatcherTests {
       ("^[a-zA-Z_][a-zA-Z0-9_]*$", FastMatcher.startsLowerOrUnderscore),
       ("^__[a-zA-Z0-9_]*__$", FastMatcher.dunder),
       ("^#!/", FastMatcher.shebang),
-      ("^#![ \\t]*/", FastMatcher.shebang),
+      ("^#![ \t]*/", FastMatcher.shebang),
       ("^--", FastMatcher.doubleDash),
       ("^///$", FastMatcher.tripleSlashExact),
       ("^///[^/]", FastMatcher.tripleSlashContent),
@@ -54,7 +54,8 @@ struct FastMatcherTests {
       ("^[nN]ew.+$", FastMatcher.startsNewOrMake),
       ("^[mM]ake.+$", FastMatcher.startsNewOrMake),
       ("^/[*][*][^*].*[*]/$", FastMatcher.docCommentBlock),
-      ("^m_.*$", FastMatcher.memberPrefix)
+      ("^m_.*$", FastMatcher.memberPrefix),
+      ("^[A-Z0-9_]+$", FastMatcher.onlyCapsDigitsUnderscores)
     ] as [(String, FastMatcher)])
     func newPatterns(pattern: String, expected: FastMatcher) {
       #expect(FastMatcher.from(pattern: pattern) == expected)
@@ -91,6 +92,17 @@ struct FastMatcherTests {
 
     @Test("rejects digit-first identifier")
     func rejectsDigitFirst() { #expect(!match(.allCapsConstant, "1MAX")) }
+  }
+
+  // MARK: - onlyCapsDigitsUnderscores
+
+  @Suite("onlyCapsDigitsUnderscores")
+  struct OnlyCapsDigitsUnderscores {
+    @Test("matches caps, digits, underscores in any order", arguments: ["MAX", "MAX_SIZE", "_MAX", "1MAX", "A", "__"])
+    func matches(input: String) { #expect(match(.onlyCapsDigitsUnderscores, input)) }
+
+    @Test("rejects any lowercase or other byte", arguments: ["MyClass", "Foo", "MAX_size", "A-B", ""])
+    func rejects(input: String) { #expect(!match(.onlyCapsDigitsUnderscores, input)) }
   }
 
   // MARK: - startsLowerOrUnderscore
@@ -311,7 +323,7 @@ struct FastMatcherTests {
 
 extension FastMatcher: CaseIterable {
   public static var allCases: [FastMatcher] {
-    [.startsUppercase, .allCapsConstant, .startsLowerOrUnderscore,
+    [.startsUppercase, .allCapsConstant, .onlyCapsDigitsUnderscores, .startsLowerOrUnderscore,
      .dunder, .shebang, .doubleDash, .tripleDash,
      .tripleSlashExact, .tripleSlashContent, .mixedCase,
      .builtinPrefix, .luaAnnotation, .startsNewOrMake, .docCommentBlock, .memberPrefix]
