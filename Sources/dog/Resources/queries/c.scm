@@ -5,6 +5,10 @@
 (preproc_def
   (preproc_arg) @variable)
 
+; dog: a macro with parameters gets the same body treatment as one without.
+(preproc_function_def
+  (preproc_arg) @variable)
+
 [
   "default"
   "goto"
@@ -147,15 +151,16 @@
 
 (preproc_defined) @function.macro
 
-((field_expression
-  (field_identifier) @property) @_parent
-  (#not-has-parent? @_parent function_declarator call_expression))
+; dog: upstream guards these two rules with #has-parent? / #has-ancestor?,
+; which dog does not evaluate, so the guards are left out. Method calls and
+; declarations still get function color: those rules start higher in the
+; tree, so tree-sitter hands them over first and dog draws the first one.
+(field_expression
+  (field_identifier) @property)
 
 (field_designator) @property
 
-((field_identifier) @property
-  (#has-ancestor? @property field_declaration)
-  (#not-has-ancestor? @property function_declarator))
+(field_identifier) @property
 
 (statement_identifier) @label
 
@@ -246,9 +251,11 @@
   function: (identifier) @function.builtin)
   (#match? @function.builtin "^__builtin_"))
 
-((call_expression
-  function: (identifier) @function.builtin)
-  (#has-ancestor? @function.builtin attribute_specifier))
+; dog: shape instead of #has-ancestor?, which dog does not evaluate.
+(attribute_specifier
+  (argument_list
+    (call_expression
+      function: (identifier) @function.builtin)))
 
 ; Preproc def / undef
 (preproc_def
@@ -258,6 +265,10 @@
   directive: (preproc_directive) @_u
   argument: (_) @constant.macro
   (#eq? @_u "#undef"))
+
+; dog: #pragma / #warning / #error text is recognised but left unstyled.
+(preproc_call
+  argument: (preproc_arg) @none)
 
 (preproc_ifdef
   name: (identifier) @constant.macro)
@@ -339,3 +350,6 @@
   (ms_pointer_modifier)
   (attribute_declaration)
 ] @attribute
+
+;; TEMP-OLD-RULE
+(field_identifier) @property

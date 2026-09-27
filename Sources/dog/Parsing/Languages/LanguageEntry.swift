@@ -75,6 +75,12 @@ actor LanguageEntry {
     return executeQuery(compiled, tree: tsTree, sourceBytes: sourceBytes)
   }
 
+  /// The per-rule checks of the compiled highlight query, compiling it on
+  /// first use. Lets tests audit which checks the shipped queries rely on.
+  func patternPredicates() async -> [[PredicateEvaluator.QueryPredicate]] {
+    await ensureCompileTask().value?.patternPredicates ?? []
+  }
+
   // MARK: - Private
 
   /// Start (or reuse) the one-shot query compilation task. Stored before any

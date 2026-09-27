@@ -17,6 +17,11 @@ enum PredicateEvaluator {
     case notEqual(String, captureIndex: UInt32)
     case anyOf(Set<String>, captureIndex: UInt32)
     case notAnyOf(Set<String>, captureIndex: UInt32)
+    /// A check dog cannot evaluate (for example `#has-ancestor?`). It never
+    /// passes, so the whole rule stays off rather than firing everywhere.
+    /// `check` names the check for test reporting, e.g. `has-ancestor?` or
+    /// `match? "^[0-9]+$"`.
+    case unsupported(check: String)
   }
 
   // MARK: - Parsing
@@ -148,7 +153,10 @@ extension PredicateEvaluator {
     case "not-any-of?":
       return .notAnyOf(Set(strings), captureIndex: captureIdx)
     default:
-      return nil
+      // Directives (`#set!`, `#offset!`) only annotate a match; skipping them
+      // changes nothing. An unknown `?` check is a filter we cannot apply.
+      if name.hasSuffix("!") { return nil }
+      return .unsupported(check: name)
     }
   }
 
@@ -156,7 +164,10 @@ extension PredicateEvaluator {
     strings: [String], captureIdx: UInt32, negated: Bool
   ) -> QueryPredicate? {
     guard let pattern = strings.first else { return nil }
-    guard let fast = FastMatcher.from(pattern: pattern) else { return nil }
+    guard let fast = FastMatcher.from(pattern: pattern) else {
+      let check = negated ? "not-match?" : "match?"
+      return .unsupported(check: "\(check) \"\(pattern)\"")
+    }
     return negated
       ? .notMatchFast(fast, captureIndex: captureIdx)
       : .matchFast(fast, captureIndex: captureIdx)
@@ -186,6 +197,9 @@ extension PredicateEvaluator {
     case .equal, .notEqual, .anyOf, .notAnyOf:
       return evaluateTextPredicate(
         predicate, captures: captures, captureCount: captureCount, source: source)
+
+    case .unsupported:
+      return false
     }
   }
 
