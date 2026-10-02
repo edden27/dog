@@ -31,7 +31,7 @@ A [yazi plugin](https://github.com/edden27/dog.yazi) wraps `dog` as a previewer 
 ## Why dog
 
 - **[700+ Zed themes](https://sh.dog/how-to-use-themes#finding-editing-or-creating-themes)** — drop a JSON file in, or point `--theme-dir` at your existing `~/.config/zed/themes` and use what you already have. Backgrounds, line numbers, and gutter are all theme-controlled, opacity included. Two zero-cost built-ins ship too — dark is the default, `--light` flips to the bright one. Any theme can be [saved as your default](https://sh.dog/how-to-use-themes#set-a-default-theme) — stored precomputed, so it loads as fast as the built-ins.
-- **Up to 14.6× faster than bat on large files** — 54k lines of TypeScript in 0.4s vs 5.8s. 100% syntax coverage across all [17 supported languages](#supported-languages).
+- **Up to 14.8× faster than bat on large files** — 54k lines of TypeScript in 0.4s vs 6.0s. 100% syntax coverage across all [17 supported languages](#supported-languages).
 - **~5ms startup, every language** — precompiled highlight queries mean there's no per-language warmup. In fzf or yazi, that's the latency on every keystroke.
 - **Single binary, no runtime deps** — [17 grammars](#supported-languages) statically compiled in. Copy it anywhere, it runs.
 - **Built on tree-sitter** — full AST parse, not regex. Highlight queries from [nvim-treesitter](https://github.com/nvim-treesitter/nvim-treesitter).
@@ -42,22 +42,22 @@ A [yazi plugin](https://github.com/edden27/dog.yazi) wraps `dog` as a previewer 
 
 | Language | Speed vs bat, large files |
 | :--- | ---: |
-| Bash | 6.1× |
+| Bash | 6.2× |
 | C | 5.8× |
 | C++ | 7.7× |
-| CSS | 6.4× |
-| Go | 6.7× |
+| CSS | 7.3× |
+| Go | 6.8× |
 | HTML | 1.7× |
-| JavaScript | 10.1× |
-| JSON | 9.1× |
-| Lua | 5.2× |
+| JavaScript | 11.5× |
+| JSON | 8.9× |
+| Lua | 5.3× |
 | Markdown | 7.7× |
 | Python | 6.1× |
 | Ruby | 5.2× |
 | Rust | 6.8× |
 | Swift | 5.3× |
 | TSX | 11.9× |
-| TypeScript | 14.6× |
+| TypeScript | 14.8× |
 | YAML | 9.5× |
 
 *HTML's ratio looks tight because its "large" benchmark file is only ~2,400 lines — it benchmarks like a medium file. Full matrix in the [benchmarks](https://sh.dog/benchmarks#speed).*
