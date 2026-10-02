@@ -6,6 +6,9 @@
 # Usage:
 #   scripts/release/publish.sh 0.1.0
 #   scripts/release/publish.sh 0.1.0 --skip-build   # reuse existing dist/ tarballs
+#   scripts/release/publish.sh 0.1.0 --notes-file notes.md   # release notes from a file
+#
+# Without --notes-file, GitHub writes the release notes itself.
 #
 # One-time prerequisites:
 #   - gh CLI installed and logged in            (gh auth status)
@@ -17,9 +20,24 @@
 
 set -euo pipefail
 
-VERSION="${1:?usage: $0 <version, e.g. 0.1.0> [--skip-build]}"
+VERSION="${1:?usage: $0 <version, e.g. 0.1.0> [--skip-build] [--notes-file <path>]}"
+shift
 SKIP_BUILD=0
-[ "${2:-}" = "--skip-build" ] && SKIP_BUILD=1
+NOTES_FILE=""
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --skip-build) SKIP_BUILD=1 ;;
+        --notes-file) NOTES_FILE="${2:?--notes-file needs a path}"; shift ;;
+        *) echo "unknown option: $1"; exit 1 ;;
+    esac
+    shift
+done
+# Checked here, before anything is tagged, and made absolute because the
+# script changes into the project folder below.
+if [ -n "$NOTES_FILE" ]; then
+    [ -f "$NOTES_FILE" ] || { echo "release notes file not found: $NOTES_FILE"; exit 1; }
+    NOTES_FILE="$(cd "$(dirname "$NOTES_FILE")" && pwd)/$(basename "$NOTES_FILE")"
+fi
 TAG="v$VERSION"
 REPO="edden27/dog"
 TAP_REPO="edden27/homebrew-dog"
@@ -63,9 +81,17 @@ fi
 
 # ── GitHub Release: create as draft, attach tarballs, then publish ───────────
 step "GitHub release"
+if [ -n "$NOTES_FILE" ]; then
+    NOTES_ARGS=(--notes-file "$NOTES_FILE")
+else
+    NOTES_ARGS=(--generate-notes)
+fi
 if ! gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
     gh release create "$TAG" --repo "$REPO" --draft \
-        --title "dog $VERSION" --generate-notes
+        --title "dog $VERSION" "${NOTES_ARGS[@]}"
+elif [ -n "$NOTES_FILE" ]; then
+    # Re-run after a failure: the release already exists, so update its notes.
+    gh release edit "$TAG" --repo "$REPO" --notes-file "$NOTES_FILE"
 fi
 gh release upload "$TAG" dist/dog-*.tar.gz --repo "$REPO" --clobber
 gh release edit "$TAG" --repo "$REPO" --draft=false
