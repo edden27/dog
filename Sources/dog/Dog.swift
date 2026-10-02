@@ -72,7 +72,7 @@ struct Dog: AsyncParsableCommand {
       echo CODE | dog -l LANGUAGE
       """,
     discussion: "get out the cave, ditch the litter box",
-    version: "0.1.0"
+    version: "0.1.1"
   )
 
   // MARK: - Arguments

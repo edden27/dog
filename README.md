@@ -139,7 +139,7 @@ Full benchmarks and methodology in the [docs](https://sh.dog/benchmarks).
 
 ## Status
 
-`0.1.0` — first public release. `dog` is stable at 0.1 but still a puppy: we don't anticipate breaking changes, but it is in active development. Known limitations:
+`0.1.1` — bug fixes since the first public release. `dog` is stable at 0.1 but still a puppy: we don't anticipate breaking changes, but it is in active development. Known limitations:
 
 - Single file at a time (multi-file planned)
 - No git-diff gutter
