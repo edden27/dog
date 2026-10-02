@@ -10,13 +10,7 @@ import Testing
 @Suite("Error Recovery", .serialized)
 struct ErrorRecoveryTests {
   private static func fixturePath(_ sub: String) -> String {
-    URL(fileURLWithPath: #filePath)
-      .deletingLastPathComponent()
-      .deletingLastPathComponent()
-      .deletingLastPathComponent()
-      .deletingLastPathComponent()
-      .appendingPathComponent("tests/fixtures/performance/\(sub)")
-      .path
+    TestFixtures.path("performance/\(sub)")
   }
 
   @Test("lua errors.lua parses without crashing and recovers valid tokens")

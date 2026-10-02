@@ -9,27 +9,15 @@ import Testing
 @Suite("Zed Theme Parser")
 struct ZedThemeTests {
 
-  /// Resolve a theme fixture path relative to the repo root.
+  /// Resolve a theme fixture path inside `scripts/fixtures/themes/`.
   private static func themePath(_ filename: String) -> String {
-    let testDir = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
-    let projectRoot =
-      testDir
-      .deletingLastPathComponent()  // dogTests
-      .deletingLastPathComponent()  // Tests
-      .deletingLastPathComponent()  // cli
-    return projectRoot.appendingPathComponent("themes/\(filename)").path
+    TestFixtures.path("themes/\(filename)")
   }
 
-  /// Repo-root `themes/` directory — the fixture directory used across
+  /// `scripts/fixtures/themes/` — the fixture directory used across
   /// resolver, listing, and variant-scoping tests.
   static func themesDir() -> String {
-    let testDir = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
-    let projectRoot =
-      testDir
-      .deletingLastPathComponent()  // dogTests
-      .deletingLastPathComponent()  // Tests
-      .deletingLastPathComponent()  // cli
-    return projectRoot.appendingPathComponent("themes").path
+    TestFixtures.path("themes")
   }
 
   private static func themeBytes(_ filename: String) throws -> [UInt8] {
@@ -45,7 +33,6 @@ struct ZedThemeTests {
     let fixtures = [
       "Catppuccin.json",
       "Nord.json",
-      "One Dark Pro.json",
       "Ultimate Dark Neo.json",
       "macOS Classic.json",
       "Everforest Theme (blur).json"
@@ -136,7 +123,6 @@ struct ZedThemeTests {
     let fixtures = [
       "Catppuccin.json",
       "Nord.json",
-      "One Dark Pro.json",
       "Ultimate Dark Neo.json",
       "macOS Classic.json",
       "Everforest Theme (blur).json"
@@ -309,10 +295,10 @@ struct ZedThemeTests {
 
   @Test("listVariantNames handles single-variant bundles")
   func listVariantNamesSingle() throws {
-    let bytes = try Self.themeBytes("One Dark Pro.json")
+    let bytes = try Self.themeBytes("Ultimate Dark Neo.json")
     let names = ZedThemeVariantWalker.listVariantNames(bytes)
     #expect(names.count == 1)
-    #expect(names.contains("One Dark Pro"))
+    #expect(names.contains("Ultimate Dark Neo"))
   }
 
   @Test("listVariantNames returns empty for file without themes array")
@@ -373,7 +359,6 @@ struct ZedThemeTests {
     let files = ZedThemeDirectoryScanner.listJSONFiles(in: Self.themesDir())
     #expect(files.contains("Catppuccin.json"))
     #expect(files.contains("Nord.json"))
-    #expect(files.contains("One Dark Pro.json"))
     #expect(files.contains("Ultimate Dark Neo.json"))
     #expect(files.contains("macOS Classic.json"))
     #expect(files.contains("Everforest Theme (blur).json"))
@@ -423,9 +408,9 @@ struct ZedThemeTests {
 
   @Test("load(name:directory:) resolves bundles where filename has spaces")
   func resolverSpacedFilename() throws {
-    // "One Dark Pro.json" — full name matches filename
+    // "Ultimate Dark Neo.json" — full name matches filename
     let theme = try ZedThemeLoader.load(
-      name: "One Dark Pro", directory: Self.themesDir()
+      name: "Ultimate Dark Neo", directory: Self.themesDir()
     )
     #expect(theme.colorTable.count == TokenType.allCases.count)
   }
@@ -473,7 +458,7 @@ struct ZedThemeTests {
     let bundleNames = bundles.map(\.bundle)
     #expect(bundleNames.contains("Catppuccin"))
     #expect(bundleNames.contains("Nord"))
-    #expect(bundleNames.contains("One Dark Pro"))
+    #expect(bundleNames.contains("Ultimate Dark Neo"))
     // Catppuccin should have 4 variants
     let catppuccin = bundles.first { $0.bundle == "Catppuccin" }
     #expect(catppuccin?.variants.count == 4)

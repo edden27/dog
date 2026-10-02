@@ -34,17 +34,7 @@ struct TokenAuditTests {
 
   /// Find the fixture directory relative to the test file.
   private static func fixturePath(language: String, ext: String, size: String = "medium") -> String? {
-    // Walk up from the test file to find the project root
-    let testDir = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
-    let projectRoot =
-      testDir
-      .deletingLastPathComponent()  // dogTests
-      .deletingLastPathComponent()  // Tests
-      .deletingLastPathComponent()  // cli
-    let path =
-      projectRoot
-      .appendingPathComponent("tests/fixtures/performance/\(language)/\(size).\(ext)")
-      .path
+    let path = TestFixtures.path("performance/\(language)/\(size).\(ext)")
     return FileManager.default.fileExists(atPath: path) ? path : nil
   }
 
@@ -119,16 +109,7 @@ struct TokenAuditTests {
   ]
 
   private static func extraFixturePath(language: String, file: String) -> String? {
-    let testDir = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
-    let projectRoot =
-      testDir
-      .deletingLastPathComponent()
-      .deletingLastPathComponent()
-      .deletingLastPathComponent()
-    let path =
-      projectRoot
-      .appendingPathComponent("tests/fixtures/performance/\(language)/\(file)")
-      .path
+    let path = TestFixtures.path("performance/\(language)/\(file)")
     return FileManager.default.fileExists(atPath: path) ? path : nil
   }
 

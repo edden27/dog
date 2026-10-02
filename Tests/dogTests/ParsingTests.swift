@@ -173,13 +173,7 @@ struct ParsingTests {
   /// Parse jquery.js — verify token count is substantial.
   @Test("Parse jquery.js produces ~86k tokens")
   func parseJQueryJS() async throws {
-    let testDir = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
-    let projectRoot =
-      testDir
-      .deletingLastPathComponent()
-      .deletingLastPathComponent()
-      .deletingLastPathComponent()
-    let path = projectRoot.appendingPathComponent("tests/fixtures/jquery.js").path
+    let path = TestFixtures.path("jquery.js")
 
     guard FileManager.default.fileExists(atPath: path) else {
       Issue.record("jquery.js fixture not found at \(path)")
@@ -239,25 +233,13 @@ struct ParsingTests {
 
   // MARK: - Helpers
 
-  private func projectRoot() -> URL {
-    URL(fileURLWithPath: #filePath)
-      .deletingLastPathComponent()  // ParsingTests.swift → dogTests/
-      .deletingLastPathComponent()  // dogTests → Tests/
-      .deletingLastPathComponent()  // Tests → cli/
-      .deletingLastPathComponent()  // cli → project root
-  }
-
   private func fixturePath(language: String, ext: String, size: String) -> String? {
-    let path = projectRoot()
-      .appendingPathComponent("tests/fixtures/performance/\(language)/\(size).\(ext)")
-      .path
+    let path = TestFixtures.path("performance/\(language)/\(size).\(ext)")
     return FileManager.default.fileExists(atPath: path) ? path : nil
   }
 
   private func fixtureDir(language: String) -> String? {
-    let path = projectRoot()
-      .appendingPathComponent("tests/fixtures/performance/\(language)")
-      .path
+    let path = TestFixtures.path("performance/\(language)")
     return FileManager.default.fileExists(atPath: path) ? path : nil
   }
 }
