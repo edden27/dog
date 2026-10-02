@@ -19,7 +19,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-DOCS_BASELINE="$PROJECT_ROOT/perf/baseline/docs-2026-07-18.csv"
+DOCS_BASELINE="$PROJECT_ROOT/perf/baseline/blank-line-fix-2026-09-27.csv"
 OUT="$PROJECT_ROOT/perf/latest-bench/results"
 
 if [[ $# -eq 0 ]]; then
