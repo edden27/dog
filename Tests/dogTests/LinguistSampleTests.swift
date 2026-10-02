@@ -28,7 +28,7 @@ struct EdgeCaseSample: Sendable, CustomTestStringConvertible {
 @Suite("Linguist Samples")
 struct LinguistSampleTests {
 
-  // MARK: - Detectable (239 linguist files with full paths)
+  // MARK: - Detectable (221 linguist files with full paths)
 
   private static let detectable: [(expected: String, filename: String)] = [
     // Shell → bash
@@ -280,7 +280,6 @@ struct LinguistSampleTests {
     ("bash", "/home/user/project/gradlew"),
     ("bash", "/home/user/project/PKGBUILD"),
     ("swift", "/Users/dev/ios-app/Package.swift"),
-    ("rust", "/Users/dev/crate/Cargo.lock"),
     ("json", "/Users/dev/project/composer.lock"),
     ("json", "/Users/dev/project/deno.lock"),
     ("json", "/Users/dev/project/Package.resolved"),

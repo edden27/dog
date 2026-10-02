@@ -140,7 +140,6 @@ declare -a FILENAME_TESTS=(
   "json|composer.lock|{\"packages\": []}"
   "yaml|.clang-format|BasedOnStyle: LLVM"
   "swift|Package.swift|// swift-tools-version: 6.2"
-  "rust|Cargo.lock|[root]"
   "python|BUILD|load(':defs.bzl', 'py_library')"
 )
 

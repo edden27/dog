@@ -182,9 +182,6 @@ enum LanguageMap {
     "mvnw": "bash",
     "PKGBUILD": "bash",
 
-    // Rust
-    "Cargo.lock": "rust",
-
     // Swift
     "Package.swift": "swift",
 
@@ -203,6 +200,7 @@ enum LanguageMap {
     ".clangd": "yaml",
     ".gemrc": "yaml",
     "glide.lock": "yaml",
+    // Yarn 2+ only. Yarn 1 lockfiles are not YAML; LanguageDetector prints them plain.
     "yarn.lock": "yaml",
     "CITATION.cff": "yaml",
 

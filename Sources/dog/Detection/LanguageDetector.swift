@@ -33,6 +33,10 @@ enum LanguageDetector {
     if let filename {
       // Stage 2: exact filename match
       if let lang = detectByFilename(filename) {
+        if isYarnClassicLockfile(filename: filename, sourceBytes: sourceBytes) {
+          Bark.debug("detection: '\(filename)' is a Yarn 1 lockfile, not YAML → plain")
+          return nil
+        }
         Bark.debug("detection: filename '\(filename)' → \(lang)")
         return lang
       }
@@ -67,6 +71,15 @@ enum LanguageDetector {
     // Extract just the filename from a path using UTF8View backward scan
     let filename = extractFilename(name)
     return LanguageMap.filenames[filename]
+  }
+
+  /// Yarn 1 writes `# yarn lockfile v1` in its header comment. Its entries use
+  /// comma-separated keys that YAML cannot read, so the YAML tree stops after
+  /// the first entry and the rest of the file would print in one flat color.
+  private static func isYarnClassicLockfile(filename: String, sourceBytes: [UInt8]) -> Bool {
+    guard extractFilename(filename) == "yarn.lock" else { return false }
+    let header = String(decoding: sourceBytes.prefix(256), as: UTF8.self)
+    return header.contains("# yarn lockfile v1")
   }
 
   // MARK: - Stage 3: Extension
